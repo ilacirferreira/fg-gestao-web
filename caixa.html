@@ -322,6 +322,24 @@ function FG_abrev(n,k){var s=String(n||'').replace(/\s+/g,' ').trim();if(!k||/\b
 function FG_cabeNomes(raiz){[].forEach.call((raiz||document).querySelectorAll('[data-nome]'),function(b){var n=b.getAttribute('data-nome'),box=b.closest('.l2')||b.parentNode,k=0;b.textContent=n;
   while(box.scrollWidth>box.clientWidth+1&&k<6){k++;var t=FG_abrev(n,k);if(t===b.textContent)break;b.textContent=t}})}
 
+/* Sugestão de e-mails ao digitar (Ilacir 07/11): cadastrados + já enviados, em todos os campos de e-mail */
+var FG_EM_LISTA={rsPara:1,rsCc:1,ePara:1},FG_EM_CHIP={novoEm:1,eNovo:1};
+function FG_emEh(t){return t&&t.id&&(FG_EM_LISTA[t.id]||FG_EM_CHIP[t.id])}
+function FG_emEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function FG_emSug(inp){var CT=(typeof D!=='undefined'&&D&&D.contatos)||[];var b=document.getElementById('fgEmSug');if(!b){b=document.createElement('div');b.id='fgEmSug';b.style.cssText='position:fixed;z-index:200;background:#fff;border:1px solid #B8C0CA;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:300px;overflow:auto;font-size:15px;display:none';document.body.appendChild(b)}
+  var q=(FG_EM_CHIP[inp.id]?inp.value:inp.value.split(/[,;]/).pop()).trim().toLowerCase();
+  if(q.length<2||!CT.length){b.style.display='none';return}
+  var l=CT.filter(function(c){return c[0].indexOf(q)>=0||String(c[1]||'').toLowerCase().indexOf(q)>=0}).slice(0,8);
+  if(!l.length){b.style.display='none';return}
+  var r=inp.getBoundingClientRect();b.style.left=r.left+'px';b.style.top=(r.bottom+2)+'px';b.style.minWidth=Math.max(r.width,320)+'px';b.style.display='block';b._inp=inp;
+  b.innerHTML=l.map(function(c){return '<div data-e="'+FG_emEsc(c[0])+'" style="padding:7px 10px;cursor:pointer;border-bottom:1px solid #EEF1F4" onmouseover="this.style.background=\'#EEF3FA\'" onmouseout="this.style.background=\'\'" onmousedown="event.preventDefault();FG_emEscolhe(this.getAttribute(\'data-e\'))"><b>'+FG_emEsc(c[0])+'</b>'+(c[1]?' <span style="color:#6B7785">· '+FG_emEsc(c[1])+'</span>':'')+'</div>'}).join('')}
+function FG_emEscolhe(e){var b=document.getElementById('fgEmSug'),inp=b&&b._inp;if(!inp)return;b.style.display='none';
+  if(FG_EM_CHIP[inp.id]){inp.value=e;inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));return}
+  var p=inp.value.split(/[,;]/);p[p.length-1]=e;inp.value=p.map(function(x){return x.trim()}).filter(Boolean).join(', ')+', ';inp.focus();inp.dispatchEvent(new Event('change',{bubbles:true}))}
+document.addEventListener('input',function(ev){if(FG_emEh(ev.target))FG_emSug(ev.target)});
+document.addEventListener('focusout',function(ev){if(FG_emEh(ev.target)){var b=document.getElementById('fgEmSug');if(b)setTimeout(function(){b.style.display='none'},150)}});
+document.addEventListener('keydown',function(ev){var b=document.getElementById('fgEmSug');if(!b||b.style.display!=='block'||b._inp!==ev.target)return;if(ev.key==='Escape'){b.style.display='none'}else if(ev.key==='Tab'||(ev.key==='Enter'&&FG_EM_LISTA[ev.target.id])){var f=b.firstChild;if(f){ev.preventDefault();FG_emEscolhe(f.getAttribute('data-e'))}}},true);
+
 var EM=D.emails;
 var SITS=['Novo','A Classificar','Aguardando Terceiro','Respondido','Só Informativo','Resolvido'];
 var S={sel:{t:'todos'},ab:{sit:1,ob:0},hist:[],busca:''};
@@ -331,16 +349,6 @@ function rsPend(){return RS.filter(function(r){return r.situacao==='aguardando'}
 function rsRun(fn,args,msg){google.script.run.withSuccessHandler(function(l){RS=l;if(msg)toast(msg);desenha()}).withFailureHandler(function(e){toast('Não gravou: '+(e&&e.message||e))})[fn].apply(null,args)}
 function rsSalvar(){var r=RS.filter(function(x){return x.id===RSEL})[0];if(!r)return;rsRun('rsEditar',[r.id,{para:document.getElementById('rsPara').value,cc:document.getElementById('rsCc').value,assunto:document.getElementById('rsAss').value,corpo:document.getElementById('rsCorpo').value}],'Alteração salva ✓')}
 /* sugestões ao digitar Para/Cc: cadastro + e-mails já enviados */
-var CT=(typeof D!=='undefined'&&D&&D.contatos)||[];
-function rsSugere(inp){var b=document.getElementById('rsSug');if(!b){b=document.createElement('div');b.id='rsSug';b.style.cssText='position:fixed;z-index:90;background:#fff;border:1px solid #B8C0CA;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:260px;overflow:auto;font-size:15px';document.body.appendChild(b)}
-  var partes=inp.value.split(/[,;]/),q=partes[partes.length-1].trim().toLowerCase();if(q.length<2){b.style.display='none';return}
-  var ja=partes.slice(0,-1).map(function(x){return x.trim().toLowerCase()});
-  var l=CT.filter(function(c){return ja.indexOf(c[0])<0&&(c[0].indexOf(q)>=0||String(c[1]).toLowerCase().indexOf(q)>=0)}).slice(0,8);
-  if(!l.length){b.style.display='none';return}var r=inp.getBoundingClientRect();b.style.left=r.left+'px';b.style.top=(r.bottom+2)+'px';b.style.width=r.width+'px';b.style.display='block';
-  b.innerHTML=l.map(function(c,i){return '<div data-e="'+esc(c[0])+'" style="padding:6px 10px;cursor:pointer;border-bottom:1px solid #EEF1F4" onmousedown="event.preventDefault();rsEscolhe(\''+inp.id+'\',this.getAttribute(\'data-e\'))"><b>'+esc(c[0])+'</b>'+(c[1]?' <span style="color:#6B7785">· '+esc(c[1])+'</span>':'')+'</div>'}).join('')}
-function rsEscolhe(id,e){var inp=document.getElementById(id),p=inp.value.split(/[,;]/);p[p.length-1]=' '+e;inp.value=p.map(function(x){return x.trim()}).filter(Boolean).join(', ')+', ';inp.focus();document.getElementById('rsSug').style.display='none'}
-document.addEventListener('input',function(ev){var t=ev.target;if(t&&(t.id==='rsPara'||t.id==='rsCc'))rsSugere(t)});
-document.addEventListener('focusout',function(ev){var t=ev.target;if(t&&(t.id==='rsPara'||t.id==='rsCc')){var b=document.getElementById('rsSug');if(b)setTimeout(function(){b.style.display='none'},150)}});
 function rsCampos(){var lp=function(id){return document.getElementById(id).value.replace(/[,;\s]+$/,'').trim()};return {para:lp('rsPara'),cc:lp('rsCc'),assunto:document.getElementById('rsAss').value,corpo:document.getElementById('rsCorpo').value}}
 function rsChips(r){var l=[];try{l=JSON.parse(r.anexos||'[]')}catch(e){}return '<div class="fld"><label>Anexos</label><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+(l.length?l.map(function(a){return '<span class="tag t-gray" style="font-size:14px;padding:3px 8px">📎 '+esc(a.nome)+(a.kb?' ('+a.kb+' KB)':'')+' <b style="cursor:pointer;margin-left:4px" title="Tirar este anexo" onclick="rsTirar(\''+a.id+'\')">×</b></span>'}).join(''):'<span style="color:#6B7785">Nenhum. Use Anexar Arquivo, lá em cima.</span>')+'</div></div>'}
 function rsAnexarArq(){var r=RS.filter(function(x){return x.id===RSEL})[0];if(!r)return;var i=document.getElementById('rsArq');if(!i){i=document.createElement('input');i.type='file';i.id='rsArq';i.multiple=true;i.style.display='none';document.body.appendChild(i)}

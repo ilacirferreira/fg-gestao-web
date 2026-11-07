@@ -352,6 +352,24 @@ function FG_abrev(n,k){var s=String(n||'').replace(/\s+/g,' ').trim();if(!k||/\b
 function FG_cabeNomes(raiz){[].forEach.call((raiz||document).querySelectorAll('[data-nome]'),function(b){var n=b.getAttribute('data-nome'),box=b.closest('.l2')||b.parentNode,k=0;b.textContent=n;
   while(box.scrollWidth>box.clientWidth+1&&k<6){k++;var t=FG_abrev(n,k);if(t===b.textContent)break;b.textContent=t}})}
 
+/* Sugestão de e-mails ao digitar (Ilacir 07/11): cadastrados + já enviados, em todos os campos de e-mail */
+var FG_EM_LISTA={rsPara:1,rsCc:1,ePara:1},FG_EM_CHIP={novoEm:1,eNovo:1};
+function FG_emEh(t){return t&&t.id&&(FG_EM_LISTA[t.id]||FG_EM_CHIP[t.id])}
+function FG_emEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function FG_emSug(inp){var CT=(typeof D!=='undefined'&&D&&D.contatos)||[];var b=document.getElementById('fgEmSug');if(!b){b=document.createElement('div');b.id='fgEmSug';b.style.cssText='position:fixed;z-index:200;background:#fff;border:1px solid #B8C0CA;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:300px;overflow:auto;font-size:15px;display:none';document.body.appendChild(b)}
+  var q=(FG_EM_CHIP[inp.id]?inp.value:inp.value.split(/[,;]/).pop()).trim().toLowerCase();
+  if(q.length<2||!CT.length){b.style.display='none';return}
+  var l=CT.filter(function(c){return c[0].indexOf(q)>=0||String(c[1]||'').toLowerCase().indexOf(q)>=0}).slice(0,8);
+  if(!l.length){b.style.display='none';return}
+  var r=inp.getBoundingClientRect();b.style.left=r.left+'px';b.style.top=(r.bottom+2)+'px';b.style.minWidth=Math.max(r.width,320)+'px';b.style.display='block';b._inp=inp;
+  b.innerHTML=l.map(function(c){return '<div data-e="'+FG_emEsc(c[0])+'" style="padding:7px 10px;cursor:pointer;border-bottom:1px solid #EEF1F4" onmouseover="this.style.background=\'#EEF3FA\'" onmouseout="this.style.background=\'\'" onmousedown="event.preventDefault();FG_emEscolhe(this.getAttribute(\'data-e\'))"><b>'+FG_emEsc(c[0])+'</b>'+(c[1]?' <span style="color:#6B7785">· '+FG_emEsc(c[1])+'</span>':'')+'</div>'}).join('')}
+function FG_emEscolhe(e){var b=document.getElementById('fgEmSug'),inp=b&&b._inp;if(!inp)return;b.style.display='none';
+  if(FG_EM_CHIP[inp.id]){inp.value=e;inp.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));return}
+  var p=inp.value.split(/[,;]/);p[p.length-1]=e;inp.value=p.map(function(x){return x.trim()}).filter(Boolean).join(', ')+', ';inp.focus();inp.dispatchEvent(new Event('change',{bubbles:true}))}
+document.addEventListener('input',function(ev){if(FG_emEh(ev.target))FG_emSug(ev.target)});
+document.addEventListener('focusout',function(ev){if(FG_emEh(ev.target)){var b=document.getElementById('fgEmSug');if(b)setTimeout(function(){b.style.display='none'},150)}});
+document.addEventListener('keydown',function(ev){var b=document.getElementById('fgEmSug');if(!b||b.style.display!=='block'||b._inp!==ev.target)return;if(ev.key==='Escape'){b.style.display='none'}else if(ev.key==='Tab'||(ev.key==='Enter'&&FG_EM_LISTA[ev.target.id])){var f=b.firstChild;if(f){ev.preventDefault();FG_emEscolhe(f.getAttribute('data-e'))}}},true);
+
 var REL=[['Resumo do Mês','Receitas, impostos, despesas, captação e partes','Todo dia 5, só para o Ilacir',1],['Saldo dos Sócios','Saldo de cada sócio, mês a mês','—',0],['Panorama e Simulador','Banco na data, previsões e cenários','—',0],['Encontro de Contas','Entrega do Living: quem fica com cada bem e o valor único do Thiago','—',0],['A Receber e Atrasados','NF emitidas sem pagamento, atrasadas > 15 dias','Toda segunda',0],['Contratos','Valor, faturado, recebido e saldo de cada contrato','—',0],['Notas Fiscais','NF do período, bruto, retenções e líquido','—',0],['Impostos do Mês','Calculado a partir das NF','Dia 10',0],['Conferência de Impostos','Guia da contabilidade × calculado','—',0],['Despesas','Por categoria e tópico','—',0],['Colaboradores','Ponto, faltas, auxílio, holerite × PIX','1º dia útil',1],['Conciliação do Extrato','Linhas do banco, classificação e comentários','—',0],['Dividendos','Transferido por sócio no mês e no ano × limites da lei','—',0],['Permutas','Cobertura, baixas e NF das permutas','—',0],['Pendências','Tudo o que está a conferir, a conciliar, a classificar','—',0],['Documentos a Vencer','Validade dos documentos da empresa','—',0]];
 /* ===== Relatórios em folha A4 (um motor só: tela, impressão e PDF usam as mesmas folhas) =====
  Padrão FG Psicologia (C68–C81), regras na ordem:
