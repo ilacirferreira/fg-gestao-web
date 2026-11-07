@@ -85,6 +85,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-perm{background:var(--perm-bg);color:var(--perm)}.t-gray{background:var(--gray-bg);color:var(--gray)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .kpi{padding:7px 12px}
+.kpi.clk{cursor:pointer;border-color:var(--blue)}.kpi.clk:hover{background:var(--hov)}.kpi .kgo{color:var(--blue);font-weight:700}
 .kpi small{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
 .kpi b{display:block;font-size:18px;margin-top:1px;white-space:nowrap}
 .kpi em{display:block;font-size:11px;color:var(--mut);font-style:normal;white-space:nowrap}
@@ -456,7 +457,7 @@ else if(s.t==='grp')ls=linhasMes(s.a,s.m).filter(function(l){return s.g>0?l.v>0:
 else if(s.t==='cat')ls=linhasMes(s.a,s.m).filter(function(l){return (s.g>0?l.v>0:l.v<0)&&l.cat===s.c});
 else ls=[];
 return q?ls.filter(function(l){return casa(l,q)}):ls}
-function kpi(t,v,e,cl){return '<div class="box kpi"><small>'+t+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
+function kpi(t,v,e,cl,go){return '<div class="box kpi'+(go?' clk" onclick="'+go+'" title="Clique para abrir e resolver"':'"')+'><small>'+t+(go?' <span class="kgo">›</span>':'')+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
 function tag(st){var x=ST[st]||['t-gray',st];return '<span class="tag '+x[0]+'">'+x[1]+'</span>'}
 function desenhaPainel(){
 var s=S.sel,head='',kp='',tabs=[],pane='';
@@ -470,7 +471,7 @@ kp=kpi('Saldo anterior',brl(r.ini),'fim de '+(s.m>1?MC[s.m-2]+'/'+s.a:'Dez/'+(s.
 if(s.t==='mes'){if(!S._tabOk){S.tab=2;S._tabOk=1}
 head='<div><div class="headtitle">Banco do Brasil S/A</div></div>';
 tabs=['Dados da Conta','Extratos Recebidos','Extrato do Mês — '+MC[s.m-1]+'/'+s.a,'Extrato por Categoria','Conferência do Mês','Regras de Classificação'];
-if(S.tab<2){var meses=0,ps=L.filter(function(l){return PEND[l.st]}).length;anos().forEach(function(a){meses+=mesesDe(a).length});kp=kpi('Saldo conferido',brl(D.saldoFim),'30/10/2026, último extrato')+kpi('Extratos recebidos',meses+' meses','mai/2023 a out/2026')+kpi('Lançamentos',L.length,'todos com a soma fechando')+kpi('Pendências',ps,'marcadas na árvore')}
+if(S.tab<2){var meses=0,ps=L.filter(function(l){return PEND[l.st]}).length;anos().forEach(function(a){meses+=mesesDe(a).length});kp=kpi('Saldo conferido',brl(D.saldoFim),'30/10/2026, último extrato')+kpi('Extratos recebidos',meses+' meses','mai/2023 a out/2026')+kpi('Lançamentos',L.length,'todos com a soma fechando')+kpi('Pendências',ps,'marcadas na árvore','',"sel({t:'pend'})")}
 if(S.tab===0)pane=paneConta();else if(S.tab===1)pane=paneExtratos();
 else if(S.tab===2)pane=paneExtrato(linhasSel(),false);
 else if(S.tab===3)pane=paneCategorias(lm);
@@ -492,7 +493,7 @@ tabs=['Linhas Pendentes'];pane=paneExtrato(lp,true);
 }else if(s.t==='conta'){
 var meses=0,ps=L.filter(function(l){return PEND[l.st]}).length;anos().forEach(function(a){meses+=mesesDe(a).length});
 head='<div><div class="headtitle">Banco do Brasil S/A</div></div><div class="tags"><span class="tag t-ok">Conferido até 30/10/2026</span></div>';
-kp=kpi('Saldo conferido',brl(D.saldoFim),'30/10/2026, último extrato')+kpi('Extratos recebidos',meses+' meses','mai/2023 a out/2026')+kpi('Lançamentos',L.length,'todos com a soma fechando')+kpi('Pendências',ps,'abrir em Pendências');
+kp=kpi('Saldo conferido',brl(D.saldoFim),'30/10/2026, último extrato')+kpi('Extratos recebidos',meses+' meses','mai/2023 a out/2026')+kpi('Lançamentos',L.length,'todos com a soma fechando')+kpi('Pendências',ps,'abrir em Pendências','',"sel({t:'pend'})");
 tabs=['Dados da Conta','Extratos Recebidos','Extrato do Mês','Extrato por Categoria','Conferência do Mês','Regras de Classificação'];
 if(S.tab>=2){S.sel={t:'mes',a:2026,m:10};S._tabOk=1;return desenhaPainel()}pane=S.tab===0?paneConta():paneExtratos();
 }else if(s.t==='fora'){

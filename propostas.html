@@ -85,6 +85,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-perm{background:var(--perm-bg);color:var(--perm)}.t-gray{background:var(--gray-bg);color:var(--gray)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .kpi{padding:7px 12px}
+.kpi.clk{cursor:pointer;border-color:var(--blue)}.kpi.clk:hover{background:var(--hov)}.kpi .kgo{color:var(--blue);font-weight:700}
 .kpi small{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
 .kpi b{display:block;font-size:18px;margin-top:1px;white-space:nowrap}
 .kpi em{display:block;font-size:11px;color:var(--mut);font-style:normal;white-space:nowrap}
@@ -388,7 +389,7 @@ h+=no((g[0]==='semresp'?'pend':g[0]==='aceita'?'emit':'ano')+' b',eq({t:'pgrp',g
 if(S.ab[k]||q)ls.forEach(function(p){h+=no('',eq({t:'prop',id:p.id}),null,esc(p.cli.replace(/ \(.*\)/,'')),'<span class="vl">'+(p.valor?num(p.valor):'nos PDFs')+'</span>',selJ({t:'prop',id:p.id}),2)})});
 document.getElementById('tree').innerHTML=h}
 /* painel */
-function kpi(t,v,e,cl){return '<div class="box kpi"><small>'+t+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
+function kpi(t,v,e,cl,go){return '<div class="box kpi'+(go?' clk" onclick="'+go+'" title="Clique para abrir e resolver"':'"')+'><small>'+t+(go?' <span class="kgo">›</span>':'')+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
 function paginar(rows){var n=Math.max(1,Math.ceil(rows.length/PT));if(S.pg>n-1)S.pg=n-1;return rows.slice(S.pg*PT,S.pg*PT+PT).join('')}
 function pgLine(t){var n=Math.max(1,Math.ceil(t/PT));if(n<2)return '';return '<div class="pgline">Linhas '+(S.pg*PT+1)+'–'+Math.min(t,S.pg*PT+PT)+' de '+t+' <button class="mini" '+(S.pg?'':'disabled')+' onclick="S.pg--;desenhaPainel()">◀</button><button class="mini" '+(S.pg<n-1?'':'disabled')+' onclick="S.pg++;desenhaPainel()">▶</button></div>'}
 function encaixa(){var w=document.getElementById('tw');if(!w)return;var t=w.querySelector('table');t.classList.remove('h1');if(t.scrollWidth>w.clientWidth+1)t.classList.add('h1')}
@@ -411,7 +412,7 @@ tabs=['Dados do Contrato','Parcelas'];pane=S.tab===0?paneDadosCt(c,p):paneParcel
 }else if(s.t==='propostas'||s.t==='pgrp'){var lp=PROPOSTAS.filter(function(p){return (s.t==='propostas'||p.sit===s.g)&&casaP(p)});
 var ac=PROPOSTAS.filter(function(p){return p.sit==='aceita'}).length,dec=PROPOSTAS.filter(function(p){return p.sit!=='rascunho'}).length;
 head='<div><div class="crumb">'+crumb+'</div><div class="headtitle">'+(s.t==='propostas'?'Propostas':GP.filter(function(g){return g[0]===s.g})[0][1])+'</div></div>';
-kp=kpi('Propostas',lp.length,'')+kpi('Valor proposto',brl(lp.reduce(function(a,p){return a+p.valor},0)),'')+kpi('Taxa de aceite',Math.round(ac/dec*100)+'%',ac+' aceitas de '+dec+' enviadas')+kpi('Vencem em 7 dias',PROPOSTAS.filter(function(p){if(p.sit!=='enviada')return false;var d=(dt(p.val)-HOJE)/864e5;return d>=0&&d<=7}).length,'validade de 30 dias');
+kp=kpi('Propostas',lp.length,'')+kpi('Valor proposto',brl(lp.reduce(function(a,p){return a+p.valor},0)),'')+kpi('Taxa de aceite',Math.round(ac/dec*100)+'%',ac+' aceitas de '+dec+' enviadas')+kpi('Vencem em 7 dias',PROPOSTAS.filter(function(p){if(p.sit!=='enviada')return false;var d=(dt(p.val)-HOJE)/864e5;return d>=0&&d<=7}).length,'validade de 30 dias','',"sel({t:'pgrp',g:'enviada'})");
 tabs=['Lista de Propostas'];pane=paneLista(lp);
 }else if(s.t==='prop'){var p=pById(s.id);
 head='<div><div class="crumb">'+crumb+' › Propostas › '+SITP[p.sit][1]+'</div><div class="headtitle">'+esc(p.cli)+' — <span style="color:#A3271B">'+esc(curto(p.obra))+'</span></div></div><div class="tags">'+tagP(p.sit)+'</div>';

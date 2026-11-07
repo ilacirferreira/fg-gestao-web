@@ -85,6 +85,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-perm{background:var(--perm-bg);color:var(--perm)}.t-gray{background:var(--gray-bg);color:var(--gray)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .kpi{padding:7px 12px}
+.kpi.clk{cursor:pointer;border-color:var(--blue)}.kpi.clk:hover{background:var(--hov)}.kpi .kgo{color:var(--blue);font-weight:700}
 .kpi small{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
 .kpi b{display:block;font-size:18px;margin-top:1px;white-space:nowrap}
 .kpi em{display:block;font-size:11px;color:var(--mut);font-style:normal;white-space:nowrap}
@@ -433,7 +434,7 @@ if(S.ab.av)GRP.forEach(function(g){var n=AVISOS.filter(function(a){return a.g===
 h+=no('raiz b',eq({t:'paginas'}),'pg','Páginas','<span class="vl">'+PAGINAS.length+'</span>',"tog('pg');"+selJ({t:'paginas'}));
 if(S.ab.pg)PAGINAS.forEach(function(p,i){var n=AVISOS.filter(function(a){return a.p===p[0]}).length;h+=no('b',eq({t:'pag',i:i}),null,esc(p[0]),n?'<span class="cnt" style="color:#7A4A0B">'+n+' aviso(s)</span>':'',selJ({t:'pag',i:i}),1)});
 document.getElementById('tree').innerHTML=h}
-function kpi(t,v,e,cl){return '<div class="box kpi"><small>'+t+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
+function kpi(t,v,e,cl,go){return '<div class="box kpi'+(go?' clk" onclick="'+go+'" title="Clique para abrir e resolver"':'"')+'><small>'+t+(go?' <span class="kgo">›</span>':'')+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
 function linhaAv(a){var g=GRP.filter(function(x){return x[0]===a.g})[0];return '<tr class="clk" onclick="irPara(\''+a.p+'\')"><td><span class="tag '+(a.g==='urg'?'t-bad':a.g==='ate'?'t-warn':'t-info')+'">'+g[1]+'</span></td><td title="'+esc(a.d)+'"><b>'+esc(a.t)+'</b></td><td>'+esc(a.p)+'</td><td><button class="btn pri" style="min-height:28px" onclick="event.stopPropagation();irPara(\''+a.p+'\')">'+esc(a.a)+'</button></td></tr>'}
 function tabela(ls){var rows=ls.map(linhaAv);return ls.length?'<div class="tablewrap" id="tw"><table><thead><tr><th>Tipo</th><th>Aviso</th><th>Onde resolve</th><th></th></tr></thead><tbody>'+paginar(rows)+'</tbody></table></div>'+pgLine(rows.length):'<div class="info">Nenhum aviso.</div>'}
 function desenhaPainel(){var s=S.sel,head='',kp='',tabs=[],pane='';

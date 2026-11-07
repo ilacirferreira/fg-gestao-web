@@ -85,6 +85,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-perm{background:var(--perm-bg);color:var(--perm)}.t-gray{background:var(--gray-bg);color:var(--gray)}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .kpi{padding:7px 12px}
+.kpi.clk{cursor:pointer;border-color:var(--blue)}.kpi.clk:hover{background:var(--hov)}.kpi .kgo{color:var(--blue);font-weight:700}
 .kpi small{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
 .kpi b{display:block;font-size:18px;margin-top:1px;white-space:nowrap}
 .kpi em{display:block;font-size:11px;color:var(--mut);font-style:normal;white-space:nowrap}
@@ -491,7 +492,7 @@ if(S.ab.rec)REC.forEach(function(r,i){var u=ultimo(r);h+=no('',eq({t:'rec',i:i})
 h+=no('raiz b',eq({t:'imp'}),'imp','Impostos','',"tog('imp');"+selJ({t:'imp'}));
 if(S.ab.imp)anos().forEach(function(a){var li=L.filter(function(l){return l.a===a&&l.cat==='Impostos'});h+=no('ano b',eq({t:'impa',a:a}),null,String(a),'<span class="vl">'+num(soma(li))+'</span>',selJ({t:'impa',a:a}),1)});
 document.getElementById('tree').innerHTML=h}
-function kpi(t,v,e,cl){return '<div class="box kpi"><small>'+t+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
+function kpi(t,v,e,cl,go){return '<div class="box kpi'+(go?' clk" onclick="'+go+'" title="Clique para abrir e resolver"':'"')+'><small>'+t+(go?' <span class="kgo">›</span>':'')+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
 function paginar(rows){var n=Math.max(1,Math.ceil(rows.length/PT));if(S.pg>n-1)S.pg=n-1;return rows.slice(S.pg*PT,S.pg*PT+PT).join('')}
 function pgLine(t){var n=Math.max(1,Math.ceil(t/PT));if(n<2)return '';return '<div class="pgline">Linhas '+(S.pg*PT+1)+'–'+Math.min(t,S.pg*PT+PT)+' de '+t+' <button class="mini" '+(S.pg?'':'disabled')+' onclick="S.pg--;desenhaPainel()">◀</button><button class="mini" '+(S.pg<n-1?'':'disabled')+' onclick="S.pg++;desenhaPainel()">▶</button></div>'}
 function ajustaTabela(){if(AJT)return;var cabe=function(){var x=document.getElementById('tw');return !x||x.scrollHeight<=x.clientHeight+1};if(!document.getElementById('tw'))return;AJT=1;try{var n=0;while(cabe()&&n++<60){var tot=document.querySelectorAll('#tw tbody tr').length;if(tot<PT)break;PT++;desenhaPainel()}n=0;while(!cabe()&&PT>3&&n++<60){PT--;desenhaPainel()}}finally{AJT=0}}
