@@ -589,9 +589,18 @@ onAuthStateChanged(auth, async u => {
     window.__FGD = JSON.parse(s.get('json'));
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
-      const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (pg === 'notas') { location.reload(); return; } return irVelho(pg, extra, semPilha); }; }
+      const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
+      window.FG_volta = function () { if (history.length > 1) history.back(); else location.href = 'inicio.html'; }; }
     $('fgCarregando').style.display = 'none';
     $('fgTempo').textContent = 'aberto em ' + ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',') + ' s' + (quando ? ' · dados de ' + quando.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+    // confere com a planilha em segundo plano; se mudou algo, oferece atualizar (não recarrega sozinho para não perder o que estiver digitando)
+    const jsonAtual = s.get('json'), k = 'fgRv_notas', ult = Number(sessionStorage.getItem(k) || 0);
+    if (API && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
+      u.getIdToken().then(tk => fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'fbPagina', args: ['notas'], token: tk }) }))
+        .then(r => r.json()).then(async j => { if (!j.ok) return; const s2 = await getDoc(doc(db, 'paginas', 'notas'));
+          if (s2.get('json') !== jsonAtual) { const b = $('fgTempo'); b.innerHTML = '<a href="#" style="color:#1F5FAF;font-weight:600" onclick="location.reload();return false">Há dados novos — clique para atualizar</a>'; }
+          else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
+    }
   } catch (e) {
     $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
     $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
