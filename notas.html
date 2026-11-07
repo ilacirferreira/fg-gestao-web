@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FG Gestão – Notas Fiscais</title>
+<style>
+:root{
+  --bg:#DCE1E7; --panel:#FFFFFF; --soft:#F3F5F7; --line:#C3CAD3; --line2:#E1E5EA;
+  --txt:#1E2733; --mut:#4A5565; --blue:#1F5FAD; --blue2:#163F75; --sel:#D6E4F7; --hov:#EEF3FA;
+  --ok-bg:#DDF0E4; --ok:#1E5E38; --warn-bg:#FCEBD3; --warn:#7A4A0B; --bad-bg:#F8DEDA; --bad:#8E2A1F;
+  --info-bg:#DDE8F7; --info:#163F75; --perm-bg:#ECE3F5; --perm:#5B3A86; --gray-bg:#E9ECF0; --gray:#4A5565;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:13px;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono{font-family:Consolas,"Courier New",monospace}
+.app{height:100vh;display:flex;flex-direction:column;padding:0 8px}
+.titlebar{display:flex;align-items:center;gap:10px;padding:7px 14px;background:#1F3B5C;color:#fff;border-radius:0 0 3px 3px}
+.titlebar b{font-size:14px;white-space:nowrap}
+.titlebar span{font-size:12px;color:#C9D6E6;white-space:nowrap}
+.titlebar .usr{margin-left:auto}
+/* barra de botões: largura toda, botões do mesmo tamanho */
+.toolbar{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;padding:6px 0}
+.tb{display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:4px 6px;border:1px solid #B9C3CF;border-radius:4px;background:#F7F8FA;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.tb:hover{background:#E4ECF7;border-color:#7FA6DA}
+.tb.novo{background:var(--blue);border-color:var(--blue);color:#fff}
+.tb.novo:hover{background:var(--blue2)}
+.tb.verde{background:#E3F2E8;border-color:#7DB592;color:#1E5E38;font-weight:600}
+.tb.verm{background:#FBEAE7;border-color:#D89A90;color:#8E2A1F;font-weight:600}
+.tb:disabled{opacity:.45;cursor:default}
+.tb svg{flex:none}
+.body{display:grid;grid-template-columns:var(--larg,350px) 6px 1fr;gap:2px;flex:1;min-height:0}
+.divisor{cursor:col-resize;border-radius:3px;position:relative}
+.divisor::after{content:"";position:absolute;left:2px;top:45%;width:2px;height:40px;border-left:1px dotted #8E99A6;border-right:1px dotted #8E99A6}
+.divisor:hover,.divisor.arr{background:#C9D6E6}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.boxhead{padding:6px 8px;border-bottom:1px solid var(--line);background:#EEF1F4;display:flex;gap:6px;align-items:center}
+/* árvore */
+.left{display:flex;flex-direction:column;min-height:0}
+.search{flex:1;display:flex;align-items:center;gap:6px;padding:0 8px;border:1px solid #B8C0CA;border-radius:3px;background:#fff;min-height:30px}
+.search input{border:none;outline:none;width:100%;background:transparent}
+.chaves{display:flex;gap:12px;padding:5px 8px;border-bottom:1px solid var(--line2);font-size:12px;color:var(--mut)}
+.chave{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.sw{width:28px;height:16px;border-radius:8px;background:#C3CAD3;position:relative;flex:none}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .12s}
+.sw.on{background:var(--blue)}.sw.on::after{left:14px}
+.tree{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:4px 6px;scrollbar-width:thin}
+.node{display:flex;align-items:center;gap:6px;min-height:26px;padding:2px 6px;border:1px solid transparent;border-radius:3px;cursor:pointer;user-select:none;line-height:1.2}
+.node:hover{background:var(--hov)}
+.node.sel{background:var(--sel);border-color:#7FA6DA}
+.node .nm{flex:1;min-width:0}
+.node.b .nm{font-weight:600}
+.node.obr .nm{color:#A3271B}
+.node.grp{background:#DCE8F8;border-color:#A9C2E6;color:#163F75;margin:2px 0}
+.node.grp:hover{background:#CFE0F6}
+.node.grp.pfg{background:#E9E2F5;border-color:#C3B3E0;color:#4A2F78}
+.node.grp.pfg:hover{background:#E0D6F1}
+.node.grp.outg{background:#E6EAEF;border-color:#C3CAD3;color:#2E3A48}
+.node.grp.outg:hover{background:#DCE1E7}
+.node.grp .cnt{color:inherit;opacity:.8}
+.chev{width:12px;height:12px;flex:none;transition:transform .12s}
+.chev.op{transform:rotate(90deg)}
+.nochev{width:12px;flex:none}
+.cnt{font-size:11px;color:#5A6676;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.ind{flex:none}
+.pgbar{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;border-top:1px solid var(--line2);font-size:12px;color:var(--mut)}
+.pgbar a{color:var(--blue);text-decoration:none;white-space:nowrap}.pgbar a:hover{text-decoration:underline}
+.pgbar .pg{display:flex;align-items:center;gap:6px}
+.mini{min-width:28px;min-height:24px;border:1px solid #9AA5B2;border-radius:3px;background:#F6F7F9;cursor:pointer}
+.mini:disabled{opacity:.4;cursor:default}
+.legend{display:flex;gap:8px;flex-wrap:nowrap;justify-content:space-between;padding:5px 8px;white-space:nowrap;border-top:1px solid var(--line);font-size:11px;color:var(--mut)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+/* painel */
+.right{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+.head{padding:8px 14px;display:flex;align-items:center;gap:12px}
+.crumb{font-size:12px;color:var(--mut)}
+.headtitle{font-size:17px;font-weight:600;line-height:1.25}
+.head .btn{flex:none}
+.head .acoes{display:flex;gap:6px}
+.tags{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-perm{background:var(--perm-bg);color:var(--perm)}.t-gray{background:var(--gray-bg);color:var(--gray)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{padding:7px 12px}
+.kpi small{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
+.kpi b{display:block;font-size:18px;margin-top:1px;white-space:nowrap}
+.kpi em{display:block;font-size:11px;color:var(--mut);font-style:normal;white-space:nowrap}
+.kpi .bar{height:5px;background:#E6EAEF;border-radius:3px;margin-top:5px;overflow:hidden}
+.kpi .bar span{display:block;height:100%;background:var(--blue)}
+.dlg{background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:8px 12px 10px;display:flex;flex-direction:column;flex:1;min-height:0}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;border-bottom:1px solid var(--line)}
+.tab{padding:6px 8px;border:1px solid var(--line);border-bottom:none;border-radius:4px 4px 0 0;background:#E9ECF0;color:#3A4554;cursor:pointer;min-height:32px;white-space:nowrap}
+.tab.on{background:#fff;color:var(--txt);font-weight:600;position:relative;top:1px}
+.pane{background:#fff;border:1px solid var(--line);border-top:none;padding:12px 14px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;overflow:hidden}
+.ficha{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px}
+.fld{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fld label{font-size:11.5px;color:var(--mut)}
+.fld .v{min-height:28px;line-height:1.3;padding:4px 7px;border:1px solid #D9CF9E;border-radius:3px;background:#FFFBEA}
+.fld .v.vz{color:#9AA5B2}
+.fld .v.sis{background:#F3F5F7;border-color:#D5DBE2;color:var(--mut)}
+.fld input,.fld select{padding:4px 7px;border:1px solid #B8C0CA;border-radius:3px;background:#FFFBEA;min-height:28px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}
+.secthead{display:flex;align-items:center;gap:8px}
+.secthead b{font-size:13px;white-space:nowrap}
+.secthead .sp{flex:1}
+.btn{min-height:28px;padding:3px 12px;border-radius:3px;border:1px solid #9AA5B2;background:#F6F7F9;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#ECEFF3}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.pri:hover{background:var(--blue2)}
+.btn.ok{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
+.btn.red{background:#B23B2E;border-color:#B23B2E;color:#fff}
+.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{font-weight:600;text-align:left;vertical-align:top;padding:5px 8px;background:#EEF1F4;border-bottom:1px solid var(--line);color:#3A4554;font-size:12px}
+td{padding:4px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td.w{white-space:normal;line-height:1.25}
+td.r,th.r{text-align:right}
+tr.hl td{background:#FFF6E5}
+tr.clk{cursor:pointer}tr.clk:hover td{background:var(--hov)}
+tfoot td{font-weight:600;background:#F7F8FA}
+.info{padding:6px 10px;background:#EEF3FA;border:1px solid #B9CBE4;border-radius:3px;font-size:12px;line-height:1.35}
+.people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-content:start}
+.card{border:1px solid var(--line);border-radius:3px;padding:7px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.card b{font-size:13px}
+.card small{color:var(--mut);overflow-wrap:anywhere}
+.file{display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:3px;background:#FAFBFC}
+.file .ic{width:34px;height:42px;border:1px solid #B8C0CA;border-radius:2px;background:#fff;display:flex;align-items:flex-end;justify-content:center;font-size:10px;font-weight:700;color:#B23B2E;padding-bottom:4px;flex:none}
+.file small{display:block;color:var(--mut);font-size:12px}
+.drop{border:1px dashed #9AA5B2;border-radius:3px;padding:12px;text-align:center;color:var(--mut);background:#FAFBFC}
+.statusbar{display:flex;gap:22px;padding:4px 14px;margin-top:6px;background:var(--soft);border:1px solid var(--line);border-bottom:none;border-radius:3px 3px 0 0;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden}
+.statusbar span:last-child{margin-left:auto}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.modal.on{display:flex}
+.mbox{width:min(640px,100%);max-height:96vh;background:var(--soft);border:1px solid #8E99A6;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.mtitle{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#1F3B5C;color:#fff;border-radius:4px 4px 0 0;font-weight:600}
+.mtitle button{background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;width:32px;height:26px}
+.mbody{padding:12px 16px;display:flex;flex-direction:column;gap:10px;background:#fff;border-bottom:1px solid var(--line);overflow:hidden}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}
+.mgrid .fld input,.mgrid .fld select,.mgrid .fld textarea{background:#FFFBEA;padding:4px 7px;border:1px solid #B8C0CA;border-radius:3px;min-height:28px}
+.mgrid .fld input[readonly]{background:#F3F5F7;color:var(--mut)}
+.mfoot{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;padding:8px 16px}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#1F3B5C;color:#fff;padding:8px 16px;border-radius:4px;font-size:12.5px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+/* janelas (pop-up) grandes e com letra maior — usuários idosos (Ilacir 02/11 19:55) */
+.modal .mbox{width:min(980px,94vw);font-size:16px}
+.modal .mbox.larga{width:min(1180px,96vw)}
+.modal .mtitle{font-size:17px;padding:10px 16px}
+.modal .mbody{padding:16px 20px;gap:12px}
+.modal .mbody label,.modal .fld label{font-size:14px}
+.modal .fld .v,.modal input,.modal select,.modal textarea{font-size:16px;min-height:36px}
+.modal .info{font-size:15px;line-height:1.45}
+.modal .btn{min-height:42px;font-size:16px}
+.modal .mfoot{padding:12px 20px;gap:10px}
+.modal .tag{font-size:13px}
+.modal .em{font-size:15px;padding:6px 10px}
+.modal .et{font-size:14px;padding:8px 12px}
+.modal .tot b{font-size:18px}
+.modal input[type=checkbox],.modal input[type=radio]{width:18px;height:18px;min-height:0}
+.modal .secthead b{font-size:16px}
+.modal .cnt,.modal small{font-size:13.5px}
+.modal .tot small{font-size:13.5px}
+.modal .em label,.modal label.em{font-size:15px}
+
+/* troca de folha das listas bem visível (Ilacir 02/11 23:44: "o extrato de outubro não aparece completo") */
+body .pgline{justify-content:center;gap:14px;font-size:16px;font-weight:600;color:#1F3B5C;padding:6px 0 2px;white-space:nowrap}
+body .pgline .mini{width:42px;height:42px;min-width:42px;border-radius:50%;border:0;background:#2F4A63;color:#fff;font-size:17px;line-height:42px;padding:0;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+body .pgline .mini:hover{background:#1F3B5C}
+body .pgline .mini:disabled{opacity:.28;cursor:default;box-shadow:none}
+
+/* PRÉVIA 05/11 — regras gerais G1/G2/G3 */
+.headrow{display:flex;gap:8px;align-items:stretch}
+.headrow>#head{flex:0 0 auto;min-width:230px;max-width:44%}
+.headrow.sokpi>#head{flex:1}
+.headrow>#head .crumb,.headrow>#head .tags{display:none}
+.headrow>#head .headtitle{font-size:19px;white-space:nowrap}
+.headrow>.kpis{flex:1;min-width:0}
+.headrow.sokpi>.kpis{display:none}
+.headrow>.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.headrow .kpi{min-width:0}
+.headrow .kpi b,.headrow .kpi em,.headrow .kpi small{overflow:hidden}
+/* PRÉVIA 05/11 — paginação discreta (Ilacir 00:35: "pode ser mais discreto, para ganhar espaço") */
+body .pgline{justify-content:flex-end;gap:6px;font-size:12px;font-weight:600;color:#1F3B5C;padding:2px 0 0}
+body .pgline .mini{width:24px;height:22px;min-width:24px;min-height:22px;border-radius:4px;font-size:11px;line-height:22px;box-shadow:none}
+/* PRÉVIA 05/11 — sem pop-up (Ilacir 00:37–00:39): a janela abre dentro da área de conteúdo, no lugar das abas */
+.dlg>.modal{position:static!important;inset:auto;background:none!important;padding:0!important;z-index:auto;flex:1;min-height:0}
+.dlg>.modal.on{display:flex}
+.dlg>.modal .mbox{width:100%!important;max-width:none!important;max-height:none;height:100%;box-shadow:none;border:none;background:transparent}
+.dlg>.modal .mtitle{border-radius:4px}
+.dlg>.modal .mbody{overflow:auto;flex:1}
+.dlg:has(>.modal.on)>.tabs,.dlg:has(>.modal.on)>.pane{display:none!important}
+.dlg>.modal .mfoot,#pane .acoes-topo{display:none!important}
+.headrow.vazio{display:none}
+
+/* 05/11 12:22 — setinhas de página na linha de botões, à direita (Ilacir) */
+.toolbar .pgtb{display:flex;align-items:center;gap:12px;padding:0 4px 0 8px;white-space:nowrap}.headrow>.pgpilha{flex:0 0 auto;margin-left:auto;flex-direction:column;align-items:flex-end;justify-content:center;gap:8px;padding:2px 4px}.headrow>.pgpilha .mini{width:20px!important;height:18px!important;min-width:20px!important;min-height:18px!important;border-radius:3px!important;font-size:9px!important;line-height:18px!important;padding:0!important;box-shadow:none!important}.headrow>.pgpilha .pgline,.headrow>.pgpilha .pgbar{display:flex!important;align-items:center;gap:8px;padding:0!important;margin:0!important;border:0!important;background:none!important;font-size:12px;font-weight:600;color:#163F75;line-height:20px!important;min-height:20px!important;height:auto!important}
+.toolbar .pgtb .pgline,.toolbar .pgtb .pgbar{display:flex!important;align-items:center;gap:6px;padding:0!important;margin:0!important;border:0!important;background:none!important;font-size:12.5px}
+#pane .pgmov,#pane .pgline,#pane .pgbar{display:none!important}
+/* 05/11 12:30 — aba e botão da tela atual com cor (Ilacir) */
+.tab.on{background:#DCEAFB!important;color:#163F75!important;border-color:#1F5FAD!important;border-top:3px solid #1F5FAD!important}
+.toolbar .tb.atual{background:#DCEAFB!important;color:#163F75!important;border:2px solid #1F5FAD!important;font-weight:700!important}
+/* 05/11 12:37 — formulário sem cara de pop-up: título claro, sem ×, fecha ao trocar de tela (Ilacir) */
+.dlg>.modal .mtitle,.modal .mtitle{background:#E6EEF8!important;color:#163F75!important;border-bottom:2px solid #1F5FAD;border-radius:6px 6px 0 0}
+.dlg>.modal .mtitle button{display:none!important}
+
+/* 05/11 18:05 — linhas de explicação viram dica ao passar o mouse (Ilacir) */
+.info.dica{display:none!important}
+.dicai{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border-radius:50%;background:#DCEAFB;color:#1F5FAD;border:1px solid #9DBAE3;font:700 12px/1 Georgia,serif;cursor:help;vertical-align:middle;flex:none}
+.dicai:hover{background:#1F5FAD;color:#fff}
+
+.app{gap:6px;padding:0 8px 8px}
+.toolbar{grid-template-columns:repeat(6,minmax(0,1fr)) minmax(0,2.2fr) minmax(0,1.5fr);gap:5px;padding:6px 0 0}
+.toolbar .tb{font-size:15px;min-height:40px}
+.busca{display:flex;align-items:center;border:1px solid #B9C3CF;border-radius:4px;background:#fff;padding:0 10px;min-width:0}
+.busca input{border:0;outline:0;width:100%;font-size:15px;background:transparent;color:var(--txt)}
+.anos{display:flex;align-items:center;justify-content:space-between;border:1px solid #B9C3CF;border-radius:4px;background:#fff;min-width:0}
+.anos button{border:0;background:none;font-size:22px;width:44px;height:100%;cursor:pointer;color:var(--blue2)}
+.anos button[disabled]{color:#C3CAD3;cursor:default}
+.anos b{font-size:17px;color:var(--blue2);white-space:nowrap}.anos b span{font-weight:400;color:var(--mut)}
+.area{flex:1;min-height:0;background:#fff;border:1px solid var(--line);border-radius:3px;padding:8px 12px;display:flex;flex-direction:column;gap:8px}
+.grade{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,minmax(0,1fr));gap:8px 14px}
+.card{border:1px solid var(--line2);border-radius:4px;padding:4px 16px;display:flex;flex-direction:column;justify-content:center;gap:3px;overflow:hidden;min-width:0;background:#fff}
+.card.sel{cursor:pointer}.card.sel:hover{border-color:#1F3B5C;background:#F3F7FC}
+.card.marcada{outline:3px solid #F2C14E}
+.l1{display:flex;align-items:center;gap:8px;font-size:calc(18px*var(--k,1));flex:none;white-space:nowrap;min-width:0}
+.l1 .dt{color:var(--txt)}.l1 .vl{margin-left:auto;font-size:calc(16px*var(--k,1));color:#3A4554}
+.l2{flex:none;font-size:calc(16px*var(--k,1));color:#3A4554;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l1 b,.l2 b{font-size:inherit}.l2 b{color:#1E2A38;font-weight:600}.l2 .pj{color:#A3271B;font-weight:600}
+.tg{font-size:calc(12.5px*var(--k,1));font-weight:600;padding:1px 8px;border-radius:3px;white-space:nowrap}
+.tg.ok{background:#DCE8F8;color:#163F75}.tg.ca{background:#FBEAE7;color:#8E2A1F}.tg.su{background:#E9ECF0;color:#4A5563}
+.tg.am{background:#FCEBD3;color:#7A4A0B}.tg.cz{background:#EEF0F3;color:#6A7684;font-weight:500}.tg.te{background:#E8E0F5;color:#5B3A8C}
+.bts{display:flex;gap:8px;flex-wrap:nowrap;flex:none}
+.bt{min-height:calc(30px*var(--k,1));padding:0 calc(16px*var(--k,1));border:1px solid #C3CAD3;border-radius:4px;background:#fff;font:500 calc(14px*var(--k,1)) "Segoe UI",Arial;color:#1E2A38;cursor:pointer;white-space:nowrap}
+.bt:hover{background:#F3F5F7}.bt.em{background:#DCE8F8;border-color:#7FA6DA;color:#163F75;font-weight:600}
+.bt[disabled]{color:#A8B1BC;background:#fff;border-color:#E3E7EC;cursor:default}
+.card.morta .l1,.card.morta .l2{color:#8A94A0}.card.morta .l1 .dt{color:#C98A85}
+.pags{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;color:#5A6676}
+.pg{width:34px;height:34px;border-radius:50%;border:1px solid #D5DBE2;background:#fff;font-size:18px;cursor:pointer}
+.pg[disabled]{color:#C3CAD3;cursor:default}
+.faixa{background:#FFF8E1;border:1px solid #E3C77A;border-radius:8px;padding:8px 14px;font-size:16px;display:flex;align-items:center;gap:12px}
+.faixa .sp{flex:1}
+.painel{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.ph{display:flex;align-items:center;gap:10px}
+.ph h2{margin:0;font:600 22px Georgia,serif;color:#163F75;white-space:nowrap}
+.ph .sp{flex:1}
+.pb{min-height:36px;padding:0 16px;border-radius:4px;border:1px solid var(--blue);background:var(--blue);color:#fff;font:600 16px "Segoe UI",Arial;cursor:pointer;white-space:nowrap}
+.pb.cz{background:#fff;color:#1E2A38;border-color:#C3CAD3}.pb.verm{background:#B3261E;border-color:#B3261E}.pb.az{background:#1F3B5C;border-color:#1F3B5C}
+.form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px}
+.fl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fl.s2{grid-column:span 2}.fl.s4{grid-column:span 4}.fl.s3{grid-column:span 3}
+.fl label{font-size:13px;color:#5A6676;white-space:nowrap}
+.fl input,.fl select,.fl textarea{font:16px "Segoe UI",Arial;padding:6px 9px;border:1px solid #B8C0CA;border-radius:6px;background:#FFFBEA;min-width:0}
+.fl textarea{resize:none;height:62px}
+.fl input[readonly]{background:#F3F5F7}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid #C3CAD3;border-radius:16px;font-size:15px;background:#FAFBFC;cursor:pointer;white-space:nowrap}
+.chip.on{background:#DCE8F8;border-color:#7FA6DA}
+.chip input{margin:0}
+.chips .add{font:15px "Segoe UI",Arial;padding:4px 9px;border:1px solid #B8C0CA;border-radius:16px;background:#FFFBEA;width:230px}
+.chk{display:flex;align-items:center;gap:7px;font-size:15px;white-space:nowrap;cursor:pointer}
+table.cf{border-collapse:collapse;width:100%;font-size:16px}
+table.cf td{padding:5px 10px;border-bottom:1px solid #E3E7EC;vertical-align:top}
+table.cf td:first-child{color:#5A6676;white-space:nowrap;width:1%}
+.duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;flex:1;min-height:0}
+.tot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tot div{border:1px solid #D5DBE2;border-radius:8px;padding:6px 12px}
+.tot small{display:block;color:#5A6676;font-size:13px}.tot b{font-size:20px}
+.cr{color:#1E6B3E}.db{color:#9B1C1C}
+.lst{display:flex;flex-direction:column;gap:6px}
+.it{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) minmax(0,2fr) auto auto;gap:12px;align-items:center;border:1px solid #D5DBE2;border-radius:8px;padding:8px 14px;font-size:16px;cursor:pointer}
+.it:hover{background:#F3F7FC;border-color:#1F3B5C}
+.it>*{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .pj{color:#A3271B;font-weight:600}
+.msg{background:#F3F5F7;border-radius:8px;padding:8px 12px;font-size:15px;color:#3A4554}
+.msg.err{background:#FBE4E2;color:#8E2A1F}
+.prev{white-space:pre-wrap;font-size:15px;border:1px solid #D5DBE2;border-radius:8px;padding:8px 12px;background:#FAFBFC;overflow:hidden}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1E2A38;color:#fff;padding:10px 18px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:80vw;z-index:1000}
+.toast.on{opacity:1}
+.ovl{position:fixed;inset:0;z-index:999;background:rgba(15,30,50,.45);display:flex;align-items:center;justify-content:center}
+.ovl>div{background:#fff;border-radius:14px;padding:28px 38px;box-shadow:0 10px 40px rgba(0,0,0,.3);text-align:center;max-width:620px;font-size:17px}
+.ovl b{display:block;font-size:24px;color:#1F3B5C;margin:10px 0}
+.spin{width:46px;height:46px;border:5px solid #DCE8F8;border-top-color:#1F3B5C;border-radius:50%;margin:0 auto;animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="titlebar">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+<b>FG Gestão – Notas Fiscais</b>
+<span class="usr">FG Engenharia</span>
+</div>
+<div class="toolbar" id="toolbar"></div>
+<div class="area" id="area"></div>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="arqs" accept="application/pdf" multiple style="display:none" onchange="importar(this.files);this.value=''">
+<iframe id="imp" style="position:absolute;width:0;height:0;border:0;visibility:hidden" title="impressão"></iframe>
+<script type="text/fg-espera" id="fgMain">
+var D=window.__FGD;
+
+var FG_BASE="https://script.google.com/macros/s/AKfycbzpOal_S67erLcaMpATNX-xymtJ0WfKkgV65HTOclBwy-c0DN8BUsSHgbhG5NybQRI6/exec";
+function FG_abrindo(){try{var o=document.createElement('div');o.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(220,225,231,.55);z-index:99;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C';o.innerHTML='<div style="background:#fff;padding:18px 34px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.22)">Abrindo…</div>';document.body.appendChild(o)}catch(e){}}
+var FG_VT="";
+function FG_ir(p,extra,semPilha){var vt=semPilha?FG_VT:(FG_VT?FG_VT+'.':'')+FG_aqui();vt=vt.split('.').filter(Boolean).slice(-8).join('.');var u=FG_BASE+'?p='+p+(extra||'')+(vt?'&vt='+vt:'');FG_abrindo();try{window.top.location.href=u}catch(e){window.open(u,'_top')}}
+function FG_volta(){var a=FG_VT.split('.');var t=a.pop();FG_VT=a.join('.');var q=t.split('_');FG_ir(q[0],q[1]?'&ob='+q[1]:'',true)}
+var FG_AQUI="notas";function FG_aqui(){return FG_AQUI}
+function FG_srv(fn,args,ok){var r=google.script.run.withSuccessHandler(function(x){if(ok)ok(x)}).withFailureHandler(function(e){toast('Não gravou: '+(e&&e.message||e))});r[fn].apply(r,args)}
+function FG_ym(s){var p=String(s||'').split('/');return p.length===3?p[2]+'-'+p[1]:p.length===2?p[1]+'-'+p[0]:''}
+function FG_nfReg(nf){return {id:'NF'+nf.n,n:nf.n,emis:nf.emis,bruto:nf.bruto,liq:nf.liq,ob:nf.ob,obn:nf.obn,cl:nf.cl,cln:nf.cln,doc:nf.doc,tipo:nf.tipo,parcs:nf.parcs,sit:nf.sit,receb:'',recv:0,nota:nf.nota,por:nf.por,substituta:nf.substituta?'1':''}}
+var FG_PROD=true;
+function FG_hook(tipo,o){
+  if(FG_PROD&&(tipo==='emitida'||tipo==='nfnova')){toast('Emissão de NF pelo sistema ainda não está ligada (falta a Focus NFe). Emita no site do ISSNet; a nota entra aqui pelo cadastro e pelo extrato.');return}
+  if(tipo==='mov')FG_srv('pgSalvar',['Movimentos',o.l.id,{cat:o.l.cat,top:o.l.top,ob:o.l.ob,st:o.l.st,com:o.l.com,comPor:o.l.comPor}],function(){toast('Gravado ✓')});
+  if(tipo==='emitida'||tipo==='nfnova'){var nf=o.nf;var t=N.filter(function(x){return x.n>=9000}).length;nf.n=9001+t;nf.nota=(nf.nota||'')+' TESTE: não foi enviada à prefeitura.';
+    FG_srv('pgInserir',['NotasFiscais',FG_nfReg(nf)],function(){toast('NF de teste '+nf.n+' gravada (não foi à prefeitura)');desenha()});
+    if(o.e)FG_srv('pgSalvar',['ParaEmitir',o.e.id,{feita:'teste '+new Date().toLocaleString('pt-BR')}])}
+  if(tipo==='nf')FG_srv('pgSalvar',['NotasFiscais','NF'+o.n.n,o.campos],function(){toast('Gravado ✓ (teste: nada foi à prefeitura)')});
+  if(tipo==='reconhecer'){FG_srv('pgSalvar',['NotasFiscais','NF'+o.n.n,{sit:'recebida',receb:o.n.receb}],function(){toast('Pagamento reconhecido ✓')});
+    if(o.c)FG_srv('pgSalvar',['Movimentos',o.c.id,{cat:'Recebimentos',top:'NF '+o.n.n,nf:String(o.n.n),ob:o.n.ob||'',st:'CONFERIDO'}])}
+  if(tipo==='prop')FG_srv('pgSalvar',['Propostas',o.p.id,{sit:o.p.sit,obs:o.p.obs||'',aceite:o.p.aceite||''}],function(){toast('Gravado ✓')});
+  if(tipo==='func')FG_srv('pgConfig',['func:'+o.f[0],o.f[1]?'1':'0'],function(){toast('Gravado ✓')});
+}
+function FG_anexar(l,fs){Array.prototype.forEach.call(fs,function(f){var rd=new FileReader();rd.onload=function(){var b64=String(rd.result).split(',')[1];toast('Enviando '+f.name+'…');
+  FG_srv('pgAnexar',[l.id,f.name,f.type||'application/octet-stream',b64],function(lista){l.anexos=lista;l.anx=FG_conv(lista);var x=document.getElementById('anx');if(x){x.innerHTML=anxHtml(l);var n=document.getElementById('anxN');if(n)n.textContent=l.anx.length+' anexo(s)'}desenhaPainel();toast('Anexado ✓ — Drive › FG Gestão (teste) › Comprovantes')})};rd.readAsDataURL(f)})}
+function FG_conv(lista){return (lista||[]).map(function(a){return {nome:a.nome,img:false,url:a.url,quem:(a.quem||'').split('@')[0]+' · '+(a.quando||'')}})}
+
+function FG_nome(n){var MIN={de:1,da:1,'do':1,dos:1,das:1,e:1,di:1,du:1},SIG={ltda:1,'s/a':1,sa:1,spe:1,me:1,epp:1,eireli:1,cma:1,crc:1,tqs:1,df:1};var s=String(n==null?'':n).replace(/\s+/g,' ').trim();if(!s||/@/.test(s))return s;return s.split(' ').map(function(w,i){var lw=w.toLowerCase(),le=lw.replace(/[^a-zà-ú]/g,'');if(!le)return w;if(SIG[lw]||SIG[le])return w.toUpperCase();if(/^[^aeiouáéíóúâêôãõà]+$/.test(le)&&le.length>=2&&w===w.toUpperCase())return w.toUpperCase();if(i>0&&MIN[lw])return lw;return lw.replace(/^([^a-zà-ú]*)([a-zà-ú])/,function(m,a,b){return a+b.toUpperCase()}).replace(/([\-\/'])([a-zà-ú])/g,function(m,a,b){return a+b.toUpperCase()})}).join(' ')}
+
+/* Nomes que não cabem (regra do FG Psicologia, Ilacir 06/11 15:01): primeiro nome inteiro (o 2º nome, se for nome composto, é o último a abreviar),
+   último sobrenome inteiro; os sobrenomes do meio viram inicial, da direita para a esquerda, só o necessário. "de/da/dos" somem junto. Empresas não. */
+function FG_abrev(n,k){var s=String(n||'').replace(/\s+/g,' ').trim();if(!k||/\b(ltda|s\/?a|me|epp|eireli|spe)\b|condom|cons[oó]rcio|construtora|engenharia|empreend|incorpora|imobili|munic[ií]pio|centro|grupo|escola|instituto/i.test(s))return s;
+  var w=s.split(' ');if(w.length<3)return s;var PART={de:1,da:1,'do':1,dos:1,das:1,e:1};var idx=[];for(var i=w.length-2;i>=1;i--)if(!PART[w[i].toLowerCase()])idx.push(i);
+  idx.slice(0,k).forEach(function(i){w[i]=w[i].charAt(0).toUpperCase()+'.';if(PART[(w[i-1]||'').toLowerCase()])w[i-1]=''});return w.filter(Boolean).join(' ')}
+function FG_cabeNomes(raiz){[].forEach.call((raiz||document).querySelectorAll('[data-nome]'),function(b){var n=b.getAttribute('data-nome'),box=b.closest('.l2')||b.parentNode,k=0;b.textContent=n;
+  while(box.scrollWidth>box.clientWidth+1&&k<6){k++;var t=FG_abrev(n,k);if(t===b.textContent)break;b.textContent=t}})}
+
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},4200)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(v){return (Math.round((+v||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function brl(v){return 'R$ '+num(v)}
+function so(v){return String(v==null?'':v).replace(/\D/g,'')}
+function vnum(s){s=String(s||'').trim();if(/,/.test(s))s=s.replace(/\./g,'').replace(',','.');return Number(s)||0}
+function nome(n){return typeof FG_nome==='function'?FG_nome(n):n}
+/* endereço: siglas sem vogal em maiúsculas (SQNW, SHIS, QL), resto com iniciais maiúsculas */
+function ender(s){return String(s||'').replace(/\s+/g,' ').trim().split(' ').map(function(w){var l=w.replace(/[^A-Za-zÀ-ú]/g,'');if(l.length>=2&&/^[^aeiouáéíóúâêôãõàAEIOUÁÉÍÓÚÂÊÔÃÕÀ]+$/.test(l))return w.toUpperCase();if(/^(apt|ap)\.?$/i.test(w))return 'Apto';return nome(w)}).join(' ')}
+var HOJE=new Date();var N=(D.nfs||[]).map(function(n){var p=String(n.emis||'').split('/');n.a=+p[2]||0;if(n.sit==='a receber'){var d=Math.floor((HOJE-new Date(n.a,(+p[1]||1)-1,+p[0]||1))/864e5);if(d>15){n.atr=d}}return n}).sort(function(a,b){return b.n-a.n});
+var ANOS=[];N.forEach(function(n){if(n.a&&ANOS.indexOf(n.a)<0)ANOS.push(n.a)});ANOS.sort(function(a,b){return b-a});
+var S={ano:ANOS[0]||new Date().getFullYear(),pg:0,q:'',modo:'lista',escolher:'',PT:10,f:{}};
+var PEND={'a receber':1,'atrasada':1,'sem baixa':1,'a cancelar':1};
+function filtradas(){var q=S.q.toLowerCase();return N.filter(function(n){if(S.filtro&&!(PEND[n.sit]&&!n.teste))return false;if(S.filtro&&!q)return true;if(q)return ('nf '+n.n+' '+n.cln+' '+n.obn+' '+n.doc+' '+num(n.bruto)).toLowerCase().indexOf(q)>=0;return n.a===S.ano})}
+function morta(n){return n.sit==='cancelada'||n.sit==='substituida'}
+function tagNF(n){
+  if(S.filtro){if(n.sit==='a cancelar')return '<span class="tg ca">A Cancelar</span>';if(n.sit==='sem baixa')return '<span class="tg cz">Sem Baixa</span>';return n.atr?'<span class="tg ca">Atrasada '+n.atr+' dias</span>':'<span class="tg ok">A Receber</span>'}
+  var at=n.sit==='a cancelar'?' <span class="tg ca" title="Emitida em duplicidade: pedir o cancelamento na Receita do DF e depois usar Cancelar NF › Já Cancelei no Site">A Cancelar</span>':'';
+  if(n.sit==='cancelada')return '<span class="tg ca" title="'+esc(n.motivo)+'">CANCELADA</span>';
+  if(n.sit==='substituida')return '<span class="tg su" title="'+esc(n.motivo)+'">SUBSTITUÍDA'+(n.subPor?' pela nº '+esc(n.subPor):'')+'</span>';
+  if(n.sit==='cancelando')return '<span class="tg am">Cancelando</span>';
+  var t='';if(n.teste)t='<span class="tg te">Teste</span> ';
+  if(n.enviadaEm)return t+at+'<span class="tg ok" title="'+esc('Enviada em '+n.enviadaEm+' para '+n.enviadaPara)+'">Enviada</span>';
+  if(n.sis)return t+at+'<span class="tg am" title="Ainda não foi enviada por e-mail ao cliente">Não Enviada</span>';
+  return t+at+'<span class="tg cz" title="Emitida no site do ISSNet, antes do sistema">Site ISSNet</span>'}
+function cardNF(n){var semPdf=!n.pdf,tp=semPdf&&!n.link?' disabled title="O PDF desta nota não está guardado no sistema (emitida no site do ISSNet)"':'';
+  var sel=S.escolher?' sel':'';
+  return '<div class="card'+(morta(n)?' morta':'')+sel+'"'+(S.escolher?' onclick="escolheu('+n.n+')"':'')+'>'+
+  '<div class="l1"><b>NF nº '+n.n+'</b> emitida em <span class="dt">'+esc(n.emis)+'</span> '+tagNF(n)+(n.substitui?' <span class="tg su">substitui a nº '+esc(n.substitui)+'</span>':'')+'<span class="vl">'+brl(n.bruto)+'</span></div>'+
+  '<div class="l2">'+(n.obn?'<span class="pj">'+esc(n.obn)+'</span> · ':'')+'<b data-nome="'+esc(nome(n.cln)||'—')+'">'+esc(nome(n.cln)||'—')+'</b></div>'+
+  (S.escolher?'':S.filtro?'<div class="bts"><button class="bt"'+tp+' onclick="ver('+n.n+')">Visualizar</button>'+(n.sit==='a cancelar'?'<button class="bt em" onclick="jaCancelei('+n.n+')">Já Cancelei no Site</button>':'<button class="bt em" onclick="reconhecer('+n.n+')">Reconhecer Pagamento</button>')+'<span style="margin-left:auto;align-self:center;font-size:calc(14px*var(--k,1));color:#5A6676">líquido '+brl(n.liq)+'</span></div>':'<div class="bts"><button class="bt"'+tp+' onclick="ver('+n.n+')">Visualizar</button><button class="bt"'+tp+' onclick="baixar('+n.n+')">Baixar</button><button class="bt"'+tp+' onclick="imprimir('+n.n+')">Imprimir</button><button class="bt em"'+(semPdf||morta(n)?' disabled title="'+(semPdf?'Sem PDF guardado no sistema':'Nota cancelada ou substituída')+'"':'')+' onclick="email('+n.n+')">E-mail</button></div>')+'</div>'}
+function acha(nn){return N.filter(function(x){return x.n===+nn})[0]}
+/* barra de ações */
+function desenhaAcoes(){var t=document.getElementById('toolbar'),q=document.getElementById('q'),foco=q&&document.activeElement===q;
+  var b=[['Voltar',"FG_volta()",''],['Início',"FG_ir('inicio')",''],['Emitir NF',"abrir('emitir')",'novo'],['Cancelar NF',"escolher('canc')",'verm'],['Substituir NF',"escolher('sub')",''],['Anexar PDF',"anexarPdf()",'']];
+  var ia=ANOS.indexOf(S.ano),c={};N.forEach(function(n){c[n.a]=(c[n.a]||0)+1});
+  t.innerHTML=b.map(function(x){return '<button class="tb '+x[2]+'" onclick="'+x[1]+'">'+x[0]+'</button>'}).join('')+
+  '<div class="busca"><input id="q" placeholder="Buscar nº, cliente, projeto, CNPJ/CPF" value="'+esc(S.q)+'" oninput="S.q=this.value.trim();S.pg=0;if(S.modo!==\'lista\'&&!S.escolher)S.modo=\'lista\';tudo()"></div>'+
+  '<div class="anos"><button title="Ano anterior" '+(ia<ANOS.length-1?'':'disabled')+' onclick="S.ano=ANOS['+(ia+1)+'];S.pg=0;S.q=\'\';S.filtro=false;tudo()">‹</button><b>'+(S.filtro?'A Receber <span>('+filtradas().length+')</span>':S.q?'Busca':S.ano+' <span>('+(c[S.ano]||0)+')</span>')+'</b><button title="Ano seguinte" '+(ia>0?'':'disabled')+' onclick="S.ano=ANOS['+(ia-1)+'];S.pg=0;S.q=\'\';S.filtro=false;tudo()">›</button></div>';
+  if(foco){var x=document.getElementById('q');x.focus();x.setSelectionRange(x.value.length,x.value.length)}}
+function javi(){D.visto=Date.now();desenhaAcoes();google.script.run.withFailureHandler(function(e){toast('Não gravou: '+(e&&e.message||e))}).nfnAvisoVisto()}
+function desenhaAnos(){}
+/* lista */
+function desenhaLista(){var ls=filtradas(),tp=Math.max(1,Math.ceil(ls.length/S.PT));if(S.pg>tp-1)S.pg=tp-1;var pag=ls.slice(S.pg*S.PT,S.pg*S.PT+S.PT);
+  var faixa=S.escolher?'<div class="faixa"><b>'+(S.escolher==='canc'?'Cancelar NF':'Substituir NF')+':</b> clique na nota.<span class="sp"></span><button class="pb cz" onclick="S.escolher=\'\';tudo()">Desistir</button></div>':'';
+  if(S.escolher)pag=pag.filter(function(n){return !morta(n)});
+  var pr=(D.proc||[]);if(pr.length&&!S.escolher)faixa+='<div class="faixa"><b>'+pr.length+' nota(s) ainda processando no GDF</b><span class="sp"></span><button class="pb" onclick="abrir(\'avisos\')">Ver e Consultar</button></div>';
+  var h=faixa+'<div class="grade" id="grade">'+(pag.length?pag.map(cardNF).join(''):'<div class="msg" style="grid-column:span 2">Nenhuma nota'+(S.q?' com "'+esc(S.q)+'"':'')+'.</div>')+'</div>';
+  var semPdf=N.filter(function(n){return !n.pdf&&n.n<151}).length;
+  h+='<div class="pags">'+''+'<button class="pg" '+(S.pg?'':'disabled')+' onclick="S.pg=0;tudo()">«</button><button class="pg" '+(S.pg?'':'disabled')+' onclick="S.pg--;tudo()">‹</button> Página <b>'+(S.pg+1)+'</b> de <b>'+tp+'</b> ('+(ls.length?(S.pg*S.PT+1)+'–'+Math.min(ls.length,S.pg*S.PT+S.PT):0)+' de '+ls.length+') <button class="pg" '+(S.pg<tp-1?'':'disabled')+' onclick="S.pg++;tudo()">›</button><button class="pg" '+(S.pg<tp-1?'':'disabled')+' onclick="S.pg='+(tp-1)+';tudo()">»</button></div>';
+  return h}
+function cabe(){setTimeout(function(){try{FG_cabeNomes(document.getElementById('area'))}catch(e){}},0);S.PT=10;var g=document.getElementById('grade');if(!g)return;var cs=[].slice.call(g.querySelectorAll('.card'));if(!cs.length)return;g.style.setProperty('--k',1);
+  var c=cs[0],ne=0;[].forEach.call(c.children,function(x){ne+=x.offsetHeight});ne+=12+(c.children.length-1)*3;var k=Math.max(0.75,Math.min(1,c.clientHeight/ne));g.style.setProperty('--k',k.toFixed(3));
+  var n=0;while(n++<6&&k>0.75&&cs.some(function(x){return x.scrollHeight>x.clientHeight+1})){k-=0.04;g.style.setProperty('--k',k.toFixed(3))}}
+function tudo(){desenhaAcoes();desenhaAnos();var a=document.getElementById('area');
+  if(S.modo==='lista'){a.innerHTML=desenhaLista();cabe()}else a.innerHTML=PAINEIS[S.modo]();cabeForm()}
+function cabeForm(){var a=document.getElementById('area');[].forEach.call(a.querySelectorAll('.prev'),function(p){var f=15;p.style.fontSize='';while(a.scrollHeight>a.clientHeight+1&&f>11){f-=0.5;p.style.fontSize=f+'px'}})}
+window.addEventListener('resize',function(){tudo()});
+/* PDF */
+function ver(nn){var n=acha(nn);if(!n.pdf&&n.link){window.open(n.link,'_blank');return}window.open('https://drive.google.com/file/d/'+n.pdf+'/view?authuser='+encodeURIComponent(D.eu),'_blank')}
+function baixar(nn){var n=acha(nn);if(!n.pdf&&n.link){window.open(n.link,'_blank');return}window.open('https://drive.google.com/uc?export=download&id='+n.pdf+'&authuser='+encodeURIComponent(D.eu),'_blank')}
+function imprimir(nn){var n0=acha(nn);if(!n0.pdf&&n0.link){window.open(n0.link,'_blank');return}toast('Preparando a impressão da NF '+nn+'…');google.script.run.withSuccessHandler(function(r){var b=atob(r.b64),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);var url=URL.createObjectURL(new Blob([u],{type:'application/pdf'}));var f=document.getElementById('imp');f.onload=function(){setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},400)};f.src=url}).withFailureHandler(function(e){toast('Não abriu: '+(e&&e.message||e))}).nfnPdf(nn)}
+/* aguarde / resultado (fixos no meio da tela) */
+function aguarde(on,tit){var o=document.getElementById('wait');if(!on){if(o)o.remove();return}o=document.createElement('div');o.id='wait';o.className='ovl';o.innerHTML='<div><div class="spin"></div><b>'+esc(tit)+'</b>Não clique de novo nem feche a tela.<br>Pode levar alguns minutos.</div>';document.body.appendChild(o)}
+function resultado(msg,ok){var o=document.createElement('div');o.className='ovl';o.innerHTML='<div><b style="color:'+(ok?'#1E6B3E':'#9B1C1C')+'">'+(ok?'Pronto':'Atenção')+'</b><div style="text-align:left;white-space:pre-wrap">'+esc(msg)+'</div><br><button class="pb az" style="min-width:160px">Fechar</button></div>';o.querySelector('button').onclick=function(){o.remove();FG_ir('notas','',true)};document.body.appendChild(o)}
+/* modos */
+function abrir(m){S.escolher='';S.modo=m;if(m==='emitir')S.f={};tudo()}
+function escolher(t){S.modo='lista';S.escolher=t;S.f={};tudo();toast(t==='canc'?'Clique na nota que quer cancelar.':'Clique na nota que quer substituir.')}
+function escolheu(nn){var n=acha(nn),t=S.escolher;S.escolher='';
+  if(t==='canc'){S.c={n:nn,mot:'',det:'',avisar:true,para:{}};(n.emails||[]).forEach(function(m){S.c.para[m]=1});S.modo='canc';tudo();return}
+  var c=cliDe(n.cl)||{};S.f={substitui:nn,cl:n.cl,ob:'',obn:n.obn,parcDesc:(n.parcs||[]).join(', '),nome:nome(n.cln),doc:n.doc,cep:c.cep||'',lg:c.lg||'',nu:c.nu||'',co:c.co||'',ba:c.ba||'',ci:c.ci||'',uf:c.uf||'',ibge:'',valor:num(n.bruto),descricao:n.descricao||'',emails:(n.emails||[]).slice(),sel:{},enviar:true,mot:''};
+  S.f.emails.forEach(function(m){S.f.sel[m]=1});if(!n.sis){S.modo='subsite';tudo();return}S.modo='form';tudo();if(S.f.cep)buscaCep(true)}
+function cliDe(id){return (D.clientes||[]).filter(function(c){return c.id===id})[0]}
+var PAINEIS={};
+PAINEIS.emitir=function(){var pe=D.emitir||[];
+  return '<div class="painel"><div class="ph"><h2>Emitir NF — escolha a parcela</h2><span class="sp"></span><button class="pb az" onclick="avulsa()">Nota Avulsa (sem parcela)</button><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button></div>'+
+  (pe.length?'<div class="lst">'+pe.slice(0,9).map(function(e,i){return '<div class="it" onclick="daParcela('+i+')"><span class="pj">'+esc(e.obn)+'</span><span>'+esc(e.desc)+'</span><span>'+esc(nome(e.cln))+'</span><span>'+esc(e.venc||'')+'</span><b>'+brl(e.bruto)+'</b></div>'}).join('')+'</div>'+(pe.length>9?'<div class="msg">E mais '+(pe.length-9)+' parcela(s): procure pelo nome na busca de cima.</div>':''):'<div class="msg">Nenhuma parcela para emitir. Use "Nota Avulsa".</div>')+'</div>'};
+function daParcela(i){var e=D.emitir[i];S.f={parc:e.id,parcDesc:e.desc,cl:e.cl,ob:e.ob,obn:e.obn,nome:nome(e.cln),doc:e.doc,cep:e.cep,lg:e.lg,nu:e.nu,co:e.co,ba:e.ba,ci:e.ci,uf:e.uf,ibge:'',valor:num(e.bruto),
+  descricao:(e.serv?e.serv+' — ':'Serviços de engenharia — ')+e.desc+' do projeto '+e.obn+'.',emails:(e.emails||[]).slice(),sel:{},enviar:true};
+  (S.f.emails||[]).forEach(function(m){S.f.sel[m]=1});if(!S.f.cep&&e.end){var m=String(e.end).match(/(\d{5})-?(\d{3})\s*$/);if(m)S.f.cep=m[1]+m[2]}S.modo='form';tudo();if(S.f.cep)buscaCep(true)}
+function avulsa(){S.f={nome:'',doc:'',cep:'',lg:'',nu:'',co:'',ba:'',ci:'',uf:'',ibge:'',valor:'',descricao:'',emails:[],sel:{},enviar:true};S.modo='form';tudo()}
+function fld(l,id,v,cls,extra){return '<div class="fl '+(cls||'')+'"><label for="f_'+id+'">'+l+'</label><input id="f_'+id+'" value="'+esc(v)+'" '+(extra||'')+' onchange="S.f.'+id+'=this.value"></div>'}
+function chipsHtml(o){return (o.emails||[]).map(function(m){return '<label class="chip'+(o.sel[m]?' on':'')+'"><input type="checkbox" '+(o.sel[m]?'checked':'')+' onchange="S.f.sel[\''+m+'\']=this.checked?1:0;this.parentNode.classList.toggle(\'on\',this.checked)"> '+esc(m)+'</label>'}).join('')}
+PAINEIS.form=function(){var f=S.f,sub=f.substitui;
+  return '<div class="painel"><div class="ph"><h2>'+(sub?'Substituir a NF nº '+sub+' — dados da nota nova':'Emitir NF'+(f.parcDesc?' — '+esc(f.parcDesc)+' · '+esc(f.obn):' Avulsa'))+'</h2><span class="sp"></span><button class="pb" onclick="conferir()">Conferir os Dados</button><button class="pb cz" onclick="'+(sub?'abrir(\'lista\')':'abrir(\'emitir\')')+'">Voltar</button></div>'+
+  '<div class="form">'+
+  '<div class="fl s2"><label for="f_nome">Tomador</label><input id="f_nome" list="dlCli" value="'+esc(f.nome)+'" '+(sub?'readonly':'')+' onchange="cliEscolhe(this.value)"><datalist id="dlCli">'+(D.clientes||[]).map(function(c){return '<option value="'+esc(nome(c.n))+'">'+esc(c.d||'')+'</option>'}).join('')+'</datalist></div>'+
+  fld('CPF / CNPJ','doc',f.doc,'',sub?'readonly':'')+fld('Valor bruto (R$)','valor',f.valor,'','inputmode="decimal"')+
+  fld('CEP','cep',f.cep,'','onblur="S.f.cep=this.value;buscaCep()"')+fld('Logradouro','lg',f.lg,'s2')+fld('Número','nu',f.nu)+
+  fld('Complemento','co',f.co)+fld('Bairro','ba',f.ba)+fld('Cidade / UF','ciuf',(f.ci||'')+(f.uf?' / '+f.uf:''),'','readonly')+fld('Código IBGE','ibge',f.ibge||'','','placeholder="vem do CEP"')+
+  '<div class="fl s4"><label for="f_descricao">Descrição do serviço (vai na nota)</label><textarea id="f_descricao" onchange="S.f.descricao=this.value">'+esc(f.descricao)+'</textarea></div>'+
+  (sub?'<div class="fl s4"><label for="f_mot">Motivo da substituição (vai para o GDF)</label><input id="f_mot" value="'+esc(f.mot||'')+'" placeholder="ex.: valor da parcela errado" onchange="S.f.mot=this.value"></div>':'')+
+  '<div class="fl s4"><label>Enviar a nota por e-mail para (do cadastro do cliente: E-mail da NF e Cópias)</label><div class="chips" id="chips">'+chipsHtml(f)+'<input class="add" id="novoEm" placeholder="+ outro e-mail (Enter)" onkeydown="if(event.key===\'Enter\')addEm()">'+(f.cl?'<label class="chk"><input type="checkbox" id="guarda"> guardar no cadastro</label>':'')+'</div></div>'+
+  '<div class="fl s4"><label class="chk"><input type="checkbox" '+(f.enviar?'checked':'')+' onchange="S.f.enviar=this.checked"> Mandar o e-mail com o PDF assim que o GDF autorizar (Cco '+esc(D.cco)+')</label></div>'+
+  '</div></div>'};
+function lerForm(){['nome','doc','valor','cep','lg','nu','co','ba','ibge','descricao','mot'].forEach(function(k){var e=document.getElementById('f_'+k);if(e)S.f[k]=e.value})}
+function cliEscolhe(v){S.f.nome=nome(v);var c=(D.clientes||[]).filter(function(x){return nome(x.n)===S.f.nome})[0];if(!c){document.getElementById('f_nome').value=S.f.nome;return}
+  lerForm();S.f.nome=nome(c.n);S.f.cl=c.id;S.f.doc=c.d||'';S.f.cep=c.cep||'';S.f.lg=c.lg||'';S.f.nu=c.nu||'';S.f.co=c.co||'';S.f.ba=c.ba||'';S.f.ci=c.ci||'';S.f.uf=c.uf||'';S.f.emails=(c.em||[]).slice();S.f.sel={};S.f.emails.forEach(function(m){S.f.sel[m]=1});tudo();if(S.f.cep)buscaCep(true)}
+function addEm(){var i=document.getElementById('novoEm'),m=i.value.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){toast('E-mail inválido.');return}lerForm();if(S.f.emails.indexOf(m)<0)S.f.emails.push(m);S.f.sel[m]=1;S.f.novos=S.f.novos||[];S.f.novos.push(m);var g=document.getElementById('guarda');S.f.guardar=!!(g&&g.checked);tudo();setTimeout(function(){var x=document.getElementById('novoEm');if(x)x.focus()},0)}
+function buscaCep(quieto){var c=so(S.f.cep);if(c.length!==8){if(!quieto)toast('O CEP precisa ter 8 números (ex.: 70686-520).');return}
+  fetch('https://viacep.com.br/ws/'+c+'/json/').then(function(r){return r.json()}).then(function(j){if(j.erro){toast('CEP não encontrado.');return}lerForm();
+    if(!S.f.lg)S.f.lg=j.logradouro||'';if(!S.f.ba)S.f.ba=j.bairro||'';S.f.ci=j.localidade||'';S.f.uf=j.uf||'';S.f.ibge=j.ibge||'';tudo()}).catch(function(){if(!quieto)toast('Não consegui consultar o CEP agora: preencha o endereço e o código IBGE (Brasília = 5300108).')})}
+function dadosEnvio(){var f=S.f,d=so(f.doc);var em=(f.emails||[]).filter(function(m){return f.sel[m]});
+  return {nome:nome(f.nome),cnpj:d.length===14?d:'',cpf:d.length===14?'':d,email:em[0]||'',valor:vnum(f.valor),descricao:f.descricao,cep:so(f.cep),logradouro:ender(f.lg),numero:ender(f.nu),complemento:ender(f.co),bairro:ender(f.ba),codMunicipio:so(f.ibge)||(f.uf&&f.uf!=='DF'?'':'5300108'),
+    cl:f.cl||'',ob:f.ob||'',obn:f.obn||'',parc:f.parc||'',parcDesc:f.parcDesc||'',emails:em,enviar:!!f.enviar}}
+function conferir(){lerForm();var d=dadosEnvio();if(d.codMunicipio.length!==7){toast('Falta o código IBGE da cidade do tomador: digite o CEP de novo para buscar.');return}
+  if(S.f.substitui&&String(S.f.mot||'').trim().length<5){toast('Escreva o motivo da substituição.');return}
+  if(d.enviar&&!d.emails.length){toast('Marque pelo menos um e-mail, ou desmarque "Mandar o e-mail".');return}
+  if(S.f.guardar&&S.f.novos&&S.f.cl)google.script.run.withSuccessHandler(function(){toast('E-mail(s) guardado(s) no cadastro do cliente ✓')}).withFailureHandler(function(e){toast('Não guardou no cadastro: '+(e&&e.message||e))}).nfnGuardarEmails(S.f.cl,S.f.novos);
+  toast('Conferindo…');google.script.run.withSuccessHandler(function(r){S.conf=r;S.d=d;S.ok=0;S.modo='conf';tudo()}).withFailureHandler(function(e){toast(e&&e.message||String(e))}).nfConferir(d)}
+PAINEIS.conf=function(){var r=S.conf,d=S.d,sub=S.f.substitui;
+  var rt=r.pj?'IRRF '+num(r.ir)+' · PIS '+num(r.pis)+' · COFINS '+num(r.cofins)+' · CSLL '+num(r.csll):'sem retenção (tomador pessoa física)';
+  var tret=Math.round((vnum(String(r.bruto).replace('.',','))-vnum(String(r.liquido).replace('.',',')))*100)/100;
+  return '<div class="painel"><div class="ph"><h2>Conferência — '+(sub?'nota nova que substitui a nº '+sub:'Emitir NF')+'</h2><span class="sp"></span><button class="pb cz" onclick="S.modo=\'form\';tudo()">Corrigir</button><button class="pb'+(S.ok?' verm':'')+'" onclick="emitir()">'+(S.ok?'Confirmar: Emitir de Verdade':(sub?'Substituir NF':'Emitir NF'))+'</button></div>'+
+  '<div class="duas"><div><table class="cf"><tr><td>Tomador</td><td><b>'+esc(d.nome)+'</b></td></tr><tr><td>'+(d.cnpj?'CNPJ':'CPF')+'</td><td>'+esc(S.f.doc)+'</td></tr><tr><td>Endereço</td><td>'+esc(d.logradouro+(d.numero?', '+d.numero:'')+(d.complemento?', '+d.complemento:'')+' — '+d.bairro+' — '+(S.f.ci||'')+'/'+(S.f.uf||'')+' — CEP '+S.f.cep+' (IBGE '+d.codMunicipio+')')+'</td></tr>'+
+  '<tr><td>Descrição</td><td>'+esc(d.descricao)+'</td></tr>'+(sub?'<tr><td>Motivo</td><td>'+esc(S.f.mot)+'</td></tr>':'')+'<tr><td>Numeração</td><td>Série '+esc(r.serie)+' · DPS nº '+esc(r.proximo)+'</td></tr></table></div>'+
+  '<div style="display:flex;flex-direction:column;gap:8px;min-height:0"><div class="tot"><div><small>Valor bruto</small><b>'+brl(r.bruto)+'</b></div><div><small>Retenções</small><b class="db">'+brl(-tret).replace('R$ -','− R$ ')+'</b></div><div><small>Líquido</small><b class="cr">'+brl(r.liquido)+'</b></div></div><div class="msg">'+rt+' · ISS 5% não retido</div>'+
+  '<div class="msg">'+(d.enviar?'<b>E-mail com o PDF</b> assim que o GDF autorizar, para: '+esc(d.emails.join(', '))+' (Cco '+esc(D.cco)+').':'<b>Sem e-mail automático</b>: use o botão E-mail no cartão depois.')+'</div>'+
+  (S.ok?'<div class="msg err">Último passo: clique em <b>Confirmar: Emitir de Verdade</b>. A nota vai para o GDF e só poderá ser cancelada ou substituída depois, com motivo.</div>':'')+'</div></div></div>'};
+function emitir(){if(!S.ok){S.ok=1;tudo();return}S.ok=0;var d=S.d,sub=S.f.substitui;aguarde(true,'Enviando a nota ao GDF… aguarde.');
+  var r=google.script.run.withSuccessHandler(function(x){aguarde(false);resultado(x.msg,!!x.ok)}).withFailureHandler(function(e){aguarde(false);resultado('A nota NÃO foi emitida: '+(e&&e.message||e),false)});
+  if(sub)r.nfnSubstituir(sub,d,S.f.mot);else r.nfnEmitir(d)}
+/* cancelar */
+var MOT=['Erro na emissão da nota fiscal','Serviço não prestado','Nota fiscal emitida em duplicidade','Valor errado','Tomador errado','Outro'];
+PAINEIS.canc=function(){var c=S.c,n=acha(c.n),em=n.emails||[];
+  if(!n.sis)return '<div class="painel"><div class="ph"><h2>Cancelar a NF nº '+n.n+'</h2><span class="sp"></span><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button><button class="pb verm" onclick="marcar(\'cancelada\')">Já Cancelei no Site</button></div>'+cardNF(n)+
+   '<div class="msg">Esta nota foi emitida no <b>site do ISSNet</b>, antes do sistema: o cancelamento é feito lá. Depois, escreva o motivo e clique em "Já Cancelei no Site" para ela ficar Cancelada aqui.</div><div class="form"><div class="fl s4"><label for="m_det">Motivo</label><input id="m_det" value="'+esc(c.det)+'" onchange="S.c.det=this.value"></div></div></div>';
+  return '<div class="painel"><div class="ph"><h2>Cancelar a NF nº '+n.n+'</h2><span class="sp"></span><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button><button class="pb verm" onclick="cancelar()">'+(c.ok?'Confirmar: Cancelar de Verdade':'Cancelar NF')+'</button></div>'+cardNF(n)+
+  '<div class="form"><div class="fl s2"><label for="m_mot">Motivo (vai para o GDF)</label><select id="m_mot" onchange="S.c.mot=this.value"><option value="">— escolha —</option>'+MOT.map(function(m){return '<option'+(c.mot===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select></div><div class="fl s2"><label for="m_det">Detalhe</label><input id="m_det" value="'+esc(c.det)+'" onchange="S.c.det=this.value"></div>'+
+  '<div class="fl s4"><label class="chk"><input type="checkbox" '+(c.avisar?'checked':'')+' onchange="S.c.avisar=this.checked"> Avisar o cliente por e-mail que a nota foi cancelada (Cco '+esc(D.cco)+')</label><div class="chips">'+em.map(function(m){return '<label class="chip'+(c.para[m]?' on':'')+'"><input type="checkbox" '+(c.para[m]?'checked':'')+' onchange="S.c.para[\''+m+'\']=this.checked?1:0"> '+esc(m)+'</label>'}).join('')+(em.length?'':'<span class="msg">Sem e-mail no cadastro do cliente.</span>')+'</div></div></div>'+
+  (n.teste?'<div class="msg">Nota de teste: o cliente não recebe aviso.</div>':'')+(c.ok?'<div class="msg err">Último passo: <b>Confirmar: Cancelar de Verdade</b>. Cancelamento não tem volta. A parcela volta para "Para Emitir".</div>':'')+'</div>'};
+function cancelar(){var c=S.c,m=document.getElementById('m_mot').value,dt=document.getElementById('m_det').value.trim();c.mot=m;c.det=dt;if(!m){toast('Escolha o motivo.');return}if(m==='Outro'&&dt.length<5){toast('Escreva o motivo no Detalhe.');return}
+  if(!c.ok){c.ok=1;tudo();return}c.ok=0;var mot=(m==='Outro'?dt:m+(dt?' - '+dt:''));var para=Object.keys(c.para).filter(function(k){return c.para[k]});
+  aguarde(true,'Cancelando a nota no GDF… aguarde.');google.script.run.withSuccessHandler(function(x){aguarde(false);resultado(x.msg,!!x.ok)}).withFailureHandler(function(e){aguarde(false);resultado('Não cancelou: '+(e&&e.message||e),false)}).nfnCancelar(c.n,mot,!!c.avisar,para)}
+PAINEIS.subsite=function(){var n=acha(S.f.substitui);return '<div class="painel"><div class="ph"><h2>Substituir a NF nº '+n.n+'</h2><span class="sp"></span><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button><button class="pb" onclick="marcar(\'substituida\')">Já Substituí no Site</button></div>'+cardNF(n)+
+  '<div class="msg">Esta nota foi emitida no <b>site do ISSNet</b>: a substituição é feita lá. Depois, informe o nº da nota nova e o motivo.</div><div class="form"><div class="fl"><label for="m_nova">Nº da nota nova</label><input id="m_nova"></div><div class="fl s3"><label for="m_det">Motivo</label><input id="m_det"></div></div></div>'};
+function marcar(sit){var dt=(document.getElementById('m_det')||{}).value||'',nv=(document.getElementById('m_nova')||{}).value||'',nn=sit==='cancelada'?S.c.n:S.f.substitui;
+  google.script.run.withSuccessHandler(function(x){resultado(x.msg,true)}).withFailureHandler(function(e){toast(e&&e.message||String(e))}).nfnMarcar(nn,sit,dt,nv)}
+/* e-mail */
+function email(nn){toast('Abrindo o e-mail da NF '+nn+'…');google.script.run.withSuccessHandler(function(r){var n=acha(nn);S.e={n:nn,para:{},lista:(r.para||[]).slice(),assunto:r.assunto,texto:r.texto,ja:r.enviadaEm?'Esta nota já foi enviada em '+r.enviadaEm+' para '+r.enviadaPara+'.':''};S.e.lista.forEach(function(m){S.e.para[m]=1});S.modo='email';tudo()}).withFailureHandler(function(e){toast(e&&e.message||String(e))}).nfnPrevia(nn,'nota')}
+PAINEIS.email=function(){var e=S.e,n=acha(e.n);
+  return '<div class="painel"><div class="ph"><h2>Enviar a NF nº '+e.n+' por e-mail</h2><span class="sp"></span><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button><button class="pb" onclick="mandar()">Enviar E-mail</button></div>'+
+  (e.ja?'<div class="msg err">'+esc(e.ja)+'</div>':'')+
+  '<div class="form"><div class="fl s4"><label>Para (cadastro do cliente: E-mail da NF e Cópias) · Cco '+esc(D.cco)+'</label><div class="chips">'+e.lista.map(function(m){return '<label class="chip'+(e.para[m]?' on':'')+'"><input type="checkbox" '+(e.para[m]?'checked':'')+' onchange="S.e.para[\''+m+'\']=this.checked?1:0;this.parentNode.classList.toggle(\'on\',this.checked)"> '+esc(m)+'</label>'}).join('')+'<input class="add" id="eNovo" placeholder="+ outro e-mail (Enter)" onkeydown="if(event.key===\'Enter\')eAdd()"></div></div>'+
+  '<div class="fl s4"><label for="eAss">Assunto</label><input id="eAss" value="'+esc(e.assunto)+'"></div><div class="fl s4"><label for="eTxt">Texto (anexo: PDF da NF '+e.n+')</label><textarea id="eTxt" style="height:210px">'+esc(e.texto)+'</textarea></div></div></div>'};
+function eAdd(){var i=document.getElementById('eNovo'),m=i.value.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){toast('E-mail inválido.');return}S.e.assunto=document.getElementById('eAss').value;S.e.texto=document.getElementById('eTxt').value;if(S.e.lista.indexOf(m)<0)S.e.lista.push(m);S.e.para[m]=1;tudo()}
+function mandar(){var e=S.e,para=e.lista.filter(function(m){return e.para[m]});if(!para.length){toast('Marque pelo menos um e-mail.');return}
+  aguarde(true,'Enviando o e-mail… aguarde.');google.script.run.withSuccessHandler(function(x){aguarde(false);resultado(x.msg,true)}).withFailureHandler(function(er){aguarde(false);resultado('O e-mail NÃO saiu: '+(er&&er.message||er),false)}).nfnEnviar(e.n,'nota',para,document.getElementById('eAss').value,document.getElementById('eTxt').value)}
+/* PDFs das notas (arquivo com "NF 141" no nome) */
+function anexarPdf(){var i=document.getElementById('nfArq');if(!i){i=document.createElement('input');i.type='file';i.id='nfArq';i.multiple=true;i.accept='application/pdf';i.style.display='none';document.body.appendChild(i);i.onchange=function(){var f=i.files;importar(f);i.value=''}}i.click()}
+function importar(fs){fs=[].slice.call(fs||[]);if(!fs.length)return;var i=0,ok=0,ja=0,ruins=[];
+  function prox(){if(i>=fs.length){aguarde(false);resultado('PDFs guardados: '+ok+(ja?' · já tinham PDF: '+ja:'')+(ruins.length?'\n\nNão reconhecidos:\n'+ruins.join('\n'):''),!ruins.length);return}
+    var f=fs[i++];document.querySelector('#wait b').textContent='Guardando '+i+' de '+fs.length+'… aguarde.';var rd=new FileReader();
+    rd.onload=function(){google.script.run.withSuccessHandler(function(r){if(r.ja)ja++;else if(r.ok)ok++;else ruins.push(r.msg);prox()}).withFailureHandler(function(e){ruins.push(f.name+': '+(e&&e.message||e));prox()}).nfnImportarPdf(f.name,String(rd.result).split(',')[1])};rd.readAsDataURL(f)}
+  aguarde(true,'Guardando os PDFs… aguarde.');prox()}
+/* a receber */
+function jaCancelei(nn){S.c={n:nn,mot:'',det:'',avisar:false,para:{}};S.modo='canc';tudo()}
+function reconhecer(nn){var n=acha(nn);S.r={n:nn,sel:''};S.modo='rec';tudo()}
+PAINEIS.rec=function(){var n=acha(S.r.n);var cs=(D.creditos||[]).map(function(c){c.dif=Math.abs(c.v-n.liq);return c}).filter(function(c){return c.dif<=Math.max(5,n.liq*0.1)}).sort(function(a,b){return a.dif-b.dif}).slice(0,6);
+  return '<div class="painel"><div class="ph"><h2>Reconhecer Pagamento — NF nº '+n.n+'</h2><span class="sp"></span><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button><button class="pb" onclick="recSalvar()">Salvar</button></div>'+cardNF(n)+
+  '<div class="msg">Líquido esperado: <b>'+brl(n.liq)+'</b>. Escolha o crédito do extrato do banco (o mesmo registro de Bancos e de Clientes e Projetos).</div><div class="lst">'+
+  cs.map(function(c){return '<label class="it" style="grid-template-columns:auto auto minmax(0,1fr) auto"><input type="radio" name="rc" value="'+c.id+'" onchange="S.r.sel=this.value"><span>'+esc(c.data)+'</span><span>'+esc(c.tipo+' '+String(c.det||'').replace(/^\d\d\/\d\d \d\d:\d\d (\d+ )?/,''))+'</span><b>'+brl(c.v)+(c.dif<0.01?' ✓ valor igual':'')+'</b></label>'}).join('')+
+  (cs.length?'':'<div class="msg">Nenhum crédito do banco ainda sem dono com valor parecido.</div>')+
+  '<label class="it" style="grid-template-columns:auto minmax(0,1fr)"><input type="radio" name="rc" value="fora" onchange="S.r.sel=this.value"><span>Recebido fora do banco (em mãos com um sócio)</span></label></div></div>'};
+function recSalvar(){if(!S.r.sel){toast('Escolha o crédito do banco ou "fora do banco".');return}aguarde(true,'Gravando… aguarde.');
+  google.script.run.withSuccessHandler(function(x){aguarde(false);resultado(x.msg,true)}).withFailureHandler(function(e){aguarde(false);resultado('Não gravou: '+(e&&e.message||e),false)}).nfnReconhecer(S.r.n,S.r.sel)}
+/* avisos */
+PAINEIS.avisos=function(){var pr=D.proc||[];
+  return '<div class="painel"><div class="ph"><h2>Últimos envios ao GDF</h2><span class="sp"></span><button class="pb cz" onclick="abrir(\'lista\')">Voltar</button></div>'+
+  (pr.length?'<div class="lst">'+pr.map(function(x){return '<div class="it" style="grid-template-columns:auto minmax(0,1fr) auto auto;cursor:default"><span>'+esc(x.quando)+'</span><span>'+esc(x.tomador)+' · R$ '+esc(String(x.valor).replace('.',','))+'</span><b>'+esc(x.status)+'</b><button class="pb az" onclick="consultar(\''+x.ref+'\')">Consultar no GDF</button></div>'}).join('')+'</div>':'')+
+  '<div class="lst">'+(D.avisos||[]).map(function(a){return '<div class="msg">'+esc(a.quando)+' · '+esc(a.txt)+'</div>'}).join('')+'</div></div>'};
+function consultar(ref){aguarde(true,'Consultando o GDF… aguarde.');google.script.run.withSuccessHandler(function(x){aguarde(false);resultado(x.msg,!!x.ok)}).withFailureHandler(function(e){aguarde(false);resultado(e&&e.message||String(e),false)}).nfConsultar(ref)}
+/* Notas do ISSNet que só têm o link: o sistema lê a página da Sefaz e guarda um PDF (06/11). */
+function issTxt(e){if(!e)return '';var c=e.cloneNode(true);[].forEach.call(c.querySelectorAll('br'),function(b){b.parentNode.replaceChild(document.createTextNode('\n'),b)});return c.textContent.replace(/[ \t\r\f\v]+/g,' ').replace(/ *\n */g,'\n').trim()}
+function issCel(e,col){var h=e.querySelector('h3');if(h&&!e.querySelector('label'))return '<td colspan="'+col+'" class="ti">'+esc(issTxt(h))+'</td>';
+  var lb=e.querySelector('label'),ct=e.querySelector('.content-text-block,.content'),lng=e.querySelector('.content-text-block');
+  return '<td colspan="'+col+'"'+(/sombreado/.test(e.className)?' class="so"':'')+'>'+(lb?'<div class="lb">'+esc(issTxt(lb))+'</div>':'')+'<div class="'+(lng?'vt':'vl')+'">'+esc(issTxt(ct||e)||(lb?'-':''))+'</div></td>'}
+function issLinhas(box){var h='';[].forEach.call(box.children,function(r){var c=r.className||'',m=c.match(/lbldados-grid-(\d)/);
+  if(m){var n=+m[1],t='';[].forEach.call(r.children,function(k){t+=issCel(k,(12/n)*(/span-2/.test(k.className)?2:1))});h+='<tr>'+t+'</tr>';return}
+  if(/lbldados-full/.test(c)){h+='<tr>'+issCel(r,12)+'</tr>';return}
+  if(r.tagName==='H3'){h+='<tr><td colspan="12" class="ti">'+esc(issTxt(r))+'</td></tr>';return}
+  var tx=issTxt(r);if(tx)h+='<tr><td colspan="12"><div class="vt">'+esc(tx)+'</div></td></tr>'});return h}
+function issLimpo(html){var d=new DOMParser().parseFromString(html,'text/html');
+  [].forEach.call(d.querySelectorAll('script,link,noscript,input,button,iframe,.modal'),function(x){x.remove()});
+  [].forEach.call(d.querySelectorAll('a'),function(a){if(/btn|imprimir|e-?mail|fechar|enviar/i.test(a.id+' '+a.textContent))a.remove()});
+  var c=d.querySelector('.danfse-container');
+  if(!c){var st=[].map.call(d.querySelectorAll('style'),function(s){return s.textContent}).join('\n');
+    return '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:0}'+st+'</style></head><body>'+d.body.innerHTML+'</body></html>'}
+  var col='<colgroup>'+new Array(13).join('<col style="width:8.33%">')+'</colgroup>',H='',hd=c.querySelector('header');
+  if(hd){var lg=hd.querySelector('img'),inf=[].map.call(hd.querySelectorAll('.info-right-box p'),function(p){return esc(issTxt(p))}).join('<br>');
+    H+='<tr><td colspan="3" class="so">'+(lg?'<img src="'+lg.getAttribute('src')+'" style="height:42px">':'')+'</td><td colspan="6" class="so" style="text-align:center"><div style="font-size:15px;font-weight:bold">'+esc(issTxt(hd.querySelector('h1')))+'</div><div>'+esc(issTxt(hd.querySelector('h2')))+'</div></td><td colspan="3" class="so" style="font-size:9px">'+inf+'</td></tr>'}
+  [].forEach.call(c.children,function(s){if(s===hd)return;var dd=s.querySelector('.nfse-dados');
+    if(dd){var q=[].filter.call(s.children,function(k){return k!==dd}).map(function(k){var im=k.querySelector('img');return (im?'<img src="'+im.getAttribute('src')+'" style="width:90px;height:90px"><br>':'')+'<span style="font-size:8px">'+esc(issTxt(k))+'</span>'}).join('');
+      H+='<tr><td colspan="10" style="padding:0;border:0"><table class="t">'+col+issLinhas(dd)+'</table></td><td colspan="2" style="text-align:center">'+q+'</td></tr>';return}
+    H+=issLinhas(s)});
+  return '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:0;font-size:10px}.t{width:100%;border-collapse:collapse}.t td{border:1px solid #999;padding:2px 4px;vertical-align:top}.ti{background:#ddd;font-weight:bold;font-size:10px}.so{background:#eee}.lb{font-size:7px;color:#333;text-transform:uppercase}.vl{font-size:10px}.vt{font-size:10px;white-space:pre-wrap}</style></head><body><table class="t">'+col+H+'</table></body></html>'}
+var ISS_TENTOU={};
+function issGerar(){var f=N.filter(function(n){return n.link&&!n.pdf&&!ISS_TENTOU[n.n]})[0];if(!f)return;ISS_TENTOU[f.n]=1;
+  toast('Guardando o PDF da NF '+f.n+' a partir do site do ISSNet…');
+  google.script.run.withSuccessHandler(function(html){var h;try{h=issLimpo(html)}catch(e){toast('NF '+f.n+': não consegui ler a página do ISSNet.');issGerar();return}
+    google.script.run.withSuccessHandler(function(r){if(r.pdf){f.pdf=r.pdf;tudo()}toast(r.msg);issGerar()}).withFailureHandler(function(e){toast('NF '+f.n+': '+(e&&e.message||e));issGerar()}).nfnPdfDeHtml(f.n,h)})
+  .withFailureHandler(function(e){toast('NF '+f.n+': '+(e&&e.message||e));issGerar()}).nfnIssHtml(f.n)}
+tudo();
+</script>
+
+<div id="fgEntrar" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#E9EDF2;z-index:200;font-family:Segoe UI,Arial,sans-serif">
+ <div style="background:#fff;padding:34px 44px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;max-width:460px">
+  <div style="font-size:22px;font-weight:700;color:#1F3B5C;margin-bottom:10px">FG Gestão – Notas Fiscais</div>
+  <div id="fgMsg" style="font-size:15px;color:#41505F;margin-bottom:18px">Entre com a conta Google autorizada.</div>
+  <button id="fgBt" style="font-size:17px;padding:10px 28px;border:0;border-radius:8px;background:#1F5FAF;color:#fff;cursor:pointer">Entrar com o Google</button>
+ </div></div>
+<div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
+<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div>
+<script>
+/* Ações que ainda são feitas no sistema atual (Apps Script). Visualizar e Baixar já abrem direto do Drive. */
+(function(){
+  function aviso(fn){var o=document.createElement('div');o.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(30,40,55,.45);z-index:300;font-family:Segoe UI,Arial,sans-serif';
+    o.innerHTML='<div style="background:#fff;padding:26px 34px;border-radius:12px;max-width:520px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1F3B5C;margin-bottom:10px">Esta ação ainda é feita no sistema atual</div><div style="font-size:15px;color:#41505F;margin-bottom:18px">Nesta primeira etapa a página rápida só mostra as notas. Emitir, cancelar, substituir e enviar e-mail continuam no FG Gestão de sempre.</div><button id="fgA1" style="font-size:16px;padding:9px 22px;border:0;border-radius:8px;background:#1F5FAF;color:#fff;margin-right:8px;cursor:pointer">Abrir o sistema atual</button><button id="fgA2" style="font-size:16px;padding:9px 22px;border:1px solid #B9C3CF;border-radius:8px;background:#fff;cursor:pointer">Fechar</button></div>';
+    document.body.appendChild(o);o.querySelector('#fgA1').onclick=function(){window.open("https://script.google.com/macros/s/AKfycbzpOal_S67erLcaMpATNX-xymtJ0WfKkgV65HTOclBwy-c0DN8BUsSHgbhG5NybQRI6/exec"+'?p=notas','_blank');o.remove()};o.querySelector('#fgA2').onclick=function(){o.remove()}}
+  function chamada(fn,args){
+    if(fn==='nfnPdf'||fn==='artPdfB64'||fn==='dtPdfB64'){var n=(window.__FGD.nfs||[]).filter(function(x){return String(x.n)===String(args[0])})[0];
+      if(n&&n.pdf){window.open('https://drive.google.com/file/d/'+n.pdf+'/view','_blank');return}}
+    aviso(fn)}
+  Object.defineProperty(window,'google',{value:{script:{get run(){var p=new Proxy({},{get:function(t,k){if(k==='withSuccessHandler'||k==='withFailureHandler'||k==='withUserObject')return function(){return p};return function(){chamada(k,[].slice.call(arguments))}}});return p}}}});
+})();
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
+const t0 = performance.now();
+const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+let rodou = false;
+onAuthStateChanged(auth, async u => {
+  if (!u) { $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
+  $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  try {
+    const s = await getDoc(doc(db, 'paginas', 'notas'));
+    if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
+    window.__FGD = JSON.parse(s.get('json'));
+    const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
+    if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc); }
+    $('fgCarregando').style.display = 'none';
+    $('fgTempo').textContent = 'aberto em ' + ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',') + ' s' + (quando ? ' · dados de ' + quando.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+  } catch (e) {
+    $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
+    $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
+  }
+});
+</script>
+</body>
+</html>
