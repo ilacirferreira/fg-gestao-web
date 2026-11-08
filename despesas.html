@@ -408,6 +408,8 @@ var PIX_EDNA=L.filter(function(l){return /EDNA DA SILVA/i.test(l.det||'')&&l.fon
   var fa=[[2325,2026,7],[750,2026,7],[1395,2026,8],[450,2026,8]].some(function(x){return Math.abs(x[0]-v)<0.011&&l.a===x[1]&&l.m===x[2]});
   l.top=fa?'Retenções NF permuta Faenge':(v>=700&&v<=1650)?'INSS (eSocial)':'DARF sem guia (a conferir)';out.push(l);return}
  out.push(l)});L.length=0;out.forEach(function(x){L.push(x)})})();
+/* Ilacir 08/11: linha Empréstimos (valendo) — empréstimos da FG para a Edna, saídos do BB; descontados depois nos recibos (rubrica 183). */
+L.forEach(function(l){if(l.cat==='Pessoal'&&(EMPR[l.data+'|'+Math.round(Math.abs(l.v)*100)/100]||/^EMPR[EÉ]STIMOS?$|^Empréstimo Concedido/i.test(String(l.top||'').trim()))){l.top='Empréstimos';l.topOrig='Empréstimos';l.det=(l.det||'')+' · empréstimo da FG à Edna (descontado depois nos recibos)'}});
 var REC=[['Gerais','Condomínio The Union'],['Terceiros','Contabilidade'],['Gerais','Telefone e Internet'],['Gerais','Energia'],['Gerais','Limpeza'],['Gerais','Limpeza (faxina do escritório)'],['Pessoal','Adiantamento (Edna)'],['Pessoal','Salário (Edna)'],['Pessoal','VT / Aux. Combustível (Edna)'],['Pessoal','VR (Edna)'],['Pessoal','Sábados Trabalhados'],['Impostos','FGTS'],['Impostos','INSS (eSocial)'],['Bancárias','Tarifas']];REC=REC.map(function(r){var n=TOPN[r[0]+'|'+r[1]]||r[1];n=NOMES[r[0]+'|'+n]||n;return [r[0],n]});
 var FG_VISTA="";var S={sel:FG_VISTA==='grade'?{t:'grade',a:2026}:{t:'painel'},ab:{mes:1,a2026:1,rec:1},tab:0,pg:0,hist:[],busca:'',edit:true};var PT=12,AJT=0;
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
