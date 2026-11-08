@@ -753,6 +753,10 @@ function supConc(a,la,DV){for(var m=1;m<=12;m++){var k=a+'-'+('0'+m).slice(-2),P
 /* Ilacir 08/11: valor em vermelho só quando o valor é REAL (guia do contador ou e-mail); dedução = ???. */
 var NP_REAL=[['Terceiros',/contab/i,2026,8,810,'Honorário da contabilidade ref. 08/2026 — EM ABERTO (aviso de cobrança da Digital BSB em 06/11/2026; Ilacir confirmou em 08/11). Vencimento 10/08/2026.'],
   ['Terceiros',/contab/i,2026,10,810,'Honorário da contabilidade ref. 09/2026 — EM ABERTO (aviso de cobrança da Digital BSB em 06/11/2026; Ilacir confirmou em 08/11). Vencimento 12/09/2026. (Mostrado em outubro, mês sem pagamento.)'],
+  ['Impostos',/INSS/i,2026,8,1563.66,'DARF Unificado (INSS/IRRF) da folha ref. 07/2026 — 1.563,66, vencimento 20/08/2026, documento 07.16.26210.5693859-6 (PDF do e-mail do Departamento Pessoal de 29/07/2026). Não há pagamento no BB.'],
+  ['Impostos',/INSS/i,2026,9,1531.75,'DARF Unificado (INSS/IRRF) da folha ref. 08/2026 — 1.531,75, vencimento 18/09/2026, documento 07.16.26237.1611172-0 (PDF do e-mail do DP de 25/08/2026). Não há pagamento no BB.'],
+  ['Impostos',/FGTS/i,2026,8,238.69,'GFD (FGTS Digital) ref. 07/2026 — 238,69, vencimento 20/08/2026 (PDF do e-mail do DP de 29/07/2026). Não há pagamento com este valor no BB (o 625,63 de 30/10 não bate com esta guia).'],
+  ['Impostos',/FGTS/i,2026,9,232.19,'GFD (FGTS Digital) ref. 08/2026 — 232,19, vencimento 18/09/2026 (PDF do e-mail do DP de 25/08/2026). Não há pagamento com este valor no BB.'],
   ['Gerais',/claro|telefone/i,2026,10,371.79,'Fatura Claro (out–nov/2026) de 371,79, vencimento 05/11/2026 — e-mail Fatura Digital Claro de 30/10/2026. Sem pagamento no extrato até agora.']];
 /* guia existe no e-mail, mas o PDF não pôde ser lido daqui: continua ??? com a prova no comentário */
 var NP_INFO=[['Impostos',/INSS/i,2026,8,'DARF Unificado (INSS/IRRF) da folha ref. 07/2026 — guia enviada pelo Departamento Pessoal da Digital BSB em 29/07/2026 ("Darf Unificado ref. 07-2026.pdf"), vencimento 20/08/2026. Não há pagamento no BB. O valor está no PDF (não consigo abrir o anexo daqui).'],
