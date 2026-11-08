@@ -425,6 +425,8 @@ L.forEach(function(l){var vv=Math.round(Math.abs(l.v)*100)/100;if(l.cat==='Pesso
 /* Ilacir 08/11 (limpa da Edna): só 5 linhas de salário, todas VALENDO, pelo mês do recibo (competência):
    Adiantamento de Salário, Saldo de Salário, VT, VR = recibo do contador; Ajustes = o que saiu do BB (dia 5 do mês ao dia 4 do seguinte) − recibo.
    Ficam à parte: Empréstimos, Sábados Trabalhados (Pix de 250 e múltiplos até 1.000) e supermercado (Compras da Empresa). */
+/* Motivo de cada Ajuste da Edna, combinado com o Ilacir (ref. do recibo) */
+var AJ_MOTIVO={'10/2026':'13º salário 1ª parcela (50%) 1.429,24 — pago no Pix de 29/10, ainda sem recibo do contador (print da Edna) − 196,72 do adiantamento pago a menos (15/10: 1.122,58 = 1.319,30 − 196,72), que compensa o "Ressarcimento de Provisão do Empréstimo eConsignado" de 196,72 creditado no recibo. Ilacir 08/11: de acordo. Quando chegar o recibo do 13º, os 1.429,24 saem daqui.'};
 var TDT='',TT={},ED_ROWS={'Saldo de Salário':['gr-cy',1],'VR (Vale Refeição)':['gr-cy',2],'VT (Vale Transporte)':['gr-cy',3],'Adiantamento de Salário':['gr-cy',4],'Ajustes':['gr-aj',5],'Empréstimos':['',6],'Sábados Trabalhados':['',7]};/* Ilacir 08/11: Pessoal começa com Saldo de Salário e segue VR, VT, Adiantamento, Ajustes, Empréstimos */
 (function(){var R=(D&&D.rub)||[],sal=[],keep=[];
   L.forEach(function(l){var eh=/EDNA DA SILVA/i.test(l.det||'')&&l.fonte!=='ajuste'&&l.fonte!=='socio'&&(l.cat==='Pessoal'||(l.cat==='Compras da Empresa'&&/^s[aá]bados/i.test(l.top||'')));
@@ -447,7 +449,7 @@ var TDT='',TT={},ED_ROWS={'Saldo de Salário':['gr-cy',1],'VR (Vale Refeição)'
     nova(g,'Adiantamento de Salário',adi,'Recibo '+k);nova(g,'Saldo de Salário',sl,'Recibo '+k);nova(g,'VT (Vale Transporte)',vt,'Recibo '+k);nova(g,'VR (Vale Refeição)',vr,'Recibo '+k);
     var quem=P.map(function(p){var o=eq(p.v,adi)?'= Adiantamento do recibo':eq(p.v,r2(sl+vt+vr))?'= Saldo + VT + VR do recibo':eq(p.v,sl)?'= Saldo de Salário do recibo':eq(p.v,r2(vt+vr))?'= VT + VR do recibo':out.some(function(x){return eq(p.v,Number(x[3]))})?'= '+out.filter(function(x){return eq(p.v,Number(x[3]))})[0][2]:'? não bate com o recibo';
       return '   '+p.data+'  '+num(p.v)+'  '+o+'  (planilha: '+Object.keys(p.nomes).join(' / ')+')'});
-    var txt='AJUSTES — Edna, ref. '+k+'\n\nSaiu do BB (Pix do dia 5 deste mês ao dia 4 do seguinte; fora sábados, supermercado e empréstimos):\n'+(quem.length?quem.join('\n'):'   nenhum Pix')+'\n   total BB: '+num(bb)+
+    var txt='AJUSTES — Edna, ref. '+k+'\n\n'+(AJ_MOTIVO[k]?'MOTIVO: '+AJ_MOTIVO[k]+'\n\n':'')+'Saiu do BB (Pix do dia 5 deste mês ao dia 4 do seguinte; fora sábados, supermercado e empréstimos):\n'+(quem.length?quem.join('\n'):'   nenhum Pix')+'\n   total BB: '+num(bb)+
       '\n\nRecibo do contador: '+(tem?'adiantamento '+num(adi)+' + saldo '+num(sl)+' + VT '+num(vt)+' + VR '+num(vr)+' = '+num(rec)+(out.length?'\n   (o recibo também tem: '+out.map(function(x){return x[2]+' '+num(x[3])}).join('; ')+' — ainda não somado nas 4 linhas)':''):'NÃO HÁ recibo deste mês')+
       '\n\nAjuste = BB − recibo = '+num(aj)+(aj>0?' (saiu do BB a mais que o recibo)':aj<0?' (saiu do BB a menos que o recibo)':' ✓');
     if(Math.abs(aj)>=0.01)nova(g,'Ajustes',aj,txt);
