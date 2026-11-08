@@ -626,7 +626,7 @@ desenha();
 function edBotao(){return '<button type="button" style="margin-left:8px;padding:1px 8px;font:inherit;font-size:12px;font-weight:600;border-radius:4px;cursor:pointer;border:1px solid #1F5FAD;'+(S.edit?'background:#1F5FAD;color:#fff':'background:#fff;color:#1F5FAD')+'" title="Com a edição ligada: clique num título para renomear, ou num valor para corrigir. O extrato do banco não muda: a correção vira um ajuste em vermelho, com o motivo no comentário." onclick="S.edit=!S.edit;desenha()">'+(S.edit?'✓ Pronto':'✎ Editar')+'</button>'}
 /* ===== Recibos do contador (08/11): 3 linhas de referência em azul, FORA dos totais, para conferir a Edna ===== */
 var REC_GR=[['c','SALÁRIO MÊS CIVIL',/^SAL[AÁ]RIO M[EÊ]S/],['c','TRIÊNIO (5%)',/TRI[EÊ]NIO/],['c','DIFERENÇA SALARIAL',/^DIF/],['c','ADIANTAMENTO (recibo do dia 15)',/^Adiantamento: /],['c','13º SALÁRIO',/^13º/],['c','FÉRIAS + 1/3',/F[eé]rias|ABONO/i],['c','OUTROS CRÉDITOS',/./],
- ['d','INSS',/^(13º: |Férias: )?INSS$/],['d','EMPRÉSTIMO',/EMPR[EÉ]STIMO/],['d','ADIANTAMENTO DE SALÁRIO',/ADIANTAMENTO DE SAL/],['d','FÉRIAS (descontos)',/F[eé]rias/i],['d','OUTROS DÉBITOS',/./],
+ ['d','INSS',/^(13º: |Férias: )?INSS$/],['d','EMPRÉSTIMO DA FG',/EMPR[EÉ]STIMO DA FG/],['d','EMPRÉSTIMO CONSIGNADO (banco)',/CONSIGNADO/],['d','ADIANTAMENTO DE SALÁRIO',/ADIANTAMENTO DE SAL/],['d','FÉRIAS (descontos)',/F[eé]rias/i],['d','OUTROS DÉBITOS',/./],
  ['l','LÍQUIDO DO RECIBO',/./],['b','VALE TRANSPORTE',/TRANSPORTE/],['b','VALE REFEIÇÃO',/./]];
 /* comentário = o recibo inteiro do contador daquele mês, como está no papel */
 /* Ilacir 08/11: adiantamento lançado × recibo do contador (mês a mês). Igual → some da grade (o recibo já mostra). Diferente → vermelho forte. */
