@@ -383,7 +383,7 @@ function aplicaNomes(l){if(l.topOrig==null)l.topOrig=l.top||'';l.top=NOMES[l.cat
 L.forEach(aplicaNomes);
 /* Linhas excluídas (Config topicosOcultos): só somem enquanto estiverem vazias (todos os meses = 0). */
 var OCULT={};try{OCULT=JSON.parse((D&&D.ocultos)||'{}')}catch(e){}
-var CATS=['Impostos','Pessoal','Gerais','Terceiros','Bancárias','Conselhos e Taxas','Compras da Empresa','A Classificar'];
+var CATS=['Impostos','Pessoal','Gerais','Terceiros','Bancárias','Conselhos e Taxas','Taxas','Compras da Empresa','A Classificar'];
 
 /* PRÉVIA 05/11 — impostos desmembrados como nas guias da contabilidade (IMPOSTOS-GUIAS-2023-2026.csv) */
 var GUIAS=[[2998.56,[['CSLL',2998.56]]],[5263.45,[['IRPJ',5263.45]]],[4224.00,[['CSLL',4224.00]]],[8604.26,[['IRPJ',8604.26]]],[2825.64,[['CSLL',2825.64]]],[4959.90,[['IRPJ',4959.90]]],
@@ -408,6 +408,12 @@ var PIX_EDNA=L.filter(function(l){return /EDNA DA SILVA/i.test(l.det||'')&&l.fon
   var fa=[[2325,2026,7],[750,2026,7],[1395,2026,8],[450,2026,8]].some(function(x){return Math.abs(x[0]-v)<0.011&&l.a===x[1]&&l.m===x[2]});
   l.top=fa?'Retenções NF permuta Faenge':(v>=700&&v<=1650)?'INSS (eSocial)':'DARF sem guia (a conferir)';out.push(l);return}
  out.push(l)});L.length=0;out.forEach(function(x){L.push(x)})})();
+/* Ilacir 08/11: "compra de supermercado e supermercado é a mesma coisa" — tudo numa linha: Compras da Empresa › COMPRAS SUPERMERCADO (fora o Pix da Edna que não é supermercado, tratado acima). */
+L.forEach(function(l){if(l.cat==='Pessoal'||l.cat==='Retiradas'||l.cat==='Aportes')return;if(/supermercado/i.test(l.top||'')&&!(l.cat==='Compras da Empresa'&&l.top==='COMPRAS SUPERMERCADO')){l.det=(l.det||'')+(l.top!=='COMPRAS SUPERMERCADO'?' · (antes: '+l.cat+' › '+l.top+')':'');l.cat='Compras da Empresa';l.top='COMPRAS SUPERMERCADO';l.topOrig='COMPRAS SUPERMERCADO'}});
+/* Ilacir 08/11: tarifas do BB pelo texto do extrato (o banco cobra todo mês, mesmo quando a planilha ficou vazia) */
+L.forEach(function(l){if(l.cat!=='Bancárias')return;var d=String(l.det||''),v=Math.abs(l.v),n=null;
+  if(/^Cobran[cç]a referente/i.test(d))n=v>=90?'TARIFA PACOTE SERVIÇOS (BB)':'TARIFA RENOVAÇÃO DE CADASTRO (BB)';else if(/^Tar\.? agrupadas/i.test(d))n='TARIFA PIX';
+  if(n&&l.top!==n){l.top=n;l.topOrig=n}});
 /* Ilacir 08/11: linha Empréstimos (valendo) — empréstimos da FG para a Edna, saídos do BB; descontados depois nos recibos (rubrica 183). */
 var EMP_CTR={'28/06/2023|20000':3,'05/03/2026|3500':4},EMP_RES={};
 /* Ilacir 08/11: Pix de 150,00 para a Edna = compras de supermercado; e os Pix que ele apontar um a um (SUPER_PIX). Tudo numa linha só: Compras da Empresa › COMPRAS SUPERMERCADO. */
@@ -498,6 +504,15 @@ var NP={},IMP_ROWS={'ISS':1,'PIS':2,'COFINS':3,'IRPJ':4,'CSLL':5,'INSS da folha 
   IMP_BB=P;
   L.length=0;keep.forEach(function(x){L.push(x)})})();
 var IMP_BB=IMP_BB||[];
+/* Ilacir 08/11: Ensaio T. Vento (Aerosim) e Caio (análise Pau Brasil) são serviços de Terceiros. */
+L.forEach(function(l){if(/t\.? ?vento|aerosim|caio|pau brasil/i.test((l.top||'')+' '+(l.plan||''))&&['Retiradas','Aportes','Fora da FG','Estornos'].indexOf(l.cat)<0)l.cat='Terceiros'});
+/* Ilacir 08/11: "junta comercial não é conselho, está mais para taxas" → categoria Taxas. */
+L.forEach(function(l){if(/junta comercial/i.test((l.top||'')+' '+(l.plan||''))&&['Retiradas','Aportes','Fora da FG','Estornos'].indexOf(l.cat)<0){l.cat='Taxas';l.top='Junta Comercial';l.topOrig='Junta Comercial'}});
+/* Ilacir 08/11: "em Manutenção lance todo tipo de manutenção: computadores, ar-condicionado, consertos…" → Gerais › Manutenção; o comentário do mês diz o que foi cada um. */
+(function(){var re=/manuten|conserto|reparo|computador|ar[- ]?condicionado|tubula|encanad|eletricist|pintura|chaveiro|t[eé]cnico/i;
+  L.forEach(function(l){if(['Retiradas','Aportes','Fora da FG','Estornos','Impostos','Pessoal'].indexOf(l.cat)>=0)return;var nm=String(l.top||'');if(!re.test(nm)&&!(l.plan&&re.test(l.plan)))return;
+    var antes=nm;l.cat='Gerais';l.top='Manutenção';l.topOrig='Manutenção';
+    var k=l.a+'|Gerais|Manutenção|'+l.m;TT[k]=(TT[k]?TT[k]+'\n':'MANUTENÇÃO — '+MESES[l.m-1]+'/'+l.a+'\n')+'   '+l.data+'  '+num(Math.abs(l.v))+'  '+(antes==='Manutenção'?'':antes+' · ')+String(l.det||'').slice(0,45)})})();
 function impBBRow(a){var tot=0,cel='';for(var m=1;m<=12;m++){var ps=IMP_BB.filter(function(p){return p.a===a&&p.m===m}),v=Math.round(ps.reduce(function(t,p){return t+p.v},0)*100)/100;tot+=v;
     cel+='<td class="r" title="'+esc(ps.length?'Pagamentos de imposto no BB — '+MESES[m-1]+'/'+a+' ('+ps.length+')\n'+ps.map(function(p){return '   '+p.data+'  '+num(p.v)+'  '+(p.usado?'guia do contador':'sem guia')+(p.plan?'  (planilha: '+p.plan+')':'')}).join('\n')+'\n   total: '+num(v)+'\n\nSó para visualizar: NÃO entra nos totais (está pelo mês do pagamento).':'Nenhum pagamento de imposto no BB neste mês.')+'">'+(v?num(v):'')+'</td>'}
   return '<tr class="gr-px"><td class="gr-t" title="Total pago de impostos no BB, pelo mês do pagamento. Passe o mouse para ver cada DARF/DAR com data. Não entra nos totais.">Pagamentos BB</td>'+cel+'<td class="r">'+(tot?num(tot):'')+'</td></tr>'}
@@ -732,15 +747,16 @@ function supConc(a,la,DV){for(var m=1;m<=12;m++){var k=a+'-'+('0'+m).slice(-2),P
   DV['Compras da Empresa|COMPRAS SUPERMERCADO|'+m]='SUPERMERCADO '+('0'+m).slice(-2)+'/'+a+' — DIVERGE DA SUA PLANILHA (linha 111)\nSua planilha: '+num(P)+'\nNo sistema: '+num(S)+'\n'+ls.map(function(l){return '   '+l.data+'  '+num(l.v)+'  '+(l.fonte==='socio'?'pago pelo sócio (fora do BB)':'Pix Edna')}).join('\n')+'\nDiferença: '+num(Math.round((S-P)*100)/100)+(so.length?'\n\nPix ao sócio que parecem reembolso (ainda em Retiradas — falta aprovar):\n'+so.map(function(x){return '   '+x[0]+'  '+x[1]+'  '+num(x[2])}).join('\n')+'\n   total '+num(ss):'')}}
 /* Ilacir 08/11: pagamento RECORRENTE não feito → texto vermelho forte com comentário (não conta no total).
    Recorrente = pago em pelo menos 4 dos 6 meses anteriores; só até o último mês do extrato. */
-var REC_IDX=null;function recNP(a,c,t,m){if(c==='Pessoal'||c==='A Classificar'||t==='Ajustes'||(c==='Impostos'&&IMP_ROWS[t]<=5))return null;
+var REC_IDX=null;function recNP(a,c,t,m){if(c==='Pessoal'||c==='A Classificar'||c==='Compras da Empresa'||t==='Ajustes'||t==='Despesas pagas por Ilacir'||(c==='Impostos'&&IMP_ROWS[t]<=5))return null;
   if(!REC_IDX){REC_IDX={};L.forEach(function(l){if(l.fonte==='guia'||l.fonte==='recibo')return;var k=l.cat+'|'+(l.top||'(sem tópico)');(REC_IDX[k]=REC_IDX[k]||{})[l.a*12+l.m]=((REC_IDX[k]||{})[l.a*12+l.m]||0)+l.v})}
-  var U=ultExtrato(),i=a*12+m;if(i>U.a*12+U.m)return null;var h=REC_IDX[c+'|'+t];if(!h||h[i])return null;
+  var U=ultExtrato(),i=a*12+m,iu=U.a*12+U.m;if(i>iu)return null;var h=REC_IDX[c+'|'+t];if(!h||h[i])return null;
+  var depois=false;for(var q=i+1;q<=iu;q++)if(h[q])depois=true;if(!depois&&iu-i>=3)return null;/* serviço que acabou (ex.: Dibclean) não é cobrado como não pago */
   var ant=[],n=0;for(var j=i-6;j<i;j++)if(h[j]){n++;ant.push(h[j])}if(n<4)return null;var ult=ant.slice(-3).sort(function(x,y){return x-y}),v=ult[Math.floor(ult.length/2)];
   return {v:v,t:'NÃO PAGO? — '+t+' é pago todo mês (em '+n+' dos 6 meses anteriores), mas não há pagamento em '+MESES[m-1]+'/'+a+'.\nValor de referência (pagamentos recentes): '+num(v)+'\n\nNão entra no total. Se foi pago fora do BB ou em outro mês, me avise.'}}
 /* Ilacir 08/11: grafia dos títulos sempre no formato "Renovação Certificado Digital" (só a exibição; o nome gravado não muda). */
 var TIT_SIGLA={ISS:1,PIS:1,COFINS:1,IRPJ:1,CSLL:1,FGTS:1,INSS:1,DARF:1,DAR:1,GDF:1,IPTU:1,VT:1,VR:1,CIEE:1,NF:1,PIX:1,BB:1,RFB:1,CREA:1,TLP:1,RRT:1,ART:1,CAU:1,CNPJ:1,IRRF:1,FG:1,PJ:1,PF:1,TI:1,DF:1,AEROSIM:0},TIT_MIN={de:1,da:1,do:1,das:1,dos:1,e:1,para:1,por:1,em:1,a:1,o:1,com:1,sobre:1,no:1,na:1},
 TIT_FIX={'renovaçao':'renovação','renovacao':'renovação','manutençao':'manutenção','manutencao':'manutenção','tubulaçao':'tubulação','gratificaçao':'gratificação','confraternizaçao':'confraternização','impressao':'impressão','condominio':'condomínio','salario':'salário','salarios':'salários','emprestimo':'empréstimo','emprestimos':'empréstimos','escritorio':'escritório','aniversario':'aniversário','certificao':'certificado','confins':'COFINS','neoennergia':'neoenergia','doaçao':'doação','copaiba':'copaíba','esocial':'eSocial','c0ndominio':'condomínio','sabados':'sábados','contabil':'contábil','honorarios':'honorários','agua':'água','energia':'energia','telefone':'telefone'};
-var TIT_NOME={'DIBCLEAN':'Dibclean (Faxina)','RAYANE - FAXINA':'Rayanne (Faxina)','NEOENNERGIA':'Neoenergia'};/* nomes pedidos pelo Ilacir 08/11 */
+var TIT_NOME={'RENOVAÇAO CERTIFICADO DIGITAL':'Certificado Digital','RENOVAÇÃO CERTIFICADO DIGITAL':'Certificado Digital','DIBCLEAN':'Dibclean (Faxina)','RAYANE - FAXINA':'Rayanne (Faxina)','NEOENNERGIA':'Neoenergia'};/* nomes pedidos pelo Ilacir 08/11 */
 function fmtTit(t){t=String(t||'');if(TIT_NOME[t.trim()])return TIT_NOME[t.trim()];if(!t||t==='(sem tópico)')return t;var n=0,ab=0;return t.split(/(\s+|\/|\+|-|\(|\))/).map(function(w){if(!w||/^(\s+|\/|\+|-|\(|\))$/.test(w)){if(w==='(')ab=1;return w}var pa=ab;ab=0;var lw=w.toLowerCase(),fx=TIT_FIX[lw];if(fx)lw=fx;var up=lw.toUpperCase();n++;
   if(TIT_SIGLA[up]===1)return up;if(/^[A-Z0-9]{2,}$/.test(fx||'')&&fx)return fx;if(fx==='eSocial')return fx;if(n>1&&!pa&&TIT_MIN[lw])return lw;if(/\d/.test(w)&&w===w.toUpperCase()&&w.length<=4)return w;return lw.charAt(0).toUpperCase()+lw.slice(1)}).join('')}
 function adiEh(l){return l.cat==='Pessoal'&&l.fonte!=='recibo'&&/^adiantamento( de)? sal[aá]rio$|^adiantamento \(edna\)$/i.test(String(l.top||'').trim())}
