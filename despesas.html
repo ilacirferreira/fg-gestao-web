@@ -553,13 +553,57 @@ function cpSit(r){if(r.pago)return ['t-ok','Paga · '+r.pago];var h=dnum(HOJE),v
 function anxCel(i,q){var r=CP[i],a=r.anx[q];return '<td class="anx" ondragover="event.preventDefault();this.style.background=\'#DCEAFB\'" ondragleave="this.style.background=\'\'" ondrop="event.preventDefault();this.style.background=\'\';cpAnexa('+i+',\''+q+'\',event.dataTransfer.files)" onmouseenter="CPH=['+i+',\''+q+'\']" style="white-space:nowrap">'+a.map(function(f,j){return '<span class="tag t-gray" style="cursor:pointer" title="'+esc(f.n)+'" onclick="cpAbre('+i+',\''+q+'\','+j+')">'+(q==='g'?'📄':'🧾')+' '+esc(f.n.replace(/\.(pdf|png|jpe?g)$/i,''))+'</span> '}).join('')+'<button class="mini" title="Escolher arquivo, arrastar aqui ou colar com Ctrl+V" onclick="cpEscolhe('+i+',\''+q+'\')">'+(a.length?'+':'Anexar')+'</button></td>'}
 var CPH=null;
 function cpEscolhe(i,q){var f=document.createElement('input');f.type='file';f.multiple=true;f.accept='image/*,application/pdf';f.onchange=function(){cpAnexa(i,q,f.files)};f.click()}
-function cpAnexa(i,q,fs){var r=CP[i];[].slice.call(fs||[]).forEach(function(f){if(f.size>20e6){toast('Arquivo grande demais (máx. 20 MB).');return}var rd=new FileReader();rd.onload=function(){var b=String(rd.result).split(',')[1];toast('Enviando '+(f.name||'print')+'…');cpRun('cpAnexar',[r.id,q,f.name||('print '+new Date().toLocaleString('pt-BR').replace(/[\/:]/g,'-')+'.png'),f.type||'application/octet-stream',b],(q==='g'?'Boleto/guia':'Comprovante')+' guardado no Drive ✓')};rd.readAsDataURL(f)})}
+function cpAnexa(i,q,fs){var r=CP[i];[].slice.call(fs||[]).forEach(function(f){if(f.size>20e6){toast('Arquivo grande demais (máx. 20 MB).');return}var rd=new FileReader();rd.onload=function(){var b=String(rd.result).split(',')[1];toast('Enviando '+(f.name||'print')+'…');if(q==='g')lfAuto(r.id,f);cpRun('cpAnexar',[r.id,q,f.name||('print '+new Date().toLocaleString('pt-BR').replace(/[\/:]/g,'-')+'.png'),f.type||'application/octet-stream',b],(q==='g'?'Boleto/guia':'Comprovante')+' guardado no Drive ✓')};rd.readAsDataURL(f)})}
+/* Ilacir 08/11 (G9): anexou boleto/fatura/guia → o painel lê valor, vencimento e código sozinho (PDF pelo texto; foto ou PDF escaneado pelo leitor de imagem). */
+/* Leitura de fatura/boleto/guia (Ilacir 08/11: "quero simplesmente anexar e o painel reconhecer os dados") */
+function lfData_(d){return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()}
+function lfM10_(s){var t=0,p=2;for(var i=s.length-1;i>=0;i--){var x=+s[i]*p;t+=Math.floor(x/10)+x%10;p=p===2?1:2}return (10-t%10)%10}
+function lfM11_(s){var t=0,p=2;for(var i=s.length-1;i>=0;i--){t+=+s[i]*p;p=p===9?2:p+1}var r=t%11;return (r===0||r===1)?0:(r===10?1:11-r)}
+function lfOk_(d){if(d.length===48&&d[0]==='8'){var m=('89'.indexOf(d[2])>=0)?lfM11_:lfM10_;for(var i=0;i<48;i+=12)if(m(d.slice(i,i+11))!==+d[i+11])return false;return true}
+  if(d.length===47&&d[0]!=='8')return lfM10_(d.slice(0,9))===+d[9]&&lfM10_(d.slice(10,20))===+d[20]&&lfM10_(d.slice(21,31))===+d[31];return false}
+/* acha a linha digitável: junta grupos de números seguidos e confere os dígitos verificadores */
+function lfCodigo_(t){var g=String(t).match(/\d+/g)||[];for(var i=0;i<g.length;i++){var d='';for(var j=i;j<g.length&&d.length<48;j++){d+=g[j];if((d.length===47||d.length===48)&&lfOk_(d))return d}}return null}
+function lfLer(txt,hoje){txt=String(txt||'');var r={},t=txt.replace(/ /g,' ');
+  hoje=hoje||new Date();
+  // 1) linha digitável / código de barras
+  var dig=lfCodigo_(t);
+  if(dig){r.linha=dig;
+    if(dig.length===48){var cb=dig.slice(0,11)+dig.slice(12,23)+dig.slice(24,35)+dig.slice(36,47);if('67'.indexOf(cb[2])>=0){var v=+cb.slice(4,15)/100;if(v>0)r.valorCB=v}}
+    else if(dig.length===47){var f=+dig.slice(33,37),v2=+dig.slice(37)/100;if(v2>0)r.valorCB=v2;
+      if(f>=1000){var c1=new Date(1997,9,7+f),c2=new Date(2025,1,22+f-1000);var pick=Math.abs(c1-hoje)<Math.abs(c2-hoje)?c1:c2;r.vencCB=lfData_(pick)}}
+    else if(dig.length===44&&dig[0]!=='8'){var f3=+dig.slice(5,9),v3=+dig.slice(9,19)/100;if(v3>0)r.valorCB=v3;if(f3>=1000){var d1=new Date(1997,9,7+f3),d2=new Date(2025,1,22+f3-1000);r.vencCB=lfData_(Math.abs(d1-hoje)<Math.abs(d2-hoje)?d1:d2)}}
+    else if(dig.length===44){if('67'.indexOf(dig[2])>=0){var v4=+dig.slice(4,15)/100;if(v4>0)r.valorCB=v4}}}
+  // 2) vencimento pelo texto
+  var mv=t.match(/venc[a-zçã\.]*[^0-9]{0,40}?(\d{2}\/\d{2}\/\d{4})/i)||t.match(/data\s+de\s+pagamento[^0-9]{0,30}?(\d{2}\/\d{2}\/\d{4})/i)||t.match(/pag[aá]vel\s+at[eé][^0-9]{0,20}?(\d{2}\/\d{2}\/\d{4})/i);
+  if(mv)r.vencTx=mv[1];
+  // 3) valor pelo texto
+  var re=/(total\s+a\s+pagar|valor\s+a\s+pagar|valor\s+do\s+documento|valor\s+cobrado|valor\s+total|total\s+da\s+fatura|valor\s+da\s+fatura|total\s+a\s+recolher|valor\s+total\s+do\s+documento)[^0-9]{0,40}?(\d{1,3}(?:\.\d{3})*,\d{2})/i,mx=t.match(re);
+  if(mx)r.valorTx=+mx[2].replace(/\./g,'').replace(',','.');
+  r.valor=r.valorCB||r.valorTx||null;r.venc=r.vencTx||r.vencCB||null;
+  return r}
+
+var LF_PDF='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js',LF_PDFW='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js',LF_OCR='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+function lfScript(u){return new Promise(function(ok,er){if(document.querySelector('script[src="'+u+'"]'))return ok();var s=document.createElement('script');s.src=u;s.onload=function(){ok()};s.onerror=function(){er(new Error('o leitor não carregou'))};document.head.appendChild(s)})}
+async function lfOcr(src){await lfScript(LF_OCR);var w=await Tesseract.createWorker('por');try{var o=await w.recognize(src);return o.data.text||''}finally{w.terminate()}}
+async function lfTexto(f){var pdf=/pdf/i.test(f.type||'')||/\.pdf$/i.test(f.name||'');
+  if(!pdf)return lfOcr(f);
+  await lfScript(LF_PDF);pdfjsLib.GlobalWorkerOptions.workerSrc=LF_PDFW;var doc=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,t='';
+  for(var p=1;p<=Math.min(doc.numPages,3);p++){var pg=await doc.getPage(p),c=await pg.getTextContent();t+=c.items.map(function(x){return x.str}).join(' ')+'\n'}
+  if(t.replace(/\s/g,'').length>40)return t;
+  var pg1=await doc.getPage(1),vp=pg1.getViewport({scale:2.5}),cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;await pg1.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;return lfOcr(cv)}
+async function lfAuto(id,f){toast('Lendo a fatura…');try{var t=await lfTexto(f),x=lfLer(t,new Date());
+    if(!x.valor&&!x.venc){toast('Não consegui ler o valor nem o vencimento desta fatura: clique na linha e digite.');return}
+    var r=CP.filter(function(y){return y.id===id})[0]||{},c={},n2=function(v){return v.toFixed(2).replace('.',',')};
+    if(x.valor)c.valor=n2(x.valor);if(x.venc)c.venc=x.venc;
+    c.obs=('Lido da fatura: '+(x.valor?'valor '+n2(x.valor):'valor não lido')+(x.venc?', vence '+x.venc:', vencimento não lido')+(x.linha?' · código: '+x.linha:'')+(r.obs&&!/^Lido da fatura/.test(r.obs)?' | antes: '+r.obs:'')).slice(0,300);
+    cpRun('cpEditar',[id,c],'Lido da fatura ✓ '+(x.valor?'R$ '+n2(x.valor):'')+(x.venc?' · vence '+x.venc:'')+' — confira na linha')}
+  catch(e){toast('Não consegui ler a fatura ('+(e&&e.message||e)+'): digite valor e vencimento na linha.')}}
 function cpAbre(i,q,j){var f=CP[i].anx[q][j];if(f.u)window.open(f.u,'_blank')}
 document.addEventListener('paste',function(e){if(S.sel.t!=='pagar'||!CPH)return;var it=[].slice.call((e.clipboardData||{}).items||[]).filter(function(x){return x.kind==='file'}).map(function(x){return x.getAsFile()});if(it.length){e.preventDefault();cpAnexa(CPH[0],CPH[1],it)}});
 function cpPagar(i){var r=CP[i];cpRun('cpPagar',[r.id,!r.pago],r.pago?'Voltou para "a pagar". Fica registrado quem marcou e desmarcou.':'Marcada como paga ✓ — sai dos avisos. Anexe o comprovante quando tiver.')}
 function cpEdita(i,campo,td){if(td.querySelector('input'))return;var r=CP[i],atual=campo==='venc'?r.v:(r.val==null?'':num(r.val).replace('− ',''));td.innerHTML='<input value="'+esc(atual)+'" placeholder="'+(campo==='venc'?'dd/mm/aaaa':'0,00')+'" style="width:96px;font:inherit;padding:2px 4px;border:1px solid #1F5FAD;border-radius:3px;background:#FFFBEA">';var inp=td.querySelector('input');inp.focus();inp.select();var feito=0,salva=function(){if(feito)return;feito=1;var v=inp.value.trim();if(v===atual){desenha();return}var c={};c[campo]=v;cpRun('cpEditar',[r.id,c],'Gravado ✓')};inp.onkeydown=function(e){if(e.key==='Enter')salva();if(e.key==='Escape'){feito=1;desenha()}};inp.onblur=salva}
 function pagarHtml(){var ord=CP.map(function(r,i){return i}).sort(function(a,b){var pa=CP[a].pago?1:0,pb=CP[b].pago?1:0;return pa-pb||(CP[b].alerta?1:0)-(CP[a].alerta?1:0)||dnum(CP[a].v)-dnum(CP[b].v)});
-var rows=ord.map(function(i){var r=CP[i],st=cpSit(r);return '<tr'+(r.pago?' style="opacity:.75"':'')+'><td style="white-space:nowrap;cursor:text" title="Clique para corrigir o vencimento" onclick="cpEdita('+i+',\'venc\',this)">'+(r.v?r.v.slice(0,5):'—')+'</td><td style="white-space:nowrap"><b>'+esc(r.c)+'</b>'+(r.obs||r.ori?' <span title="'+esc((r.obs?r.obs+' · ':'')+'vem de: '+(r.ori||''))+'" style="color:#5A6B7F;cursor:help">ⓘ</span>':'')+'</td><td style="white-space:nowrap">'+esc(r.k)+'</td><td class="r db" style="cursor:text" title="Clique para corrigir o valor" onclick="cpEdita('+i+',\'valor\',this)">'+(r.val==null?'<span style="color:#8A97A6">a confirmar</span>':num(r.val))+'</td>'+anxCel(i,'g')+anxCel(i,'p')+'<td><span class="tag '+st[0]+'" style="white-space:nowrap">'+st[1]+'</span></td><td><button class="btn '+(r.pago?'':'pri')+'" style="white-space:nowrap" onclick="cpPagar('+i+')">'+(r.pago?'Desfazer':'Marcar como Pago')+'</button></td></tr>'});
+var rows=ord.map(function(i){var r=CP[i],st=cpSit(r);return '<tr'+(r.pago?' style="opacity:.75"':'')+'><td style="white-space:nowrap;cursor:text" title="Clique para corrigir o vencimento" onclick="cpEdita('+i+',\'venc\',this)">'+(r.v?r.v.slice(0,5):'—')+'</td><td style="white-space:nowrap"><b>'+esc(r.c)+'</b>'+(r.obs||r.ori?' <span title="'+esc((r.obs?r.obs+' · ':'')+'vem de: '+(r.ori||''))+'" style="color:#5A6B7F;cursor:help">ⓘ</span>':'')+'</td><td style="white-space:nowrap">'+esc(r.k)+'</td><td class="r db" style="cursor:text" title="Clique para corrigir o valor" onclick="cpEdita('+i+',\'valor\',this)">'+(r.val==null?'<span style="color:#8A97A6">a confirmar</span>':num(r.val))+(/^Lido da fatura/.test(r.obs||'')?' <span title="'+esc(r.obs)+'" style="color:#2E7D32;font-size:12px;font-weight:700;cursor:help">✓ lido</span>':'')+'</td>'+anxCel(i,'g')+anxCel(i,'p')+'<td><span class="tag '+st[0]+'" style="white-space:nowrap">'+st[1]+'</span></td><td><button class="btn '+(r.pago?'':'pri')+'" style="white-space:nowrap" onclick="cpPagar('+i+')">'+(r.pago?'Desfazer':'Marcar como Pago')+'</button></td></tr>'});
 return '<div class="pgline"><button class="mini" title="Mês anterior" onclick="cpMesMais(-1)">◀</button>'+cpMesNome(CPD.mes)+'<button class="mini" title="Próximo mês" onclick="cpMesMais(1)">▶</button></div><div class="tablewrap" id="tw" title="Anexos: arraste o arquivo para a célula, cole um print com Ctrl+V com o mouse sobre ela, ou clique em Anexar. Vencimento e valor: clique para corrigir."><table><thead><tr><th>Vence</th><th>Conta</th><th>Categoria</th><th class="r">Valor</th><th>Boleto / Guia</th><th>Comprovante</th><th>Situação</th><th></th></tr></thead><tbody>'+paginar(rows)+'</tbody></table></div>'+pgLine(rows.length)}
 var ICO={'Impostos':'🧾','Pessoal':'👥','Gerais':'🏢','Terceiros':'📒','Bancárias':'🏦','Conselhos e Taxas':'📜','Conselhos (CREA)':'📜','Taxas':'🏛️','Compras da Empresa':'🛒','A Classificar':'❓'};
 function painelHtml(){var A=2026,MA=11,U=ultExtrato(),cards=CATS.map(function(c){var la=L.filter(function(l){return l.cat===c&&l.a===A});
