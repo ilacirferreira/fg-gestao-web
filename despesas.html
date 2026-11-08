@@ -627,12 +627,17 @@ function edBotao(){return '<button type="button" style="margin-left:8px;padding:
 var REC_GR=[['c','SALÁRIO MÊS CIVIL',/^SAL[AÁ]RIO M[EÊ]S/],['c','TRIÊNIO (5%)',/TRI[EÊ]NIO/],['c','DIFERENÇA SALARIAL',/^DIF/],['c','ADIANTAMENTO (recibo do dia 15)',/^Adiantamento: /],['c','13º SALÁRIO',/^13º/],['c','FÉRIAS + 1/3',/F[eé]rias|ABONO/i],['c','OUTROS CRÉDITOS',/./],
  ['d','INSS',/^(13º: |Férias: )?INSS$/],['d','EMPRÉSTIMO',/EMPR[EÉ]STIMO/],['d','ADIANTAMENTO DE SALÁRIO',/ADIANTAMENTO DE SAL/],['d','FÉRIAS (descontos)',/F[eé]rias/i],['d','OUTROS DÉBITOS',/./],
  ['l','LÍQUIDO DO RECIBO',/./],['b','VALE TRANSPORTE',/TRANSPORTE/],['b','VALE REFEIÇÃO',/./]];
+/* comentário = o recibo inteiro do contador daquele mês, como está no papel */
+function recTit(R,a,m){var ref=('0'+m).slice(-2)+'/'+a,it=R.filter(function(x){return x[0]===ref});if(!it.length)return 'Sem recibo do contador para '+ref+'.';
+  var bl=function(g,t,sn){var l=it.filter(function(x){return x[1]===g});return l.length?t+'\n'+l.map(function(x){return '   '+x[2]+':  '+sn+num(x[3])}).join('\n')+'\n':''};
+  var sc=0,sd=0;it.forEach(function(x){if(x[1]==='c')sc+=Number(x[3]);if(x[1]==='d')sd+=Number(x[3])});
+  return 'RECIBO DA EDNA — ref. '+ref+' (contador)\n\n'+bl('c','CRÉDITOS (proventos)','')+'   total créditos: '+num(sc)+'\n\n'+bl('d','DÉBITOS (descontos)','− ')+'   total débitos: − '+num(sd)+'\n\n'+bl('l','LÍQUIDO','')+'\n'+bl('b','BENEFÍCIOS (pagos à parte)','')+'\nSó para conferir: NÃO entra nos totais.'}
 function recGrupo(x){for(var i=0;i<REC_GR.length;i++)if(REC_GR[i][0]===x[1]&&REC_GR[i][2].test(x[2]))return i;return -1}
 /* Recibo da Edna (contador): 1 linha (líquido) fechada; ▸ abre os itens — azul = crédito, vermelho suave = débito. Fora dos totais. */
 function refRecibos(a){var R=(D&&D.rub)||[],B={},T={};R.forEach(function(x){var p=String(x[0]).split('/');if(+p[1]!==a)return;var i=recGrupo(x),m=+p[0];if(i<0)return;B[i]=B[i]||{};var c=B[i][m]=B[i][m]||{v:0,it:[]};c.v+=Number(x[3]);c.it.push(x[2]+': '+num(x[3]))});
   if(!Object.keys(B).length)return [];var ab=!!S.recAb,nm={c:'crédito',d:'débito',l:'líquido',b:'benefício'};
   var lin=function(i,cls,tit,rot){var g=REC_GR[i],tot=0,cel='';for(var m=1;m<=12;m++){var c=(B[i]||{})[m],v=c?Math.round(c.v*100)/100:0;tot+=v;
-      cel+='<td class="r" title="'+esc('Recibo ref. '+('0'+m).slice(-2)+'/'+a+' — '+nm[g[0]]+(c?':\n'+c.it.join('\n'):' (sem recibo)')+'\nSó para conferir: NÃO entra nos totais.')+'">'+(v?(g[0]==='d'?'− ':'')+num(v):'')+'</td>'}
+      cel+='<td class="r" title="'+esc(recTit(R,a,m))+'">'+(v?(g[0]==='d'?'− ':'')+num(v):'')+'</td>'}
     return '<tr class="'+cls+'"><td class="gr-t" title="'+esc(tit)+'"'+(rot?' style="cursor:pointer" onclick="S.recAb=!S.recAb;desenha()"':'')+'>'+(rot||esc(g[1]))+'</td>'+cel+'<td class="r">'+(tot?(g[0]==='d'?'− ':'')+num(tot):'')+'</td></tr>'};
   var iL=12,rows=[lin(iL,'gr-ref gr-rech',(ab?'Clique para fechar os itens do recibo.':'Clique para ver cada item do recibo (azul = crédito, vermelho = débito).')+' Valores dos recibos do contador, mês de referência. Não entra no subtotal nem no total.',(ab?'▾':'▸')+' Recibo da Edna — líquido')];
   if(ab)REC_GR.forEach(function(g,i){if(i===iL||!B[i])return;rows.push(lin(i,g[0]==='d'?'gr-deb':'gr-ref','Recibo da Edna — '+nm[g[0]]+'. Passe o mouse no mês para ver os itens do recibo. Não entra nos totais.'))});
