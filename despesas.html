@@ -722,7 +722,13 @@ function pixRows(a){var R=(D&&D.rub)||[],rs=function(m,y){return ('0'+m).slice(-
       cel+='<td class="r '+cls+'" title="'+esc(tit)+'">'+num(p.v)+'</td>'}
     rows.push('<tr class="gr-px"><td class="gr-t" title="'+esc('Pix número '+(i+1)+' do mês para a Edna (ordem de data), tirado do extrato do BB. Cyan = bate com o recibo; cinza = sábados; verde = supermercado (150); lilás = empréstimo da FG; sem cor = a conciliar. Não entra nos totais.')+'">PIX '+(i+1)+'</td>'+cel+'<td class="r">'+num(tot)+'</td></tr>')}
   return rows}
-function refRecibos(a){return pixRows(a)}
+function refRecibos(a){return pixUma(a)}
+/* Ilacir 08/11: uma linha só, "PIX" — total dos Pix do BB para a Edna no mês; o comentário lista cada Pix com data e o que ele é. Fora dos totais. */
+function pixUma(a){var tmp=document.createElement('tbody');tmp.innerHTML=pixRows(a).join('');var trs=[].slice.call(tmp.querySelectorAll('tr')),tot=0,cel='';
+  for(var m=1;m<=12;m++){var it=[],v=0;trs.forEach(function(tr){var td=tr.children[m];if(td&&td.textContent.trim()){var t=td.getAttribute('title')||'',ls=t.split('\n'),dv=ls[1]||'';var exp=(ls.slice(3).filter(function(x){return x&&!/^Só para conferir/.test(x)})[0]||'');it.push('   '+dv+'   '+exp);var p=PIX_EDNA.filter(function(q){return q.a===a&&q.m===m}).sort(function(x,y){return x.d-y.d})[it.length-1];if(p)v+=p.v}});
+    v=Math.round(v*100)/100;tot+=v;
+    cel+='<td class="r" title="'+esc(it.length?'PIX para a Edna — '+MESES[m-1]+'/'+a+' ('+it.length+' Pix)\n'+it.join('\n')+'\n   total: '+num(v)+'\n\nSó para visualizar: NÃO entra no subtotal nem no total.':'Nenhum Pix para a Edna em '+MESES[m-1]+'/'+a+'.')+'">'+(v?num(v):'')+'</td>'}
+  return ['<tr class="gr-px"><td class="gr-t" title="'+esc('Total dos Pix do BB para a Edna no mês. Passe o mouse no mês para ver cada Pix com a data. Só para visualizar: NÃO entra nos totais.')+'">PIX</td>'+cel+'<td class="r">'+(tot?num(tot):'')+'</td></tr>']}
 function refRecibosAntigo(a){var R=(D&&D.rub)||[],B={},T={};R.forEach(function(x){var p=String(x[0]).split('/');if(+p[1]!==a)return;var i=recGrupo(x),m=+p[0];if(i<0)return;B[i]=B[i]||{};var c=B[i][m]=B[i][m]||{v:0,it:[]};c.v+=Number(x[3]);c.it.push(x[2]+': '+num(x[3]))});
   if(!Object.keys(B).length)return [];var ab=!!S.recAb;
   var soma=function(f){var o={};R.forEach(function(x){var p=String(x[0]).split('/');if(+p[1]===a&&f(x))o[+p[0]]=(o[+p[0]]||0)+Number(x[3])});return o};
