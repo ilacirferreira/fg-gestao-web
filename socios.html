@@ -235,6 +235,15 @@ td.cr,td.db{font-weight:600}
 .barra{height:8px;background:#E6EAEF;border-radius:4px;overflow:hidden;min-width:160px}
 .barra span{display:block;height:100%}
 .neg{color:#8E2A1F;font-weight:700}
+.rp-h{display:flex;align-items:center;gap:14px;margin:0 0 4px;white-space:nowrap}
+.rp-h b{font-size:12.5px;letter-spacing:.12em;color:#1F3B5C}.rp-h .rp-s{font-family:Georgia,serif;font-size:19px;color:#1E2733}
+.rp-h label{font-size:14px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-weight:600;color:#1F3B5C}.rp-h label input{width:18px;height:18px;cursor:pointer}
+.rnd2{width:34px;height:34px;border-radius:50%;border:1px solid #9AA5B2;background:#fff;color:#1F3B5C;font:700 20px/1 Arial,sans-serif;cursor:pointer}.rnd2:disabled{opacity:.35;cursor:default}
+.grade{table-layout:fixed;width:100%;font-size:13px}.grade th,.grade td{white-space:nowrap;padding:4px 5px;overflow:hidden;font-size:inherit}.grade th:first-child,.grade td:first-child{width:21%}.grade th:last-child,.grade td:last-child{width:8.5%}
+.grade tr.gr-c td{font-weight:700;background:#F3F5F7}.grade tr.gr-st td{font-weight:700;border-top:1px solid #C9D1DA}.grade tr.gr-st td:first-child{padding-left:28px}
+.grade td.gr-t{padding-left:18px}.grade td.gr-com{cursor:help}.grade td.gr-dv{background:#C0392B!important;color:#fff!important;font-weight:700;cursor:help}.grade td.gr-ap{color:#2E7D32}
+.grade tfoot td{font-weight:700;border-top:2px solid #1F3B5C}
+.grade tr.gr-ref td{background:#EAF2FB;color:#1F4F7A;font-style:italic}
 </style>
 </head>
 <body>
@@ -399,8 +408,8 @@ function desenhaPainel(){var s=S.sel,head='',kp='',tabs=[],pane='',u=ult(),crumb
 if(s.t==='socios'){
 head='<div><div class="crumb">'+crumb+'</div><div class="headtitle">Saldo dos Sócios — fim de '+MESES[u.m-1]+' de '+u.a+'</div></div><div class="tags"><span class="tag t-gray">confidencial</span></div>';
 kp=SOC.map(function(x){var v=u['saldo_'+x.k];return kpi(x.nome,brl(v),v<0?'retirou a mais que a parte':(x.k==='I'?'parte residual (caixa + bens − os outros)':'a receber'),v<0?'neg':'')}).join('')+kpi('Banco em 30/10/2026','R$ 85.736,52','saldo conferido no Bancos');
-tabs=['Resumo','Evolução dos Saldos','Encontro de Contas'];
-pane=S.tab===0?paneResumo():S.tab===1?paneEvolucao():paneEncontro();
+tabs=['Resumo','Evolução dos Saldos','Encontro de Contas','Resumo dos Pagamentos'];
+pane=S.tab===0?paneResumo():S.tab===1?paneEvolucao():S.tab===2?paneEncontro():paneResPag();
 }else if(s.t==='socio'){var x=SOC.filter(function(o){return o.k===s.k})[0],v=u['saldo_'+s.k];
 var a26=R.filter(function(r){return r.a===2026});var parte=a26.reduce(function(t,r){return t+r['parte_'+s.k]+(s.k==='2'?0:r['cap_'+s.k])},0),ret=a26.reduce(function(t,r){return t+r['ret_'+s.k]},0);
 head='<div><div class="crumb">'+crumb+' › Saldo dos Sócios</div><div class="headtitle">'+x.nome+'</div></div><div class="tags">'+(v<0?'<span class="tag t-bad">retirou a mais</span>':'<span class="tag t-ok">saldo a receber</span>')+'</div>';
@@ -430,6 +439,48 @@ document.getElementById('head').innerHTML=head;document.getElementById('kpis').i
 document.getElementById('tabs').innerHTML=tabs.map(function(t,i){return '<div class="tab'+(i===S.tab?' on':'')+'" onclick="S.tab='+i+';S.pg=0;desenhaPainel()">'+t+'</div>'}).join('');
 document.getElementById('pane').innerHTML=pane;
 if(!AJT)setTimeout(ajustaTabela,0)}
+/* Ilacir 08/11 (FG Gestão 9): "Resumo dos Pagamentos" aos sócios no mesmo formato do Resumo dos Pagamentos das Despesas.
+   Sócios juntos ou separados (caixinhas). Nomes das linhas como na planilha dele (aba TUDO, linhas 171–187).
+   Vermelho = o banco (+ recebido fora do banco) não bate com a planilha dele naquele mês (planilha vai de mai/2023 a ago/2026).
+   Função "Bloquear a Parte do Ilacir" (Configurações › Funções Ligadas): ligada, a parte do Ilacir some desta aba. */
+var PLAN_SOC={"1":{"2023-05":[5000],"2023-06":[5000,10000,5000],"2023-07":[5000],"2023-08":[172,5000,5000],"2023-09":[5000],"2023-10":[5000],"2023-11":[10000,5000,2500,5000],"2024-01":[5000,5000],"2024-02":[5000],"2024-03":[10000],"2024-04":[735.11,10000],"2024-05":[16000,204.48,20000],"2024-06":[3667,17500],"2024-07":[6000,3667,5000,3000,11000],"2024-08":[5600,5500],"2024-09":[5500,5600,11000],"2024-10":[8000],"2024-11":[22000],"2024-12":[11000],"2025-02":[22000],"2025-04":[11000],"2025-05":[11000],"2025-06":[12100],"2025-07":[11000],"2025-08":[11000],"2025-09":[24000],"2025-10":[26801.01],"2025-12":[27750],"2026-01":[38250],"2026-02":[11000],"2026-04":[101500],"2026-05":[14234.42],"2026-06":[18000],"2026-07":[25000],"2026-08":[15000]},"2":{"2023-06":[10000,3300],"2023-08":[151.33,3300],"2023-09":[3300],"2023-11":[5000,3300,3105.81],"2023-12":[4000],"2024-01":[4000,4000],"2024-02":[4000],"2024-04":[4000,5000],"2024-05":[5000,5000],"2024-06":[7500],"2024-07":[5000,1500,5000],"2024-08":[2400,5000],"2024-09":[2400,5000],"2024-10":[5000],"2024-11":[10000],"2024-12":[10000],"2025-01":[5000],"2025-02":[5000],"2025-04":[5000],"2025-05":[10000],"2025-07":[5000],"2025-08":[10000],"2025-10":[20000],"2025-11":[7000],"2025-12":[5000],"2026-01":[5507.24],"2026-02":[5000],"2026-03":[5000],"2026-04":[10000],"2026-05":[5000],"2026-06":[5000],"2026-07":[10000]}};
+var RP={a:0,I:1,'1':1,'2':1};
+function rpBloq(){return !!(D&&D.bloqIlacir)}
+function rpAnos(){var o={};D.mov.forEach(function(l){o[+l.data.slice(6)]=1});return Object.keys(o).map(Number).sort(function(a,b){return b-a})}
+function rpPlanTem(a,m){var k=a*100+m;return k>=202305&&k<=202608}
+function rpLinhas(k){var nm=SOC.filter(function(x){return x.k===k})[0].nome,L=[];
+  var fora=((D&&D.fora)||[]).filter(function(f){return new RegExp(nm,'i').test(f.quem||'')&&/^\d\d\/\d\d\/\d{4}$/.test(f.data||'')}).map(function(f){return {data:f.data,v:Number(f.valor),det:(f.projeto||'')+' (fora do banco)',com:f.com||''}});
+  if(k==='I'){L.push(['PIX ENVIADO PARA ILACIR',D.mov.filter(function(l){return l.cat==='Retiradas'&&l.top==='Ilacir'}).map(function(l){return {data:l.data,v:-l.v,det:l.det,com:l.com}})]);
+    L.push(['PAGO PELA FG PARA ILACIR',D.mov.filter(function(l){return l.cat==='Fora da FG'}).map(function(l){return {data:l.data,v:-l.v,det:l.det+(l.top?' · '+l.top:''),com:l.com}})]);
+    L.push(['APORTES DO ILACIR (devolvido à FG)',D.mov.filter(function(l){return l.cat==='Aportes'}).map(function(l){return {data:l.data,v:-l.v,det:l.det,com:l.com}})])}
+  else L.push(['PIX ENVIADO PARA '+nm.toUpperCase(),D.mov.filter(function(l){return l.cat==='Retiradas'&&l.top===nm}).map(function(l){return {data:l.data,v:-l.v,det:l.det,com:l.com}})]);
+  L.push(['RECEBIDO FORA DO BANCO',fora]);
+  L.push(['CONSIDERADO NO RATEIO',R.filter(function(r){return Number(r['ret_'+k])}).map(function(r){return {data:'01/'+('0'+r.m).slice(-2)+'/'+r.a,v:Number(r['ret_'+k]),det:'retiradas do mês no cálculo do rateio'+(r.aberto?' (mês em aberto)':' (mês fechado)'),com:''}}),1]);return L}
+function rpMes(ls,a,m){return ls.filter(function(x){return +x.data.slice(6)===a&&+x.data.slice(3,5)===m})}
+function rpTit(t,a,m,ls){var tot=ls.reduce(function(s,x){return s+x.v},0);return t+' — '+MC[m-1]+'/'+a+'\n'+ls.map(function(x){return '   '+x.data+'  '+num(x.v)+'  '+String(x.det||'').replace(/^\d\d\/\d\d \d\d:\d\d\s*/,'').slice(0,40)+(x.com?'\n        '+String(x.com).slice(0,110):'')}).join('\n')+'\n   total: '+num(tot)}
+function rpSoc(k){RP[k]=RP[k]?0:1;if(!RP.I&&!RP['1']&&!RP['2'])RP[k]=1;S.pg=0;desenhaPainel()}
+function rpSo(k){RP.I=0;RP['1']=0;RP['2']=0;RP[k]=1;S.pg=0;desenhaPainel()}
+function rpTodos(){RP.I=rpBloq()?0:1;RP['1']=1;RP['2']=1;S.pg=0;desenhaPainel()}
+function paneResPag(){var an=rpAnos();if(!RP.a)RP.a=an[0];var a=RP.a,bl=rpBloq();if(bl)RP.I=0;if(!RP.I&&!RP['1']&&!RP['2'])RP['1']=1;
+  var td=function(v,cl,t){return '<td class="r'+(cl?' '+cl:'')+(t?' gr-com':'')+'"'+(t?' title="'+esc(t)+'"':'')+'>'+(v?num(v):'')+'</td>'};
+  var rows=[],tm=[0,0,0,0,0,0,0,0,0,0,0,0];
+  SOC.forEach(function(x){if(!RP[x.k]||(x.k==='I'&&bl))return;var Ls=rpLinhas(x.k),sm=[0,0,0,0,0,0,0,0,0,0,0,0],lin=[];
+    Ls.forEach(function(Ln,i){var cel='',tot=0,ref=Ln[2];for(var m=1;m<=12;m++){var lm=rpMes(Ln[1],a,m),v=Math.round(lm.reduce(function(s,y){return s+y.v},0)*100)/100;tot+=v;if(!ref)sm[m-1]+=v;
+        var t=lm.length?(ref?'CONSIDERADO NO RATEIO — '+MC[m-1]+'/'+a+': '+num(v)+'\nÉ o que o cálculo do saldo do sócio usa como retirada neste mês (Pix + recebidos fora do banco).\nSó para conferir: não entra no subtotal.':rpTit(Ln[0],a,m,lm)):'';
+        if(i===0&&x.k!=='I'&&rpPlanTem(a,m)){var pl=(PLAN_SOC[x.k][a+'-'+('0'+m).slice(-2)]||[]),pv=Math.round(pl.reduce(function(s,y){return s+y},0)*100)/100,fo=rpMes(Ls[Ls.length-2][1],a,m).reduce(function(s,y){return s+y.v},0),bb=Math.round((v+fo)*100)/100;
+          if(Math.abs(pv-bb)>0.005){t='NÃO BATE COM A SUA PLANILHA — '+MC[m-1]+'/'+a+'\nSua planilha: '+num(pv)+(pl.length?' ('+pl.map(num).join(' + ')+')':'')+'\nNo banco'+(fo?' + fora do banco':'')+': '+num(bb)+'\nDiferença: '+num(Math.round((bb-pv)*100)/100)+(lm.length?'\n\n'+rpTit(Ln[0],a,m,lm):'')+(pv>bb?'\n\nPode ser dinheiro recebido fora do banco ainda sem data (ex.: Posto 409 e mais 5 projetos de 2026, pagos ao Thiago).':'');cel+='<td class="r gr-dv" title="'+esc(t)+'">'+num(v)+'</td>';continue}}
+        cel+=td(v,v<0?'gr-ap':'',t)}
+      if(Ln[1].length||tot)lin.push('<tr'+(ref?' class="gr-ref"':'')+'><td class="gr-t" title="'+esc(Ln[0])+'">'+esc(Ln[0])+'</td>'+cel+'<td class="r">'+num(Math.round(tot*100)/100)+'</td></tr>')});
+    var st=0,cs='';for(var m=1;m<=12;m++){st+=sm[m-1];tm[m-1]+=sm[m-1];cs+=td(Math.round(sm[m-1]*100)/100)}
+    rows.push('<tr class="gr-c"><td>'+x.nome+'</td>'+'<td></td>'.repeat(13)+'</tr>');rows=rows.concat(lin);
+    rows.push('<tr class="gr-st"><td>Subtotal '+x.nome+'</td>'+cs+'<td class="r">'+num(Math.round(st*100)/100)+'</td></tr>')});
+  var tt=tm.reduce(function(s,y){return s+y},0),i=an.indexOf(a);
+  var cx=function(k,n){return '<label title="Marque um ou mais sócios"><input type="checkbox" '+(RP[k]?'checked':'')+' onclick="rpSoc(\''+k+'\')">'+n+'</label>'};
+  return '<div class="rp-h"><b>RESUMO DOS PAGAMENTOS · '+a+'</b><span class="rp-s">Janeiro a Dezembro</span><span style="flex:1"></span>'+
+    (bl?'<span class="tag t-gray" title="Configurações › Funções Ligadas › Bloquear a Parte do Ilacir">parte do Ilacir bloqueada</span>':cx('I','Ilacir'))+cx('1','Thiago')+cx('2','Rebeca')+
+    '<button class="mini" onclick="rpTodos()" title="Ver todos juntos">Todos</button>'+
+    '<button class="rnd2" title="Ano anterior" '+(i<an.length-1?'':'disabled')+' onclick="RP.a='+(an[i+1]||a)+';S.pg=0;desenhaPainel()">‹</button><button class="rnd2" title="Ano seguinte" '+(i>0?'':'disabled')+' onclick="RP.a='+(an[i-1]||a)+';S.pg=0;desenhaPainel()">›</button></div>'+
+    '<div class="tablewrap" id="tw"><table class="grade"><thead><tr><th title="Pare o mouse num valor para ver cada pagamento. Vermelho: não bate com a sua planilha (aba TUDO).">Sócio</th>'+MC.map(function(x){return '<th class="r">'+x+'</th>'}).join('')+'<th class="r">Total</th></tr></thead><tbody>'+paginar(rows)+'</tbody><tfoot><tr><td>Total</td>'+tm.map(function(x){return td(Math.round(x*100)/100)}).join('')+'<td class="r">'+num(Math.round(tt*100)/100)+'</td></tr></tfoot></table></div>'+pgLine(rows.length)}
 /* Encontro de Contas — simulação de 31/10/2026 (premissas a confirmar). Um valor só para o Thiago: os dois apartamentos já estão na conta. */
 var ENC={data:'05/11/2026',entrega:'fev/2027',thiago:522814.38,living:750000,rebeca:421952.32,ilacir:1025118.00,uplife:670000};
 function paneEncontro(){var e=ENC,dif=Math.round((e.living-e.thiago)*100)/100;
