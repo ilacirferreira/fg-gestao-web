@@ -245,7 +245,10 @@ table.h1 .opc{display:none}
 .pgline{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;color:var(--mut)}
 table.h1 .opc{display:none}table.h2 .opc2{display:none}
 .btn.cinza{background:#E9ECF0;border-color:#C3CAD3;color:#8E99A6}
-tr.soma td{font-weight:700;background:#F3F5F7}</style>
+tr.soma td{font-weight:700;background:#F3F5F7}.fi-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 14px;margin:8px 0}.fi-f label{display:block;font-size:13px;color:#5A6B7F;margin-bottom:3px;white-space:nowrap}
+.fi-v{min-height:36px;padding:7px 10px;border:1px solid #D5DCE4;border-radius:6px;background:#fff;font-size:15px;white-space:nowrap;overflow:hidden;cursor:text}.fi-v:hover{background:#FFFBEA;outline:1px dashed #C9B26B}
+.fi-vz{color:#9AA5B2;font-style:italic}.fi-ro{background:#F3F5F7;cursor:default}.fi-ro:hover{background:#F3F5F7;outline:none}.fi-in{width:100%;border:0;outline:0;font:inherit;background:transparent}
+</style>
 </head>
 <body>
 <div class="app">
@@ -390,7 +393,23 @@ function ajustaTabela(){if(AJT)return;var cabe=function(){var x=document.getElem
 function kpi(t,v,e,cl,go){return '<div class="box kpi'+(go?' clk" onclick="'+go+'" title="Clique para abrir e resolver"':'"')+'><small>'+t+(go?' <span class="kgo">›</span>':'')+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
 function L2(t,v,c){return '<tr'+(c?' class="'+c+'"':'')+'><td>'+t+'</td><td class="r">'+v+'</td></tr>'}
 function fc(l,v,w){return '<div class="fld"'+(w?' style="grid-column:span '+w+'"':'')+'><label>'+l+'</label><div class="v'+(v?'':' vz')+'" style="white-space:nowrap">'+(v||'a preencher')+'</div></div>'}
-function paneCad(){return '<div class="secthead"><b>Cadastro da Colaboradora</b><span class="sp"></span><button class="btn" onclick="toast(\'Ainda não disponível: Editar pede o PIN.\')">Editar</button></div><div class="mgrid" style="grid-template-columns:repeat(4,1fr)">'+fc('Nome','Edna da Silva Santos',2)+fc('Função','Desenhista')+fc('Vínculo','CLT')+fc('Data de admissão','')+fc('Salário base','R$ 2.638,60')+fc('Triênio','5% (desde jul/2026)')+fc('Horário contratual','')+fc('VR e VT','pagos no mês seguinte')+fc('Auxílio combustível','R$ 60 por dia trabalhado')+fc('Empréstimo','eConsignado — parcela 5/22')+fc('Chave PIX','')+'</div><div class="info dica">Campos "a preencher": aguardando a resposta da contabilidade (Departamento Pessoal).</div>'}
+/* Ilacir 08/11 (G9): ficha de cadastro (sócios e colaboradores) — um clique no campo para editar; Enter grava, Esc cancela. */
+function fichaNome_(s){var mi=/^(da|de|do|das|dos|e)$/i;return String(s).toLowerCase().split(/\s+/).filter(Boolean).map(function(w,i){return i&&mi.test(w)?w:w.charAt(0).toUpperCase()+w.slice(1)}).join(' ')}
+function fichaHtml(id,titulo,campos,padrao,fixos){var f=(typeof D!=='undefined'&&D&&D.fichas&&D.fichas[id])||{};padrao=padrao||{};
+  var cel=function(c){var v=f[c]!=null&&f[c]!==''?f[c]:(padrao[c]||''),w=/Endereço|Observações|Nome completo/.test(c)?2:1;
+    return '<div class="fld fi-f"'+(w>1?' style="grid-column:span '+w+'"':'')+'><label>'+esc(c)+'</label><div class="fi-v'+(v?'':' fi-vz')+'" title="Clique para editar" onclick="fichaEd(this,\''+id+'\',\''+c.replace(/'/g,"\\'")+'\')">'+(v?esc(v):'a preencher')+'</div></div>'};
+  return '<div class="secthead"><b>'+esc(titulo)+'</b><span class="sp"></span><span class="tag t-gray">clique num campo para editar · Enter grava</span></div>'+
+    '<div class="mgrid fi-g">'+campos.map(cel).join('')+(fixos||[]).map(function(x){return '<div class="fld fi-f"><label>'+esc(x[0])+'</label><div class="fi-v fi-ro" title="'+esc(x[2]||'')+'">'+esc(x[1])+'</div></div>'}).join('')+'</div>'+
+    '<div class="info dica">Tudo o que for mudado fica no Histórico de Alterações (quem, quando, antes e depois). Número de conta, agência ou cartão não se guarda aqui.</div>'}
+function fichaEd(el,id,campo){if(el.querySelector('input'))return;var atual=el.classList.contains('fi-vz')?'':el.textContent,inp=document.createElement('input');inp.value=atual;inp.className='fi-in';el.innerHTML='';el.appendChild(inp);inp.focus();inp.select();
+  var feito=false,fim=function(grava){if(feito)return;feito=true;var v=inp.value.trim();if(grava&&/^Nome/.test(campo))v=fichaNome_(v);
+    if(!grava||v===atual){el.textContent=atual||'a preencher';return}el.textContent=v||'a preencher';toast('Gravando…');
+    FG_srv('fichaSalvar',[id,campo,v],function(fi){if(fi)D.fichas=fi;toast('Gravado ✓');desenhaPainel()})};
+  inp.onkeydown=function(e){if(e.key==='Enter')fim(true);if(e.key==='Escape')fim(false)};inp.onblur=function(){fim(true)}}
+
+var FICHA_COL=['Nome completo','CPF','Função','Vínculo','Data de admissão','Salário base','Triênio','Horário contratual','VR e VT','Auxílio combustível','Empréstimo','Chave PIX','Telefone','E-mail','Endereço','Observações'];
+var FICHA_EDNA_PAD={'Nome completo':'Edna da Silva Santos','Função':'Desenhista','Vínculo':'CLT','Salário base':'R$ 2.638,60','Triênio':'5% (desde jul/2026)','VR e VT':'pagos no mês seguinte','Auxílio combustível':'R$ 60 por dia trabalhado','Empréstimo':'eConsignado — parcela 5/22'};
+function paneCad(){return fichaHtml('colab:edna','Cadastro da Colaboradora — Edna',FICHA_COL,FICHA_EDNA_PAD)}
 function paneFer(){var rs=D.ferias||[];return '<div class="secthead"><b>Histórico de Férias e 13º</b></div><div class="tablewrap" id="tw"><table><tbody>'+rs.map(function(r){return '<tr>'+Object.keys(r).slice(0,5).map(function(k){return '<td style="white-space:nowrap">'+esc(r[k])+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>'}
 function desenhaPainel(){var s=S.sel,head='',kp='',tabs=[],pane='',cr='Colaboradores';
 if(s.t==='hol'){var x=H.filter(function(h){return h.ref===s.ref})[0];var pm=x.m===12?[x.a+1,1]:[x.a,x.m+1];var px=pixMes(x.a,x.m).concat(pixMes(pm[0],pm[1]));
