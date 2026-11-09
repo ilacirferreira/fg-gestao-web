@@ -383,7 +383,8 @@ h+=no('ano b',eq({t:'hols'}),'hol','Holerites','<span class="cnt">'+H.length+'</
 if(S.ab.hol)[2026,2025].forEach(function(a){h+=no('b',eq({t:'ano',a:a}),'a'+a,String(a),'',"tog('a"+a+"');"+selJ({t:'ano',a:a}),2);
 if(S.ab['a'+a])H.filter(function(x){return x.a===a}).slice().reverse().forEach(function(x){h+=no('',eq({t:'hol',ref:x.ref}),null,MESES[x.m-1],'<span class="vl">líq. '+num(x.liq)+'</span>',selJ({t:'hol',ref:x.ref}),3)})});
 h+=no('ano b',eq({t:'emp'}),null,'Empréstimos','<span class="cnt">'+D.emprestimos.length+'</span>',selJ({t:'emp'}),1);
-h+=no('ano b',eq({t:'fer'}),null,'Férias e 13º','<span class="cnt">'+D.ferias.length+'</span>',selJ({t:'fer'}),1)}
+h+=no('ano b',eq({t:'fer'}),null,'Férias e 13º','<span class="cnt">'+D.ferias.length+'</span>',selJ({t:'fer'}),1);
+h+=no('ano b',eq({t:'rec'})||S.sel.t==='recm',null,'Recibos assinados','<span class="cnt">'+recResumo()+'</span>',selJ({t:'rec'}),1)}
 h+=no('raiz b',eq({t:'prest'}),'prest','Prestadores e Estágio','',"tog('prest');"+selJ({t:'prest'}));
 if(S.ab.prest){if(!colArq('ray'))h+=no('',eq({t:'ray'}),null,'Rayane — faxina do escritório','<span class="cnt">'+D.rayane.length+' PIX</span>',selJ({t:'ray'}),1);if(!colArq('ciee'))h+=no('',eq({t:'ciee'}),null,'Estágio (CIEE)','<span class="cnt">'+D.ciee.length+' boletos</span>',selJ({t:'ciee'}),1)}
 document.getElementById('tree').innerHTML=h}
@@ -411,8 +412,80 @@ var FICHA_COL=['Nome completo','CPF','Função','Vínculo','Data de admissão','
 var FICHA_EDNA_PAD={'Nome completo':'Edna da Silva Santos','Função':'Desenhista','Vínculo':'CLT','Salário base':'R$ 2.638,60','Triênio':'5% (desde jul/2026)','VR e VT':'pagos no mês seguinte','Auxílio combustível':'R$ 60 por dia trabalhado','Empréstimo':'eConsignado — parcela 5/22'};
 function paneCad(){return fichaHtml('colab:edna','Cadastro da Colaboradora — Edna',FICHA_COL,FICHA_EDNA_PAD)}
 function paneFer(){var rs=D.ferias||[];return '<div class="secthead"><b>Histórico de Férias e 13º</b></div><div class="tablewrap" id="tw"><table><tbody>'+rs.map(function(r){return '<tr>'+Object.keys(r).slice(0,5).map(function(k){return '<td style="white-space:nowrap">'+esc(r[k])+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>'}
+/* ===== Recibos assinados (Ilacir 09/11/2026) — uma linha por competência (mês do salário); serve para qualquer colaborador ===== */
+var REC_K='edna',REC_EXP=['Holerite','VR','VT','Folha de resumo'];
+function recD(){return (D&&D.rec&&D.rec[REC_K])||{nome:'Edna',papel:[],comps:{},conf:{},fotos:[]}}
+function recNx(c){var a=+c.slice(0,4),m=+c.slice(5);m++;if(m>12){m=1;a++}return a+'-'+('0'+m).slice(-2)}
+function recNome(c){return MESES[+c.slice(5)-1]+'/'+c.slice(0,4)}
+function recPix(c){var a=+c.slice(0,4),m=+c.slice(5),n=recNx(c),a2=+n.slice(0,4),m2=+n.slice(5);
+  return (D.pix||[]).filter(function(p){var x=p.data.split('/'),d=+x[0],mm=+x[1],aa=+x[2];return (aa===a&&mm===m&&d>=5)||(aa===a2&&mm===m2&&d<=4)})}
+function recDocs(c){var R=recD(),L=[];
+  R.papel.filter(function(p){return p[1]===c}).forEach(function(p){var f=R.fotos.filter(function(x){return x.num===p[0]})[0];L.push({num:p[0],tipo:p[2],ref:p[3],valor:p[4],obs:p[5],foto:f||null})});
+  R.fotos.filter(function(f){return f.comp===c&&(!f.num||!R.papel.some(function(p){return p[0]===f.num}))}).forEach(function(f){L.push({num:'',tipo:f.tipo,ref:f.ref,valor:f.valor,obs:f.obs,foto:f})});
+  return L}
+function recComps(ano){var R=recD(),hoje=new Date(),lim=hoje.getFullYear()*12+hoje.getMonth()-1,cs=[];
+  for(var m=1;m<=12;m++){var c=ano+'-'+('0'+m).slice(-2);if(ano*12+m-1>lim)break;if(recDocs(c).length||R.comps[c]||ano>=2025)cs.push(c)}return cs}
+function recSit(c){var R=recD(),k=R.comps[c]||{},px=recPix(c).reduce(function(a,p){return a+p.v},0),cf=R.conf[c];
+  if(cf&&cf.st==='conferido')return {cl:'t-ok',t:'Conferido',px:px,dif:0};
+  if(k.folha==null)return {cl:'t-gray',t:recDocs(c).length?'sem folha de resumo':'sem recibos',px:px,dif:null};
+  var dif=Math.round((px-k.folha-(k.adi||0))*100)/100;
+  return Math.abs(dif)<1?{cl:'t-info',t:'PIX bate — falta validar',px:px,dif:dif}:{cl:'t-warn',t:'PIX difere '+(dif>0?'+':'−')+num(dif),px:px,dif:dif}}
+function recCel(c,tipo){var L=recDocs(c).filter(function(d){return d.tipo===tipo});
+  if(!L.length)return '<b style="color:#c62828" title="Falta pedir">✗</b>';
+  var f=L.filter(function(d){return d.foto})[0];
+  return f?'<a class="tag t-ok" href="'+esc(f.foto.url)+'" target="_blank" title="Abrir a foto" onclick="event.stopPropagation()">✓ foto</a>':'<span class="tag t-info" title="Assinado em papel; foto ainda não anexada ao Drive">✓</span>'}
+function recResumo(){var R=recD();return R.papel.length+R.fotos.filter(function(f){return !f.num}).length}
+function recAno(ano){var R=recD(),cs=recComps(ano).slice().reverse();
+  return '<div class="tablewrap" id="tw"><table><thead><tr><th>Salário de</th><th>Holerite</th><th>VR</th><th>VT</th><th>Folha de resumo</th><th class="r">Adiant.</th><th class="r">PIX no BB</th><th>Situação</th></tr></thead><tbody>'+
+  paginar(cs.map(function(c){var k=R.comps[c]||{},s=recSit(c);
+    return '<tr class="clk" onclick="'+selJ({t:'recm',c:c})+'"><td><b>'+recNome(c)+'</b>'+(k.obs?' <span class="tag t-warn" title="'+esc(k.obs)+'">!</span>':'')+'</td><td>'+recCel(c,'Holerite')+'</td><td>'+recCel(c,'VR')+'</td><td>'+recCel(c,'VT')+'</td><td>'+recCel(c,'Folha de resumo')+(k.folha!=null?' '+num(k.folha):'')+'</td><td class="r">'+(k.adi!=null?num(k.adi):'—')+'</td><td class="r">'+num(s.px)+'</td><td><span class="tag '+s.cl+'">'+s.t+'</span></td></tr>'}))+
+  '</tbody></table></div>'+pgLine(cs.length)+'<div class="info dica">✓ foto = foto no Drive (clique para abrir) · ✓ = assinado em papel, foto ainda não anexada · ✗ = falta pedir à '+esc(R.nome)+'. Adiantamento não tem recibo: confere pelo PIX e pelo holerite. PIX no BB = do dia 5 do mês ao dia 4 do mês seguinte. Esperado = folha de resumo + adiantamento.</div>'}
+function recDet(c){var R=recD(),k=R.comps[c]||{},L=recDocs(c),fal=REC_EXP.filter(function(t){return !L.some(function(d){return d.tipo===t})});
+  var cards=L.map(function(d){var f=d.foto;return '<div class="box" style="display:flex;gap:12px;align-items:center;padding:6px 10px;margin-bottom:6px">'+
+    (f?'<a href="'+esc(f.url)+'" target="_blank"><img src="https://drive.google.com/thumbnail?id='+esc(f.fileId)+'&sz=w220" style="width:72px;height:92px;object-fit:cover;border:1px solid #ccc;border-radius:4px" alt="foto"></a>':'<div style="width:72px;height:92px;border:1px dashed #aab;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:#667">assinado<br>em papel</div>')+
+    '<div style="flex:1"><b>'+esc(d.tipo)+(d.ref?' '+esc(d.ref):'')+'</b>'+(d.valor?' — R$ '+num(d.valor):'')+(d.num?' <span class="tag t-gray">foto nº '+esc(d.num)+'</span>':'')+(d.obs?'<div style="color:#8a5a00;margin-top:4px">'+esc(d.obs)+'</div>':'')+
+    (f?'':'<div style="margin-top:6px"><button class="btn" onclick="recAnexarUm(\''+c+'\',\''+esc(d.tipo).replace(/'/g,"\\'")+'\',\''+esc(d.ref)+'\','+(d.valor||0)+',\''+esc(d.num)+'\')">Anexar a foto</button></div>')+'</div></div>'}).join('');
+  var faltam=fal.length?'<div class="info" style="border-color:#c33">Falta pedir: <b>'+fal.join(', ')+'</b></div>':'';
+  return faltam+(k.obs?'<div class="info" style="border-color:#d90">'+esc(k.obs)+'</div>':'')+(cards||'<div class="info">Nenhum recibo desta competência ainda.</div>')}
+function recConf(c,v){toast('Gravando…');FG_srv('recibosConferir',[REC_K,c,v,''],function(r){if(r)D.rec=r;toast(v?'Marcado como conferido ✓':'Conferência desfeita');desenhaPainel()})}
+function recArq(inp,cb){var fs=[].slice.call(inp.files||[]),out=[];if(!fs.length){toast('Escolha a foto ou o PDF.');return}
+  (function prox(i){if(i>=fs.length)return cb(out);var f=fs[i],rd=new FileReader();
+    rd.onload=function(){var u=rd.result;if(!/^image\//.test(f.type)){out.push({nome:f.name,mime:f.type||'application/pdf',b64:u.split(',')[1]});return prox(i+1)}
+      var im=new Image();im.onload=function(){var s=Math.min(1,1800/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*s);cv.height=Math.round(im.height*s);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+        out.push({nome:f.name,mime:'image/jpeg',b64:cv.toDataURL('image/jpeg',0.75).split(',')[1]});prox(i+1)};im.src=u};rd.readAsDataURL(f)})(0)}
+function recForm(c,tipo,ref,valor,numF){return '<div class="mgrid"><div class="fld"><label>Salário de (AAAA-MM)</label><input id="raC" value="'+esc(c||'')+'"></div><div class="fld"><label>Tipo</label><select id="raT">'+['Holerite','VR','VT','Folha de resumo','Adiantamento','Férias','Aviso de férias','13º (1ª parcela)','13º (2ª parcela)','Empréstimo','Outro'].map(function(t){return '<option'+(t===tipo?' selected':'')+'>'+t+'</option>'}).join('')+'</select></div>'+
+  '<div class="fld"><label>Referência (mm/aaaa)</label><input id="raR" value="'+esc(ref||'')+'"></div><div class="fld"><label>Valor</label><input id="raV" value="'+(valor?num(valor):'')+'"></div>'+
+  '<div class="fld" style="grid-column:span 2"><label>Observação</label><input id="raO"></div><div class="fld" style="grid-column:span 2"><label>Foto(s) ou PDF</label><input type="file" id="raF" accept="image/*,application/pdf" multiple></div><input type="hidden" id="raN" value="'+esc(numF||'')+'"></div>'+
+  '<div class="info dica">A foto vai para o Drive em Colaboradores/'+esc(recD().nome)+'/Recibos/'+esc(c||'AAAA-MM')+'. VR e VT entram no salário do mês anterior (o VR de agosto vai com o salário de julho).</div>'}
+function recSalvar(){var g=function(i){return ((document.getElementById(i)||{}).value||'').trim()},c=g('raC');if(!/^\d{4}-\d{2}$/.test(c)){toast('Salário de: use AAAA-MM (ex.: 2025-07).');return}
+  var v=g('raV').replace(/\./g,'').replace(',','.');recArq(document.getElementById('raF'),function(fs){var i=0;toast('Enviando '+fs.length+' arquivo(s)…');
+    (function prox(){if(i>=fs.length){fecharModal();toast('Recibo(s) guardado(s) no Drive ✓');sel({t:'recm',c:c});return}var f=fs[i++];
+      FG_srv('recibosAnexar',[REC_K,c,g('raT'),g('raR'),v,g('raO'),f.nome,f.mime,f.b64,g('raN')],function(r){if(r)D.rec=r;prox()})})()})}
+function recAnexarUm(c,tipo,ref,valor,numF){abrirModal('Anexar recibo — '+recD().nome,recForm(c,tipo,ref,valor,numF),[['Cancelar','fecharModal()',''],['Guardar no Drive','recSalvar()','novo']])}
+function recPdf(ano){var R=recD(),cs=recComps(ano),fs=R.fotos.filter(function(f){return f.comp.slice(0,4)===String(ano)}).sort(function(a,b){return a.comp<b.comp?-1:1});
+  var w=window.open('','_blank');if(!w){toast('Libere as janelas (pop-up) para gerar o PDF.');return}
+  var h='<html><head><title>Recibos '+esc(R.nome)+' '+ano+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:18px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:4px 6px}th{background:#eee}.r{text-align:right}.pg{page-break-before:always;text-align:center}.pg img{max-width:100%;max-height:92vh}h1{font-size:18px}</style></head><body>'+
+    '<h1>FG Engenharia — Recibos de pagamento assinados — '+esc(R.nome)+' — '+ano+'</h1><p>Gerado em '+new Date().toLocaleString('pt-BR')+'</p><table><tr><th>Salário de</th><th>Holerite</th><th>VR</th><th>VT</th><th>Folha</th><th class="r">Adiant.</th><th class="r">PIX no BB</th><th>Situação</th></tr>'+
+    cs.map(function(c){var k=R.comps[c]||{},s=recSit(c),t=function(x){var L=recDocs(c).filter(function(d){return d.tipo===x});return !L.length?'falta':L.some(function(d){return d.foto})?'foto':'papel'};
+      return '<tr><td>'+recNome(c)+'</td><td>'+t('Holerite')+'</td><td>'+t('VR')+'</td><td>'+t('VT')+'</td><td>'+t('Folha de resumo')+(k.folha!=null?' '+num(k.folha):'')+'</td><td class="r">'+(k.adi!=null?num(k.adi):'—')+'</td><td class="r">'+num(s.px)+'</td><td>'+s.t+(k.obs?' — '+esc(k.obs):'')+'</td></tr>'}).join('')+'</table><div id="fotos"></div></body></html>';
+  w.document.write(h);w.document.close();if(!fs.length){w.document.getElementById('fotos').innerHTML='<p><b>Nenhuma foto anexada ainda neste ano.</b></p>';return}
+  var ids=fs.map(function(f){return f.fileId}),i=0;toast('Montando o PDF com '+ids.length+' foto(s)…');
+  (function lote(){if(i>=ids.length){toast('Pronto — use Imprimir › Salvar como PDF');setTimeout(function(){w.print()},600);return}var pd=ids.slice(i,i+6);i+=6;
+    FG_srv('recibosImagens',[pd],function(r){(r||[]).forEach(function(x){var f=fs.filter(function(y){return y.fileId===x.id})[0];w.document.getElementById('fotos').insertAdjacentHTML('beforeend','<div class="pg"><p><b>'+recNome(f.comp)+' — '+esc(f.tipo)+(f.ref?' '+esc(f.ref):'')+'</b></p>'+(x.b64?(/pdf/.test(x.mime)?'<p>(PDF — abrir no Drive: '+esc(f.url)+')</p>':'<img src="data:'+x.mime+';base64,'+x.b64+'">'):'<p>Não abriu: '+esc(x.erro||'')+'</p>')+'</div>')});lote()})})()}
+function recPainel(s){var R=recD(),cr='Colaboradores › '+esc(R.nome)+' › Recibos assinados',o={};
+  if(s.t==='rec'){var anos=[2026,2025,2024],ano=anos[Math.min(S.tab,2)];
+    var tot=0,foto=R.fotos.length,conf=Object.keys(R.conf).length,fal=0;[2025,2026].forEach(function(a){recComps(a).forEach(function(c){fal+=REC_EXP.filter(function(t){return !recDocs(c).some(function(d){return d.tipo===t})}).length})});
+    o.head='<div><div class="crumb">'+cr+'</div><div class="headtitle">Recibos assinados — '+esc(R.nome)+'</div></div>';
+    o.kp=kpi('Recibos em papel',R.papel.length,'fotografados em 09/11/2026')+kpi('Fotos no Drive',foto,foto?'clique ✓ foto para abrir':'anexar pelo botão','',null)+kpi('Faltam pedir',fal,'holerite, VR, VT ou folha (2025–2026)','cr')+kpi('Meses conferidos',conf,'você valida mês a mês');
+    o.tabs=['2026','2025','2024'];o.pane='<div class="acoes-topo"><button class="btn novo" onclick="recAnexarUm(\'\',\'Holerite\',\'\',0,\'\')">Anexar recibo</button><button class="btn" onclick="recPdf('+ano+')">PDF de '+ano+'</button></div>'+recAno(ano);return o}
+  var c=s.c,k=R.comps[c]||{},st=recSit(c),cf=R.conf[c],px=recPix(c);
+  o.head='<div><div class="crumb">'+cr+'</div><div class="headtitle">Salário de '+recNome(c)+'</div></div><div class="tags"><span class="tag '+st.cl+'">'+st.t+'</span></div>';var BT='<div class="acoes-topo">'+(cf?'<button class="btn" onclick="recConf(\''+c+'\',false)">Desfazer conferência</button>':'<button class="btn novo" onclick="recConf(\''+c+'\',true)">Marcar como conferido</button>')+'<button class="btn" onclick="recAnexarUm(\''+c+'\',\'Holerite\',\'\',0,\'\')">Anexar recibo</button></div>';
+  o.kp=kpi('Folha de resumo',k.folha!=null?brl(k.folha):'—','pago no início do mês seguinte')+kpi('Adiantamento',k.adi!=null?brl(k.adi):'—','sem recibo: PIX + holerite')+kpi('PIX no BB',brl(st.px),px.length+' PIX (dia 5 ao dia 4)')+kpi('Diferença',st.dif==null?'—':(st.dif<0?'−':'')+num(st.dif),cf?'conferido por '+esc(cf.quem)+' em '+esc(cf.quando):'PIX − (folha + adiantamento)');
+  o.tabs=['Recibos','PIX no Banco'];
+  o.pane=BT+(S.tab===0?recDet(c):'<div class="tablewrap" id="tw"><table><thead><tr><th>Data</th><th>PIX</th><th class="r">Valor</th><th>Situação</th></tr></thead><tbody>'+px.map(function(p){return '<tr><td>'+p.data+'</td><td>'+esc(p.tipo)+'</td><td class="r db">'+num(p.v)+'</td><td><span class="tag '+(p.st==='CONFERIDO'?'t-ok':'t-info')+'">'+(p.st==='CONFERIDO'?'Conferido':'Provável')+'</span></td></tr>'}).join('')+'</tbody></table></div><div class="info">Soma: '+brl(st.px)+'. Esperado: folha '+(k.folha!=null?num(k.folha):'—')+' + adiantamento '+(k.adi!=null?num(k.adi):'—')+'.</div>');
+  return o}
 function desenhaPainel(){var s=S.sel,head='',kp='',tabs=[],pane='',cr='Colaboradores';
-if(s.t==='hol'){var x=H.filter(function(h){return h.ref===s.ref})[0];var pm=x.m===12?[x.a+1,1]:[x.a,x.m+1];var px=pixMes(x.a,x.m).concat(pixMes(pm[0],pm[1]));
+if(s.t==='rec'||s.t==='recm'){var RP=recPainel(s);head=RP.head;kp=RP.kp;tabs=RP.tabs;pane=RP.pane;}else if(s.t==='hol'){var x=H.filter(function(h){return h.ref===s.ref})[0];var pm=x.m===12?[x.a+1,1]:[x.a,x.m+1];var px=pixMes(x.a,x.m).concat(pixMes(pm[0],pm[1]));
 head='<div><div class="crumb">'+cr+' › Edna › Holerites</div><div class="headtitle">Holerite de '+MESES[x.m-1]+' de '+x.a+'</div></div><div class="tags">'+(x.obs?'<span class="tag t-warn">'+esc(x.obs)+'</span>':'<span class="tag t-ok">sem observação</span>')+'</div>';
 kp=kpi('Salário base',brl(x.base),'')+kpi('Proventos',brl(x.prov),'')+kpi('Líquido do holerite',brl(x.liq),'depois de INSS, adiantamento e empréstimo','cr')+kpi('VR + VT (mês seguinte)',brl(x.vr+x.vt),'VR '+num(x.vr)+' · VT '+num(x.vt));
 tabs=['Holerite','PIX no Banco'];
@@ -438,7 +511,7 @@ head='<div><div class="crumb">'+cr+' › Prestadores e Estágio</div><div class=
 var tt=ls2.reduce(function(a,p){return a+p.v},0);kp=kpi('Pagamentos',ls2.length,'')+kpi('Total',brl(tt),'')+kpi('Último',ls2.length?ls2[ls2.length-1].data:'—','')+kpi('Valor típico',ls2.length?brl(ls2[ls2.length-1].v):'—','');
 tabs=['Pagamentos'];pane=(s.t!=='prest'?'<div class="acoes-topo"><button class="btn verm" onclick="colArquivar(\''+s.t+'\',\''+(s.t==='ciee'?'Estágio (CIEE)':'Rayane — faxina do escritório')+'\')">Mandar para o Arquivo Morto</button></div>':'')+'<div class="tablewrap" id="tw"><table><thead><tr><th>Data</th><th class="r">Valor</th></tr></thead><tbody>'+paginar(ls2.slice().reverse().map(function(p){return '<tr><td>'+p.data+'</td><td class="r db">'+num(p.v)+'</td></tr>'}))+'</tbody></table></div>'+pgLine(ls2.length)}
 document.getElementById('head').innerHTML=head;document.getElementById('kpis').innerHTML=kp;
-var nT=tabs.length;tabs=tabs.concat((s.t==='ray'||s.t==='ciee'||s.t==='prest')?['Novo Lançamento']:['Marcar Ponto','Novo Lançamento']);
+var nT=tabs.length;tabs=tabs.concat((s.t==='rec'||s.t==='recm')?[]:(s.t==='ray'||s.t==='ciee'||s.t==='prest')?['Novo Lançamento']:['Marcar Ponto','Novo Lançamento']);
 if(S.tab>=nT){var cap=null,_o=abrirModal;abrirModal=function(t,b,bt){cap={b:b,bt:bt}};(tabs[S.tab]==='Marcar Ponto'?ponto2:novoLanc)();abrirModal=_o;
 pane='<div class="mbody" style="font-size:15px">'+cap.b+'</div><div class="acoes-topo">'+cap.bt.filter(function(x){return x[0]!=='Cancelar'}).map(function(x){return '<button class="btn '+x[2]+'" style="min-height:40px;font-size:15px" onclick="'+x[1]+'">'+x[0]+'</button>'}).join('')+'</div>'}
 document.getElementById('tabs').innerHTML=tabs.map(function(t,i){return '<div class="tab'+(i===S.tab?' on':'')+(i>=nT?'" style="color:#163F75;font-weight:600':'')+'" onclick="S.tab='+i+';S.pg=0;desenhaPainel()">'+t+'</div>'}).join('');
