@@ -636,7 +636,7 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
   <button id="fgBt" style="font-size:17px;padding:10px 28px;border:0;border-radius:8px;background:#1F5FAF;color:#fff;cursor:pointer">Entrar com o Google</button>
  </div></div>
 <div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
-<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div>
+<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div><script>(function(){var t=document.getElementById('fgTempo'),b=document.querySelector('.titlebar .usr');if(t&&b){t.style.cssText='font:12px Segoe UI,Arial,sans-serif;color:#C9D6E5;margin-left:auto;margin-right:14px;white-space:nowrap';b.style.marginLeft='0';b.parentNode.insertBefore(t,b);}else if(t){t.style.background='#fff';t.style.padding='1px 6px';}})()</script>
 <script>
 /* Ações: vão para o FG Gestão API (Apps Script), que confere o login do Firebase antes de agir. */
 (function(){
