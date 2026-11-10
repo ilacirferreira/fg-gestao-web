@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FG Gestão – Clientes e Projetos</title>
+<style>
+:root{
+  --bg:#DCE1E7; --panel:#FFFFFF; --soft:#F3F5F7; --line:#C3CAD3; --line2:#E1E5EA;
+  --txt:#1E2733; --mut:#4A5565; --blue:#1F5FAD; --blue2:#163F75; --sel:#D6E4F7; --hov:#EEF3FA;
+  --ok-bg:#DDF0E4; --ok:#1E5E38; --warn-bg:#FCEBD3; --warn:#7A4A0B; --bad-bg:#F8DEDA; --bad:#8E2A1F;
+  --info-bg:#DDE8F7; --info:#163F75; --perm-bg:#ECE3F5; --perm:#5B3A86; --gray-bg:#E9ECF0; --gray:#4A5565;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:13px;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono{font-family:Consolas,"Courier New",monospace}
+.app{height:100vh;display:flex;flex-direction:column;padding:0 8px}
+.titlebar{display:flex;align-items:center;gap:10px;padding:7px 14px;background:#1F3B5C;color:#fff;border-radius:0 0 3px 3px}
+.titlebar b{font-size:14px;white-space:nowrap}
+.titlebar span{font-size:12px;color:#C9D6E6;white-space:nowrap}
+.titlebar .usr{margin-left:auto}
+/* barra de botões: largura toda, botões do mesmo tamanho */
+.toolbar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 0}
+/* PRÉVIA 05/11 */
+.dlg>.modal .mfoot,#pane .acoes-topo{display:none!important}
+/* PRÉVIA 05/11 — sem pop-up (Ilacir 00:37–00:39): a janela abre dentro da área de conteúdo, no lugar das abas */
+.dlg>.modal{position:static!important;inset:auto;background:none!important;padding:0!important;z-index:auto;flex:1;min-height:0}
+.dlg>.modal.on{display:flex}
+.dlg>.modal .mbox{width:100%!important;max-width:none!important;max-height:none;height:100%;box-shadow:none;border:none;background:transparent}
+.dlg>.modal .mtitle{border-radius:4px}
+.dlg>.modal .mbody{overflow:auto;flex:1}
+.dlg:has(>.modal.on)>.tabs,.dlg:has(>.modal.on)>.pane{display:none!important}
+
+.headrow{display:flex;gap:8px;align-items:stretch}.headrow>#head{flex:0 0 auto;min-width:230px;max-width:44%}.headrow>#head .crumb,.headrow>#head .tags{display:none}.headrow>#head .headtitle{font-size:19px;white-space:nowrap}.headrow>.kpis{flex:1;min-width:0}
+#pgInfo{white-space:nowrap}.headrow .kpi b{font-size:16px}.headrow .kpi{min-width:0;overflow:hidden}.headrow .kpi b,.headrow .kpi em,.headrow .kpi small{overflow:hidden;white-space:nowrap}.headrow>.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.pgbar:has(#pgbarAc button) #pgInfo{display:none}
+.tb{display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:4px 6px;border:1px solid #B9C3CF;border-radius:4px;background:#F7F8FA;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.tb:hover{background:#E4ECF7;border-color:#7FA6DA}
+.tb.novo{background:var(--blue);border-color:var(--blue);color:#fff}
+.tb.novo:hover{background:var(--blue2)}
+.tb.verde{background:#E3F2E8;border-color:#7DB592;color:#1E5E38;font-weight:600}
+.tb.verm{background:#FBEAE7;border-color:#D89A90;color:#8E2A1F;font-weight:600}
+.tb:disabled{opacity:.45;cursor:default}
+.tb svg{flex:none}
+.body{display:grid;grid-template-columns:var(--larg,350px) 6px 1fr;gap:2px;flex:1;min-height:0}
+.divisor{cursor:col-resize;border-radius:3px;position:relative}
+.divisor::after{content:"";position:absolute;left:2px;top:45%;width:2px;height:40px;border-left:1px dotted #8E99A6;border-right:1px dotted #8E99A6}
+.divisor:hover,.divisor.arr{background:#C9D6E6}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.boxhead{padding:6px 8px;border-bottom:1px solid var(--line);background:#EEF1F4;display:flex;gap:6px;align-items:center}
+/* árvore */
+.left{display:flex;flex-direction:column;min-height:0}
+.search{flex:1;display:flex;align-items:center;gap:6px;padding:0 8px;border:1px solid #B8C0CA;border-radius:3px;background:#fff;min-height:30px}
+.search input{border:none;outline:none;width:100%;background:transparent}
+.chaves{display:flex;gap:12px;padding:5px 8px;border-bottom:1px solid var(--line2);font-size:12px;color:var(--mut)}
+.chave{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.sw{width:28px;height:16px;border-radius:8px;background:#C3CAD3;position:relative;flex:none}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .12s}
+.sw.on{background:var(--blue)}.sw.on::after{left:14px}
+.tree{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:4px 6px;scrollbar-width:thin}
+.node{display:flex;align-items:center;gap:6px;min-height:26px;padding:2px 6px;border:1px solid transparent;border-radius:3px;cursor:pointer;user-select:none;line-height:1.2}
+.node:hover{background:var(--hov)}
+.node.sel{background:var(--sel);border-color:#7FA6DA}
+.node .nm{flex:1;min-width:0}
+.node.b .nm{font-weight:600}
+.node.obr .nm{color:#A3271B}
+.node.grp{background:#DCE8F8;border-color:#A9C2E6;color:#163F75;margin:2px 0}
+.node.grp:hover{background:#CFE0F6}
+.node.grp.pfg{background:#E9E2F5;border-color:#C3B3E0;color:#4A2F78}
+.node.grp.pfg:hover{background:#E0D6F1}
+.node.grp.outg{background:#E6EAEF;border-color:#C3CAD3;color:#2E3A48}
+.node.grp.outg:hover{background:#DCE1E7}
+.node.grp .cnt{color:inherit;opacity:.8}
+.chev{width:12px;height:12px;flex:none;transition:transform .12s}
+.chev.op{transform:rotate(90deg)}
+.nochev{width:12px;flex:none}
+.cnt{font-size:11px;color:#5A6676;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.ind{flex:none}
+.pgbar{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;border-top:1px solid var(--line2);font-size:12px;color:var(--mut)}
+.pgbar a{color:var(--blue);text-decoration:none;white-space:nowrap}.pgbar a:hover{text-decoration:underline}
+.pgbar .pg{display:flex;align-items:center;gap:6px}
+.mini{min-width:28px;min-height:24px;border:1px solid #9AA5B2;border-radius:3px;background:#F6F7F9;cursor:pointer}
+.mini:disabled{opacity:.4;cursor:default}
+.legend{display:flex;gap:8px;flex-wrap:nowrap;justify-content:space-between;padding:5px 8px;white-space:nowrap;border-top:1px solid var(--line);font-size:11px;color:var(--mut)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+/* painel */
+.right{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+.head{padding:8px 14px;display:flex;align-items:center;gap:12px}
+.crumb{font-size:12px;color:var(--mut)}
+.headtitle{font-size:17px;font-weight:600;line-height:1.25}
+.head .btn{flex:none}
+.head .acoes{display:flex;gap:6px}
+.tags{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.t-ok{background:var(--ok-bg);color:var(--ok)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-info{background:var(--info-bg);color:var(--info)}.t-perm{background:var(--perm-bg);color:var(--perm)}.t-gray{background:var(--gray-bg);color:var(--gray)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{padding:7px 12px}
+.kpi small{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
+.kpi b{display:block;font-size:18px;margin-top:1px;white-space:nowrap}
+.kpi em{display:block;font-size:11px;color:var(--mut);font-style:normal;white-space:nowrap}
+.kpi .bar{height:5px;background:#E6EAEF;border-radius:3px;margin-top:5px;overflow:hidden}
+.kpi .bar span{display:block;height:100%;background:var(--blue)}
+.dlg{background:var(--soft);border:1px solid var(--line);border-radius:3px;padding:8px 12px 10px;display:flex;flex-direction:column;flex:1;min-height:0}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;border-bottom:1px solid var(--line)}
+.tab{padding:6px 8px;border:1px solid var(--line);border-bottom:none;border-radius:4px 4px 0 0;background:#E9ECF0;color:#3A4554;cursor:pointer;min-height:32px;white-space:nowrap}
+.tab.on{background:#fff;color:var(--txt);font-weight:600;position:relative;top:1px}
+.pane{background:#fff;border:1px solid var(--line);border-top:none;padding:12px 14px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;overflow:hidden}
+.ficha{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px}
+.fld{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fld label{font-size:11.5px;color:var(--mut)}
+.fld .v{min-height:28px;line-height:1.3;padding:4px 7px;border:1px solid #D9CF9E;border-radius:3px;background:#FFFBEA}
+.fld .v.vz{color:#9AA5B2}
+.fld .v.sis{background:#F3F5F7;border-color:#D5DBE2;color:var(--mut)}
+.fld input,.fld select{padding:4px 7px;border:1px solid #B8C0CA;border-radius:3px;background:#FFFBEA;min-height:28px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}
+.secthead{display:flex;align-items:center;gap:8px}
+.secthead b{font-size:13px;white-space:nowrap}
+.secthead .sp{flex:1}
+.btn{min-height:28px;padding:3px 12px;border-radius:3px;border:1px solid #9AA5B2;background:#F6F7F9;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#ECEFF3}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.pri:hover{background:var(--blue2)}
+.btn.ok{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
+.btn.red{background:#B23B2E;border-color:#B23B2E;color:#fff}
+.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{font-weight:600;text-align:left;vertical-align:top;padding:5px 8px;background:#EEF1F4;border-bottom:1px solid var(--line);color:#3A4554;font-size:12px}
+td{padding:4px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td.w{white-space:normal;line-height:1.25}
+td.r,th.r{text-align:right}
+tr.hl td{background:#FFF6E5}
+tr.clk{cursor:pointer}tr.clk:hover td{background:var(--hov)}
+tfoot td{font-weight:600;background:#F7F8FA}
+.info{padding:6px 10px;background:#EEF3FA;border:1px solid #B9CBE4;border-radius:3px;font-size:12px;line-height:1.35}
+.people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-content:start}
+.card{border:1px solid var(--line);border-radius:3px;padding:7px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.card b{font-size:13px}
+.card small{color:var(--mut);overflow-wrap:anywhere}
+.file{display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:3px;background:#FAFBFC}
+.file .ic{width:34px;height:42px;border:1px solid #B8C0CA;border-radius:2px;background:#fff;display:flex;align-items:flex-end;justify-content:center;font-size:10px;font-weight:700;color:#B23B2E;padding-bottom:4px;flex:none}
+.file small{display:block;color:var(--mut);font-size:12px}
+.drop{border:1px dashed #9AA5B2;border-radius:3px;padding:12px;text-align:center;color:var(--mut);background:#FAFBFC}
+.statusbar{display:flex;gap:22px;padding:4px 14px;margin-top:6px;background:var(--soft);border:1px solid var(--line);border-bottom:none;border-radius:3px 3px 0 0;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden}
+.statusbar span:last-child{margin-left:auto}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.modal.on{display:flex}
+.mbox{width:min(640px,100%);max-height:96vh;background:var(--soft);border:1px solid #8E99A6;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.mtitle{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#1F3B5C;color:#fff;border-radius:4px 4px 0 0;font-weight:600}
+.mtitle button{background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;width:32px;height:26px}
+.mbody{padding:12px 16px;display:flex;flex-direction:column;gap:10px;background:#fff;border-bottom:1px solid var(--line);overflow:hidden}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}
+.mgrid .fld input,.mgrid .fld select,.mgrid .fld textarea{background:#FFFBEA;padding:4px 7px;border:1px solid #B8C0CA;border-radius:3px;min-height:28px}
+.mgrid .fld input[readonly]{background:#F3F5F7;color:var(--mut)}
+.mfoot{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;padding:8px 16px}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#1F3B5C;color:#fff;padding:8px 16px;border-radius:4px;font-size:12.5px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+.so-cel{display:none}
+@media (max-width:900px){
+  body{overflow:auto}
+  .app{height:auto;min-height:100vh}
+  .toolbar{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tb{font-size:11.5px;white-space:normal;text-align:center;line-height:1.15;padding:3px}
+  .kpi b{font-size:15px}.kpi small,.kpi em{white-space:normal}
+  .body{grid-template-columns:1fr}
+  .divisor{display:none}
+  .left{height:70vh}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ficha,.people{grid-template-columns:1fr}
+  .s2,.s3{grid-column:auto}
+  .tabs{grid-auto-flow:row;grid-template-columns:repeat(3,1fr)}
+  .titlebar span.cam{display:none}
+  .so-cel{display:inline}
+  td{white-space:normal}
+  .titlebar .usr,.statusbar,.mh,tfoot{display:none}
+  .secthead{flex-wrap:wrap}
+  .tablewrap{overflow-x:auto}
+  .app{overflow-x:hidden}
+}
+/* janelas (pop-up) grandes e com letra maior — usuários idosos (Ilacir 02/11 19:55) */
+.modal .mbox{width:min(980px,94vw);font-size:16px}
+.modal .mbox.larga{width:min(1180px,96vw)}
+.modal .mtitle{font-size:17px;padding:10px 16px}
+.modal .mbody{padding:16px 20px;gap:12px}
+.modal .mbody label,.modal .fld label{font-size:14px}
+.modal .fld .v,.modal input,.modal select,.modal textarea{font-size:16px;min-height:36px}
+.modal .info{font-size:15px;line-height:1.45}
+.modal .btn{min-height:42px;font-size:16px}
+.modal .mfoot{padding:12px 20px;gap:10px}
+.modal .tag{font-size:13px}
+.modal .em{font-size:15px;padding:6px 10px}
+.modal .et{font-size:14px;padding:8px 12px}
+.modal .tot b{font-size:18px}
+.modal input[type=checkbox],.modal input[type=radio]{width:18px;height:18px;min-height:0}
+.modal .secthead b{font-size:16px}
+.modal .cnt,.modal small{font-size:13.5px}
+.modal .tot small{font-size:13.5px}
+.modal .em label,.modal label.em{font-size:15px}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3"/></svg>
+    <b>FG Gestão – Clientes e Projetos</b>
+    <span class="usr" id="usr">carregando…</span>
+  </div>
+
+  <div class="toolbar" id="toolbar"></div>
+
+  <div class="body">
+    <div class="box left">
+      <div class="boxhead">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5A6676" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input id="busca" aria-label="Procurar" placeholder="Procurar cliente, projeto, CPF/CNPJ, código ou NF">
+        </div>
+      </div>
+      <div class="chaves" style="display:none">
+                <span class="chave" id="chGrp"><span class="sw on"></span>Agrupar</span>
+      </div>
+      <div class="tree" id="tree"></div>
+      <div class="pgbar" style="gap:6px"><span id="pgInfo"></span><a href="#" id="lkArq" style="display:none"></a><span id="pgbarAc" style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1"></span></div>
+    </div>
+
+    <div class="divisor" id="divisor" title="Arraste para mudar a largura da árvore (duplo clique volta ao padrão)"></div>
+    <div class="right">
+      <div class="box head" id="head"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="dlg">
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="pane" id="pane"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <div class="mbox">
+    <div class="mtitle"><span id="mt"></span><button type="button" aria-label="Fechar" onclick="fecharModal()">×</button></div>
+    <div class="mbody" id="mbody"></div>
+    <div class="mfoot" id="mfoot"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="text/fg-espera" id="fgMain">
+var FG_BASE="";function FG_abrindo(){try{var o=document.createElement('div');o.style.cssText='position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(220,225,231,.55);z-index:99;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C';o.innerHTML='<div style="background:#fff;padding:18px 34px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.22)">Abrindo…</div>';document.body.appendChild(o)}catch(e){}}
+var FG_VT="";
+function FG_ir(p,extra,semPilha){var vt=semPilha?FG_VT:(FG_VT?FG_VT+'.':'')+FG_aqui();vt=vt.split('.').filter(Boolean).slice(-8).join('.');var u=FG_BASE+'?p='+p+(extra||'')+(vt?'&vt='+vt:'');FG_abrindo();try{window.top.location.href=u}catch(e){window.open(u,'_top')}}
+function FG_volta(){var a=FG_VT.split('.');var t=a.pop();FG_VT=a.join('.');var q=t.split('_');FG_ir(q[0],q[1]?'&ob='+q[1]:'',true)}
+function FG_aqui(){return 'projetos'+(S&&S.sel&&S.sel.t==='obra'&&S.sel.id?'_'+S.sel.id:'')}
+var FG_OB=(new URLSearchParams(location.search).get("ob")||"");
+var D = {clientes:[],obras:[]};
+var HOJE = '';
+
+/* ---------- utilidades ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function brl(v){return 'R$ '+(Math.round(v*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function nrm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove('on')},2600)}
+var CL={},OB={};
+function aplica(d){D=d;CL={};OB={};D.clientes.forEach(function(c){CL[c.id]=c});D.obras.forEach(function(o){OB[o.id]=o});HOJE=d.hoje;
+  document.getElementById('usr').textContent=(d.ambiente==='TESTE'?'TESTE · ':'')+d.usuario;}
+/* chamada ao servidor: grava, recarrega tudo e redesenha */
+function srv(fn,args,ok,msg){
+  toast('Gravando…');
+  var r=google.script.run.withSuccessHandler(function(res){
+    google.script.run.withSuccessHandler(function(d){aplica(d);if(ok)ok(res);desenha();toast(msg||'Gravado')}).withFailureHandler(erro).pjCarregar();
+  }).withFailureHandler(erro);
+  r[fn].apply(r,args);
+}
+function erro(e){toast('Erro: '+(e&&e.message?e.message:e))}
+function obrasDe(cid){return D.obras.filter(function(o){return o.cls.indexOf(cid)>=0})}
+function parcDe(o,cid){return o.parc.filter(function(p){return !cid||!p.cl||p.cl===cid})}
+function nomeCliente(c){return c.nome}
+var PFG='Pessoa Física';
+var OUT='Outras Construtoras';
+function grupoDe(c){return c.grupo||(c.tipo==='PF'?PFG:OUT)}
+function ordemG(g){return g===PFG?1:g===OUT?2:0}
+function aberta(p){return p.sit==='a vencer'||p.sit==='faturada'||p.sit==='a conferir'}
+var ANDAM={'em andamento':1,'contratada':1};
+function pastaDe(o){return o.arq?'arq':o.sit==='concluída'?'con':'and'}
+function clienteEmAndamento(c){return obrasDe(c.id).some(function(o){return pastaDe(o)==='and'})}
+
+/* ---------- totais ---------- */
+function tot(parcs,contrato){
+  var t={contrato:contrato||0,faturado:0,recebido:0,receber:0,conferir:0,permuta:0,abertas:0,faturadaSemBaixa:0};
+  parcs.forEach(function(p){
+    if(p.nf&&p.sit!=='a vencer'&&p.sit!=='permuta')t.faturado+=p.bruto;
+    if(p.sit==='paga')t.recebido+=p.liq;
+    if(p.sit==='a vencer'){t.receber+=p.bruto;t.abertas++}
+    if(p.sit==='a conferir'){t.conferir+=p.bruto;t.abertas++}
+    if(p.sit==='permuta')t.permuta+=p.bruto;
+    if(p.sit==='faturada')t.faturadaSemBaixa++;
+  });
+  if(!t.contrato)t.contrato=parcs.reduce(function(a,p){return a+p.bruto},0);
+  return t;
+}
+function totObra(o){return tot(o.parc,o.contrato)}
+function totCliente(c){
+  var ps=[],ct=0;obrasDe(c.id).forEach(function(o){var pp=parcDe(o,c.id);ps=ps.concat(pp);ct+=(o.cls.length>1?0:(o.contrato||0))});
+  var t=tot(ps,0);if(ct>t.contrato)t.contrato=ct;return t;
+}
+function corObra(o){
+  var t=totObra(o);
+  if(t.conferir>0||o.sit==='a conferir')return '#C77A12';
+  if(t.receber>0)return '#1F5FAD';
+  if(t.permuta>0)return '#7A5BA6';
+  if(!o.parc.length)return '#9AA5B2';
+  if(t.faturadaSemBaixa===o.parc.length)return '#9AA5B2';
+  return '#2E7D4F';
+}
+function corCliente(c){
+  var cs=obrasDe(c.id).map(corObra);
+  var ord=['#C77A12','#1F5FAD','#7A5BA6','#2E7D4F','#9AA5B2'];
+  for(var i=0;i<ord.length;i++)if(cs.indexOf(ord[i])>=0)return ord[i];
+  return '#9AA5B2';
+}
+var SITTAG={'baixada':['t-gray','Não recebida'],'paga':['t-ok','Paga'],'faturada':['t-gray','NF emitida'],'a vencer':['t-info','A vencer'],'a conferir':['t-warn','A conferir'],'permuta':['t-perm','Permuta'],'cancelada':['t-gray','NF cancelada']};
+var OBTAG={'em andamento':['t-info','Em andamento'],'contratada':['t-info','Em andamento (início 2027)'],'concluída':['t-ok','Concluído'],'a conferir':['t-warn','Em andamento · a conferir'],'cancelada':['t-bad','Cancelado']};
+
+/* ---------- ícones ---------- */
+var IC={
+ pasta:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C08A1E" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+ pastaC:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8594" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+ grupo:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5FAD" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+ pj:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5FAD" stroke-width="1.8"><path d="M4 21V7l8-4 8 4v14M9 21v-5h6v5M8 10h2M14 10h2"/></svg>',
+ pf:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F5FAD" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>',
+ obra:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E7D4F" stroke-width="1.8"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3"/></svg>',
+ doc:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A4554" stroke-width="1.8"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg>',
+ contr:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B23B2E" stroke-width="1.8"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8 13h8M8 17h4"/></svg>',
+ pess:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A4554" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5M17 9h5M18 13h4"/></svg>',
+ din:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E5E38" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+ graf:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A4554" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+ dwg:'<svg class="ind" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3A4554" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
+};
+var CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#5A6676" stroke-width="2.6"><path d="M9 6l6 6-6 6"/></svg>';
+
+/* ---------- estado ---------- */
+var S={sel:{t:'obra',id:'OB0001',cl:'CL0001'},aba:'financeiro',open:{},busca:'',soAnd:false,agrupar:true,pg:0,pgPar:0,edit:false};
+var HIST=[];
+function snap(){return JSON.stringify({sel:S.sel,aba:S.aba,busca:S.busca,soAnd:S.soAnd,agrupar:S.agrupar,pg:S.pg,open:S.open})}
+function marca(){HIST.push(snap());if(HIST.length>60)HIST.shift()}
+function inicial(){
+  S.open={'F:and':1};
+  var o1=OB['OB0001']||D.obras.filter(function(o){return !o.arq})[0]||D.obras[0];S.sel=o1?{t:'obra',id:o1.id,cl:(o1.cls&&o1.cls[0])||''}:{t:'raiz'};S.aba='financeiro';S.busca='';S.soAnd=true;S.agrupar=true;S.pg=0;S.pgPar=0;S.edit=false;
+  document.getElementById('busca').value='';
+}
+
+/* ---------- árvore (linhas visíveis, paginadas) ---------- */
+function casa(c){
+  if(!obrasDe(c.id).some(function(o){return !o.arq}))return false;
+  if(!S.busca)return true;
+  var q=nrm(S.busca);
+  var alvo=[c.nome,c.doc,c.id,c.grupo].join(' ');
+  if(nrm(alvo).indexOf(q)>=0)return true;
+  return obrasDe(c.id).some(function(o){return casaObra(o,q)});
+}
+function casaObra(o,q){
+  if(nrm([o.nome,o.id,o.end,o.serv].join(' ')).indexOf(q)>=0)return true;
+  return o.parc.some(function(p){return p.nf&&nrm('nf '+p.nf).indexOf(q)>=0||String(p.nf)===S.busca.trim()});
+}
+function linhas(){
+  var L=[],bus=!!S.busca;
+  var cls=D.clientes.filter(casa);
+  var tem=function(pk){return function(c){return obrasDe(c.id).some(function(o){return pastaDe(o)===pk&&(!bus||casaObra(o,nrm(S.busca))||nrm([c.nome,c.doc,c.id,c.grupo].join(' ')).indexOf(nrm(S.busca))>=0)})}};
+  var pastas=[['and','Projetos em Andamento',cls.filter(tem('and'))],['con','Projetos Concluídos',cls.filter(tem('con'))]];
+  pastas.forEach(function(pf){
+    var fk='F:'+pf[0],op=bus||S.open[fk];
+    var np=D.obras.filter(function(o){return pastaDe(o)===pf[0]&&pf[2].some(function(c){return o.cls.indexOf(c.id)>=0})}).length;
+    L.push({k:fk,n:0,ic:pf[0]==='ina'?IC.pastaC:IC.pasta,nm:pf[1],b:1,cnt:np+(np===1?' projeto':' projetos'),exp:true,op:op});
+    if(!op)return;
+    if(!pf[2].length){L.push({k:fk+':v',n:1,nm:'(vazio)',mut:1});return}
+    var grupos={},soltos=[];
+    pf[2].forEach(function(c){var g=grupoDe(c);if(S.agrupar&&g){(grupos[g]=grupos[g]||[]).push(c)}else soltos.push(c)});
+    var itens=[];
+    var nProj=function(g){return D.obras.filter(function(o){return pastaDe(o)===pf[0]&&grupos[g].some(function(c){return o.cls.indexOf(c.id)>=0})}).length};
+    Object.keys(grupos).sort(function(a,b){return ordemG(a)-ordemG(b)||(ordemG(a)===0?nProj(b)-nProj(a):0)||a.localeCompare(b)}).forEach(function(g){grupos[g].sort(function(a,b){return a.nome.localeCompare(b.nome)});itens.push({g:g,cs:grupos[g]})});
+    soltos.sort(function(a,b){return a.nome.localeCompare(b.nome)});
+    itens=itens.concat(soltos.map(function(c){return {c:c}}));
+    itens.forEach(function(it){
+      if(it.g){
+        var gk='G:'+pf[0]+':'+it.g,gop=bus||S.open[gk];
+        L.push({k:gk,n:1,ic:it.g===PFG?IC.pf:IC.grupo,nm:it.g===PFG?'Pessoa Física (sem CNPJ)':it.g===OUT?OUT:'Grupo '+it.g,b:1,cnt:(function(){var n=D.obras.filter(function(o){return pastaDe(o)===pf[0]&&it.cs.some(function(c){return o.cls.indexOf(c.id)>=0})}).length;return n+(n>1?' projetos':' projeto')})(),exp:true,op:gop,grp:1,pfg:it.g===PFG,outg:it.g===OUT});
+        if(gop)it.cs.forEach(function(c){cliLinhas(L,c,2,pf[0])});
+      }else cliLinhas(L,it.c,1,pf[0]);
+    });
+  });
+  return L;
+}
+function cliLinhas(L,c,n,pk){
+  var ck='C:'+pk+':'+c.id,op=(S.busca&&true)||S.open[ck];
+  var obs=obrasDe(c.id);
+  L.push({k:ck,n:n,ic:c.tipo==='PF'?IC.pf:IC.pj,nm:c.nome,b:1,dot:corCliente(c),exp:true,op:op,sel:S.sel.t==='cliente'&&S.sel.id===c.id,act:{t:'cliente',id:c.id,cl:c.id,aba:'cliente'}});
+  if(!op)return;
+  var q=nrm(S.busca);
+  obs.forEach(function(o){
+    if(pastaDe(o)!==pk)return;
+    if(S.busca&&!casaObra(o,q)&&nrm([c.nome,c.doc,c.id,c.grupo].join(' ')).indexOf(q)<0)return;
+    var ok='O:'+pk+':'+c.id+':'+o.id,oop=S.open[ok];
+    var selO=S.sel.t==='obra'&&S.sel.id===o.id&&S.sel.cl===c.id;
+    L.push({k:ok,n:n+1,ic:IC.obra,nm:o.nome,b:1,obr:1,dot:corObra(o),exp:true,op:oop,sel:selO&&!oop,act:{t:'obra',id:o.id,cl:c.id,aba:'obra'}});
+    if(!oop)return;
+    var t=totObra(o),ab=function(a){return selO&&S.aba===a};
+    L.push({k:ok+':d',n:n+2,ic:IC.doc,nm:'Dados do Projeto',sel:ab('obra'),act:{t:'obra',id:o.id,cl:c.id,aba:'obra'}});
+    L.push({k:ok+':c',n:n+2,ic:IC.contr,nm:'Contrato',tag:o.contrato?(t.permuta>0&&t.receber===0?['t-perm','permuta']:['t-ok','cadastrado']):['t-warn','a cadastrar'],sel:ab('contrato'),act:{t:'obra',id:o.id,cl:c.id,aba:'contrato'}});
+    L.push({k:ok+':f',n:n+2,ic:IC.din,nm:'Parcelas e Recebimentos',cnt:o.parc.length||'',dot:corObra(o),sel:ab('financeiro'),act:{t:'obra',id:o.id,cl:c.id,aba:'financeiro'}});
+    var nn=o.parc.filter(function(p){return /^\d+$/.test(p.nf)}).length;
+    L.push({k:ok+':n',n:n+2,ic:IC.doc,nm:'Notas Fiscais',cnt:nn||'',sel:ab('notas'),act:{t:'obra',id:o.id,cl:c.id,aba:'notas'}});
+    L.push({k:ok+':x',n:n+2,ic:IC.dwg,nm:'Documentos',tag:o.art?['t-ok','ART']:(ANDAM[o.sit]?['t-warn','sem ART']:null),sel:ab('documentos'),act:{t:'obra',id:o.id,cl:c.id,aba:'documentos'}});
+  });
+}
+var PP=18;
+function linhaHtml(r,i){
+  var pad=r.n*16;
+  var h='<div class="node'+(r.b?' b':'')+(r.grp?' grp':'')+(r.obr?' obr':'')+(r.pfg?' pfg':'')+(r.outg?' outg':'')+(r.sel?' sel':'')+'" data-i="'+i+'" style="padding-left:'+(6+pad)+'px">';
+  h+=r.exp?CHEV.replace('class="chev"','class="chev'+(r.op?' op':'')+'" data-tg="1"'):'<span class="nochev"></span>';
+  h+=(r.ic||'')+'<span class="nm"'+(r.mut?' style="color:#9AA5B2"':'')+'>'+esc(r.nm)+'</span>';
+  if(r.tag)h+='<span class="tag '+r.tag[0]+'">'+r.tag[1]+'</span>';
+  if(r.cnt!==undefined&&r.cnt!=='')h+='<span class="cnt">'+r.cnt+'</span>';
+
+  return h+'</div>';
+}
+var LIN=[];
+function desenhaArvore(){
+  LIN=linhas();
+  var t=document.getElementById('tree'),y=t.scrollTop;
+  t.innerHTML=LIN.map(function(r,j){return linhaHtml(r,j)}).join('');
+  t.scrollTop=y;
+  var nc=D.clientes.filter(casa).length;
+  var ativos=D.obras.filter(function(o){return !o.arq}),narq=D.obras.length-ativos.length;
+  document.getElementById('pgInfo').textContent=S.busca?nc+' cliente(s) encontrados':ativos.length+' projetos na árvore';
+  document.getElementById('lkArq').textContent='Arquivo ('+narq+(narq===1?' projeto)':' projetos)');
+}
+function mostraSelecao(){var s=document.querySelector('#tree .node.sel');if(s)s.scrollIntoView({block:'nearest'})}
+document.getElementById('tree').addEventListener('click',function(e){
+  var n=e.target.closest('.node');if(!n)return;
+  var r=LIN[+n.dataset.i];if(!r)return;
+  marca();
+  if(e.target.closest('[data-tg]')||!r.act){S.open[r.k]=!r.op;if(r.op&&!S.open[r.k])delete S.open[r.k];desenha();return}
+  if(r.exp&&!r.op)S.open[r.k]=1;
+  seleciona(r.act);
+});
+function descartar(seguir){
+  if(!S.edit){seguir();return}
+  document.getElementById('mt').textContent='Alterações não salvas';
+  document.getElementById('mbody').innerHTML='<div>Você está editando. Descartar as alterações?</div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" id="dNao">Continuar Editando</button><button class="btn red" id="dSim">Descartar</button>';
+  document.getElementById('dNao').onclick=fecharModal;
+  document.getElementById('dSim').onclick=function(){fecharModal();S.edit=false;seguir()};
+  abrirModal();
+}
+function seleciona(a){
+  if(S.edit){descartar(function(){seleciona(a)});return}
+  S.edit=false;
+  S.sel={t:a.t,id:a.id,cl:a.cl};S.aba=a.aba||S.aba;S.pgPar=0;
+  if(a.t==='obra'){var pk=pastaDe(OB[a.id]);S.open['F:'+pk]=1;S.open['C:'+pk+':'+a.cl]=1;S.open['G:'+pk+':'+grupoDe(CL[a.cl])]=1}
+  desenha();
+}
+
+/* ---------- painel direito ---------- */
+function abasDe(){
+  return S.sel.t==='obra'?[['obra','Projeto'],['cliente','Cliente'],['contrato','Contrato'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['historico','Histórico'],['arquivo','Arquivo']]
+                         :[['cliente','Cliente'],['obras','Projetos'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['historico','Histórico'],['arquivo','Arquivo']];
+}
+function desenhaPainel(){
+  var c=CL[S.sel.cl],o=S.sel.t==='obra'?OB[S.sel.id]:null;
+  var ab=abasDe();if(!ab.some(function(a){return a[0]===S.aba}))S.aba=ab[0][0];
+  var t=o?tot(parcDe(o,c.id),o.cls.length>1?0:o.contrato):totCliente(c);
+  // cabeçalho
+  var crumb='Clientes › '+(c.grupo?'Grupo '+esc(c.grupo):grupoDe(c))+' › '+esc(c.nome)+(o?' › Projetos':'');
+  var tags='';
+
+  var mov=!o?'':o.arq?'<button class="btn pri" onclick="desarquivar(\''+o.id+'\')">Desarquivar</button>':(pastaDe(o)==='and'?'<button class="btn ok" onclick="moverProjeto()">Mover para Concluídos</button>':'<button class="btn pri" onclick="moverProjeto()">Voltar para Em Andamento</button>')+'<button class="btn" onclick="arquivar()">Arquivar Projeto</button>';
+  if(o&&o.arq)tags+='<span class="tag t-gray">Arquivado em '+esc(o.arqData)+' · '+esc(o.arqMotivo)+'</span>';
+  if(t.conferir>0)tags+='<span class="tag t-warn">'+brl(t.conferir)+' a conferir</span>';
+  if(t.permuta>0)tags+='<span class="tag t-perm">Permuta '+brl(t.permuta)+'</span>';
+  if(o&&o.parc.some(function(p){return p.semNF}))tags+='<span class="tag t-bad">Recebido sem NF</span>';
+  var sub=o?'Projeto <span class="mono">'+o.id+'</span> · Cliente <span class="mono">'+c.id+'</span>'+(o.cls.length>1?' (projeto com '+o.cls.length+' tomadores)':'')+' · Captação: '+esc(o.capt)
+            :'Cliente <span class="mono">'+c.id+'</span> · '+(c.tipo==='PF'?'CPF':'CNPJ')+' <span class="mono">'+esc(c.doc)+'</span> · '+obrasDe(c.id).length+' projeto(s)';
+  document.getElementById('head').innerHTML='<div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span class="crumb">'+crumb+'</span><span class="headtitle"'+(o?' style="color:#A3271B"':'')+'>'+esc(o?o.nome:c.nome)+'</span><span class="crumb">'+sub+'</span></div><div class="tags">'+tags+'</div>';document.getElementById('pgbarAc').innerHTML=mov;
+  if(document.getElementById('caminho'))document.getElementById('caminho').textContent='\\FG\\CLIENTES\\'+(grupoDe(c)?grupoDe(c).toUpperCase()+'\\':'')+c.id+(o?'\\'+o.id:'');
+  // KPIs
+  var base=t.contrato||1,pct=function(v){return Math.min(100,Math.round(v/base*100))};
+  var k=[['Valor contratado (bruto)',brl(t.contrato),'',100,'#1F5FAD',o&&!o.contrato?'sem contrato cadastrado: soma das NF':''],
+         ['NF emitidas (bruto)',brl(t.faturado),'',pct(t.faturado),'#5A6676',''],
+         ['Recebido confirmado (líquido)',brl(t.recebido),'color:#1E5E38',pct(t.recebido),'#2E7D4F',t.faturadaSemBaixa?t.faturadaSemBaixa+' NF antigas a conciliar com o extrato':''],
+         ['A receber em dinheiro (bruto)',brl(t.receber),'color:#163F75',pct(t.receber),'#1F5FAD',t.abertas?t.abertas+' parcela(s) em aberto':'nada em aberto']];
+  document.getElementById('kpis').innerHTML=k.map(function(x){return '<div class="box kpi"><small>'+x[0]+'</small><b style="'+x[2]+'">'+x[1]+'</b><em>'+(x[5]||'&nbsp;')+'</em><div class="bar"><span style="width:'+x[3]+'%;background:'+x[4]+'"></span></div></div>'}).join('');
+  // abas
+  document.getElementById('tabs').innerHTML=ab.map(function(a){return '<button class="tab'+(a[0]===S.aba?' on':'')+'" data-a="'+a[0]+'" type="button">'+a[1]+'</button>'}).join('');
+  var P=document.getElementById('pane');
+  P.innerHTML=({obra:paneObra,cliente:paneCliente,contrato:paneContrato,financeiro:paneFinanceiro,notas:paneNotas,documentos:paneDocs,historico:paneHist,obras:paneObras,contatos:paneContatos,arquivo:paneArquivo})[S.aba](c,o,t);
+  if(S.aba==='financeiro'||S.aba==='obras'||S.aba==='notas')ajustaTabela();
+  // barra de status
+  var all=tot([].concat.apply([],D.obras.map(function(x){return x.parc})),0);
+  if(document.getElementById('status'))document.getElementById('status').innerHTML='<span>Carteira: a receber em dinheiro '+brl(all.receber)+'</span><span>A conferir '+brl(all.conferir)+'</span><span>Permutas '+brl(all.permuta)+'</span><span>Selecionado: '+esc(o?o.id+' · '+o.nome:c.id+' · '+c.nome)+'</span><span>Base: Cadastro Único · NF 1–148 · BB até 30/10</span>';
+}
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;var a=b.dataset.a;descartar(function(){marca();S.aba=a;S.pgPar=0;desenha()})});
+
+function campo(lb,v,cls,key){
+  var vz=(v===''||v==null);
+  if(S.edit&&key)return '<div class="fld '+(cls||'')+'"><label>'+lb+'</label><input data-k="'+key+'" value="'+esc(v)+'"></div>';
+  return '<div class="fld '+(cls||'')+'"><label>'+lb+'</label><div class="v'+(vz?' vz':'')+(key?'':' sis')+'">'+(vz?'—':esc(v))+'</div></div>';
+}
+function paneCliente(c){
+  return (S.edit?'<div class="secthead" style="margin-top:-4px"><b style="color:#7A4A0B">Editando: altere os campos e clique em Salvar</b><span class="sp"></span><button class="btn" onclick="cancelaEdit()">Cancelar</button><button class="btn pri" onclick="salvaEdit()">Salvar</button></div>':'')+'<div class="ficha">'+
+   campo('Razão social / Nome',c.nome,'s2','nome')+campo('Código',c.id)+
+   campo('Tipo',c.tipo==='PF'?'Pessoa física':c.tipo==='PJ'?'Pessoa jurídica':'(a obter)')+campo(c.tipo==='PF'?'CPF':'CNPJ / CPF',c.doc,'','doc')+campo('Grupo',grupoDe(c),'','grupo')+
+   campo('Endereço',c.end,'s2','end')+campo('Bairro',c.bairro,'','bairro')+
+   campo('Cidade / UF',c.cid,'','cid')+campo('CEP',c.cep,'','cep')+campo('Telefone',c.tel,'','tel')+
+   campo('Situação',c.sit==='ativo'?'Ativo':'Inativo')+campo('Projetos',obrasDe(c.id).map(function(o){return o.id}).join(', '),'s2')+
+  '</div>'+(c.doc==='(a obter)'?'<div class="info">CPF/CNPJ ainda não informado: este cliente não pode receber NF até ser preenchido.</div>':'');
+}
+function paneObra(c,o){
+  return (S.edit?'<div class="secthead" style="margin-top:-4px"><b style="color:#7A4A0B">Editando: altere os campos e clique em Salvar</b><span class="sp"></span><button class="btn" onclick="cancelaEdit()">Cancelar</button><button class="btn pri" onclick="salvaEdit()">Salvar</button></div>':'')+'<div class="ficha">'+
+   campo('Nome do projeto',o.nome,'s2','nome')+campo('Código',o.id)+
+   campo('Cliente(s) / tomador(es) da NF',o.cls.map(function(x){return x+' · '+CL[x].nome}).join(' | '),'s3')+
+   campo('Endereço da obra (local do projeto)',o.end,'s2','end')+campo('Bairro / RA',o.bairro,'','bairro')+
+   campo('Cidade / UF',o.cid,'','cid')+campo('CEP',o.cep,'','cep')+campo('Situação',(OBTAG[o.sit]||[0,o.sit])[1])+
+   campo('Serviço (define o NBS da NF)',o.serv,'s2','serv')+campo('Captação (rateio)',o.capt,'','capt')+
+   campo('ART',o.art,'s3','art')+
+  '</div>'+((o.sit==='em andamento'&&!o.end)?'<div class="info">Projeto em andamento sem endereço: o endereço é obrigatório para emitir a NF e registrar a ART.</div>':'');
+}
+function paneContrato(c,o,t){
+  var h='<div class="ficha">'+campo('Valor total (bruto)',o.contrato?brl(o.contrato):'')+campo('Forma de cobrança',o.contratoDesc,'s2')+
+    campo('Parcelas',o.parc.length?o.parc.length+' ('+o.parc.filter(function(p){return p.sit==='paga'}).length+' pagas)':'')+
+    campo('Reajuste','Sem reajuste (contratos da FG não têm reajuste)','s2')+campo('Multa rescisória','2%')+campo('Situação',o.contrato?'Proposta aprovada':'A cadastrar','s2')+'</div>';
+  h+='<div class="secthead"><b>Arquivos do contrato</b><span class="sp"></span><button class="btn" onclick="toast(\'Anexos entram com a tela de Documentos\')">Anexar Arquivo</button><button class="btn pri" onclick="toast(\'Em breve: formulário de aditivo\')">Novo Aditivo</button></div>';
+  h+='<div class="file"><div class="ic">PDF</div><div><b>Proposta aprovada</b><small>Ultimamente a FG não assina contrato: vale a proposta aceita · localizar no e-mail e anexar</small></div></div>';
+  h+='<div class="drop">Arraste aqui o PDF da proposta, do contrato ou do aditivo</div>';
+  return h;
+}
+function paneObras(c){
+  var obs=obrasDe(c.id);
+  var h='<div class="secthead"><b>Projetos do cliente</b><span class="sp"></span><button class="btn pri" onclick="novo(\'obra\')">Novo Projeto</button></div>';
+  h+='<div class="tablewrap" id="tw"><table><thead><tr><th>Código</th><th>Projeto</th><th>Situação</th><th class="r">Contratado</th><th class="r">Recebido (líq.)</th><th class="r">A receber</th><th>Captação</th></tr></thead><tbody>';
+  var rows=obs.map(function(o){var t=tot(parcDe(o,c.id),o.cls.length>1?0:o.contrato),ot=OBTAG[o.sit]||['t-gray',o.sit];
+    return '<tr class="clk" onclick="seleciona({t:\'obra\',id:\''+o.id+'\',cl:\''+c.id+'\',aba:\'obra\'})"><td class="mono">'+o.id+'</td><td class="w">'+esc(o.nome)+'</td><td><span class="tag '+ot[0]+'">'+ot[1]+'</span></td><td class="r">'+brl(t.contrato)+'</td><td class="r">'+brl(t.recebido)+'</td><td class="r">'+brl(t.receber)+'</td><td>'+esc(o.capt)+'</td></tr>'});
+  h+=paginaTab(rows,7)+'</tbody></table></div>'+pgTab(rows.length);
+  return h;
+}
+var PT=10;
+function paginaTab(rows){var n=Math.max(1,Math.ceil(rows.length/PT));if(S.pgPar>n-1)S.pgPar=n-1;return rows.slice(S.pgPar*PT,S.pgPar*PT+PT).join('')}
+function pgTab(total){var n=Math.max(1,Math.ceil(total/PT));
+  return '<div class="secthead" style="font-size:12px;color:var(--mut)"><span>'+total+' linha(s)</span><span class="sp"></span>'+(n>1?'<button class="mini" '+(S.pgPar===0?'disabled':'')+' onclick="S.pgPar--;desenhaPainel()">&#9664;</button><span>Página '+(S.pgPar+1)+' de '+n+'</span><button class="mini" '+(S.pgPar>=n-1?'disabled':'')+' onclick="S.pgPar++;desenhaPainel()">&#9654;</button>':'')+'</div>'}
+var AJT=0;
+function ajustaTabela(){
+  if(AJT)return;
+  var w=document.getElementById('tw');if(!w)return;
+  var cabe=function(){var x=document.getElementById('tw');return !x||x.scrollHeight<=x.clientHeight+1};
+  AJT=1;
+  try{
+    // cresce enquanto couber (até 40 linhas), depois encolhe até não cortar nenhuma linha
+    var n=0;while(cabe()&&n++<40){var tot=document.querySelectorAll('#tw tbody tr').length;if(tot<PT)break;var prim=S.pgPar*PT;PT++;S.pgPar=Math.floor(prim/PT);desenhaPainel()}
+    n=0;while(!cabe()&&PT>3&&n++<40){var prim2=S.pgPar*PT;PT--;S.pgPar=Math.floor(prim2/PT);desenhaPainel()}
+  }finally{AJT=0}
+}
+function paneFinanceiro(c,o){
+  var lista=[];
+  if(o)parcDe(o,c.id).forEach(function(p,i){lista.push({o:o,p:p,i:o.parc.indexOf(p)})});
+  else obrasDe(c.id).forEach(function(ob){parcDe(ob,c.id).forEach(function(p){lista.push({o:ob,p:p,i:ob.parc.indexOf(p)})})});
+  var h='<div class="secthead"><b>'+(o?'Parcelas do projeto '+o.id:'Parcelas de todos os projetos do cliente')+'</b><span class="sp"></span>'+
+    (o?'<button class="btn pri" onclick="novo(\'parcela\')">Nova Parcela</button><button class="btn" onclick="gerarParcelas()">Gerar Parcelas</button><button class="btn ok" onclick="abrirReconhecer()">Reconhecer Pagamento</button>':'')+'</div>';
+  if(!lista.length)return h+'<div class="info">Nenhuma parcela cadastrada. Cadastre o contrato e use "Gerar Parcelas".</div>';
+  var rows=lista.map(function(x){var p=x.p,st=SITTAG[p.sit]||['t-gray',p.sit];
+    var rec=p.sit==='paga'?(p.receb||'—'):'—';
+    var btn=aberta(p)&&!x.o.arq?'<button class="btn" style="min-height:22px;padding:0 8px" onclick="abrirReconhecer(\''+x.o.id+'\','+x.i+')">Reconhecer</button> <button class="btn" style="min-height:22px;padding:0 8px" onclick="naoRecebida(\''+x.o.id+'\','+x.i+')">Não Será Recebida</button>':'';
+    return '<tr'+(p.sit==='a conferir'?' class="hl"':'')+'>'+(o?'':'<td class="mono">'+x.o.id+'</td>')+'<td class="w">'+esc(p.desc)+(p.semNF?' <span class="tag t-bad">sem NF</span>':'')+'</td><td class="mono mh">'+esc(p.nf||'—')+'</td><td class="mh">'+esc(p.emis||'—')+'</td><td>'+esc(p.venc||'—')+'</td><td class="r">'+(p.bruto?brl(p.bruto):'—')+'</td><td class="mh">'+esc(rec)+'</td><td class="r mh">'+(p.sit==='paga'?brl(p.liq):'—')+'</td><td><span class="tag '+st[0]+'">'+st[1]+'</span></td><td>'+btn+'</td></tr>'});
+  var t=tot(lista.map(function(x){return x.p}),0);
+  h+='<div class="tablewrap" id="tw"><table><thead><tr>'+(o?'':'<th>Projeto</th>')+'<th>Parcela / descrição</th><th class="mh">NF</th><th class="mh">Emissão</th><th>Vencimento</th><th class="r">Valor bruto</th><th class="mh">Recebido em</th><th class="r mh">Recebido (líquido)</th><th>Situação</th><th></th></tr></thead><tbody>'+paginaTab(rows)+'</tbody>'+
+     '<tfoot><tr><td colspan="'+(o?4:5)+'">Totais de '+lista.length+' parcela(s)</td><td class="r">'+brl(lista.reduce(function(a,x){return a+x.p.bruto},0))+'</td><td></td><td class="r">'+brl(t.recebido)+'</td><td colspan="2"></td></tr></tfoot></table></div>'+pgTab(rows.length);
+  if(t.faturadaSemBaixa)h+='<div class="info">"NF emitida" = nota sem baixa conferida no banco: a data e o valor líquido entram quando a auditoria pelos extratos do BB (2023–2025) for importada.</div>';
+  return h;
+}
+function paneNotas(c,o){
+  var lista=[];
+  (o?[o]:obrasDe(c.id)).forEach(function(ob){parcDe(ob,c.id).forEach(function(p){if(/^\d+$/.test(p.nf)&&!lista.some(function(x){return x.p.nf===p.nf}))lista.push({o:ob,p:p})})});
+  lista.sort(function(a,b){return (+b.p.nf)-(+a.p.nf)});
+  var h='<div class="secthead"><b>Notas fiscais '+(o?'do projeto '+o.id:'do cliente')+'</b><span class="sp"></span><button class="btn pri" onclick="emitirNF()">Emitir NF</button></div>';
+  if(!lista.length)return h+'<div class="info">Nenhuma NF emitida para '+(o?'este projeto':'este cliente')+'.</div>';
+  var rows=lista.map(function(x){var p=x.p,st=SITTAG[p.sit]||['t-gray',p.sit];
+    return '<tr><td class="mono">'+esc(p.nf)+'</td>'+(o?'':'<td class="mono">'+x.o.id+'</td>')+'<td>'+esc(p.emis)+'</td><td class="w">'+esc(CL[p.cl||c.id].nome)+'</td><td class="w mh">'+esc(p.desc)+'</td><td class="r">'+brl(p.bruto)+'</td><td class="r mh">'+(p.liqNota?brl(p.liqNota):'—')+'</td><td><span class="tag '+st[0]+'">'+(p.sit==='paga'?'Recebida':p.sit==='faturada'?'Sem baixa':st[1])+'</span></td></tr>'});
+  h+='<div class="tablewrap" id="tw"><table><thead><tr><th>NF</th>'+(o?'':'<th>Projeto</th>')+'<th>Emissão</th><th>Tomador</th><th class="mh">Descrição</th><th class="r">Bruto</th><th class="r mh">Líquido na nota</th><th>Situação</th></tr></thead><tbody>'+paginaTab(rows)+'</tbody></table></div>'+pgTab(rows.length);
+  return h;
+}
+function paneDocs(c,o){
+  var obs=o?[o]:obrasDe(c.id);
+  var h='<div class="secthead"><b>Documentos '+(o?'do projeto':'do cliente')+'</b><span class="sp"></span><button class="btn" onclick="toast(\'Em breve: pasta do projeto no Drive da FG\')">Abrir Pasta</button><button class="btn pri" onclick="toast(\'Em breve: registrar documento (ART, proposta, contrato, aditivo, formulário)\')">Novo Documento</button></div>';
+  var arts=obs.filter(function(x){return x.art});
+  h+='<div class="file"><div class="ic">ART</div><div><b>ART'+(arts.length>1?'s ('+arts.length+')':'')+'</b><small>'+(arts.length?arts.map(function(x){return (o?'':x.id+': ')+esc(x.art)}).join('<br>'):'Nenhuma ART registrada'+(o&&ANDAM[o.sit]?' — projeto em andamento: registrar a ART':''))+'</small></div></div>';
+  h+='<div class="file"><div class="ic">PDF</div><div><b>Proposta e contrato</b><small>'+(obs.some(function(x){return x.contrato})?'Proposta aprovada (ultimamente a FG não assina contrato) — anexar o PDF':'A cadastrar')+'</small></div></div>';
+  h+='<div class="file"><div class="ic" style="color:#1F5FAD">A4</div><div><b>Formulários FG (folha A4)</b><small>Folha Timbrada e Formulário Padrão: recibos, declarações e cartas do projeto, gerados com os dados do cadastro</small></div></div>';
+  h+='<div class="drop">Arraste aqui a ART, a proposta, o contrato, o aditivo ou outro documento</div>';
+  return h;
+}
+function emitirNF(){
+  var o=S.sel.t==='obra'?OB[S.sel.id]:null;
+  var ab=o?o.parc.filter(function(p){return p.sit==='a vencer'&&!p.nf}):[];
+  document.getElementById('mt').textContent='Emitir NF';
+  document.getElementById('mbody').innerHTML=o?'<div class="info">'+esc(CL[S.sel.cl].nome)+' › '+esc(o.nome)+'</div><div class="mgrid"><div class="fld s2"><label>Parcela</label><select>'+(ab.length?ab.map(function(p){return '<option>'+esc(p.desc)+' · '+brl(p.bruto)+' · '+esc(p.venc)+'</option>'}).join(''):'<option>Nenhuma parcela a faturar</option>')+'</select></div><div class="fld"><label>Tomador</label><select>'+o.cls.map(function(x){return '<option>'+esc(CL[x].nome)+'</option>'}).join('')+'</select></div><div class="fld"><label>Retenções</label><select><option>'+(CL[o.cls[0]].tipo==='PF'?'Sem retenção (PF)':'6,15% (IR + PIS/COFINS/CSLL)')+'</option></select></div></div><div class="info">A NF sai pelo Emissor Nacional com o texto padrão da parcela; o PDF vai para a pasta da obra e o envio por e-mail só sai depois do seu "pode enviar".</div>':'<div class="info">Selecione uma obra na árvore.</div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" onclick="fecharModal();FG_ir(\'notas\')">Ir para Notas Fiscais</button>';
+  abrirModal();
+}
+function paneContatos(c,o){
+  var ls=(D.contatos||[]).filter(function(x){return x.cl===c.id||(o&&x.ob===o.id)});
+  var h='<div class="secthead"><b>Contatos do financeiro '+(o?'do projeto e ':'')+'do cliente</b><span class="sp"></span><button class="btn pri" onclick="novoContato()">Novo Contato do Financeiro</button></div>';
+  if(!ls.length)return h+'<div class="info">Nenhum contato do financeiro cadastrado. Cadastre quem recebe a NF e a cobrança (nome, e-mail, telefone).</div>';
+  return h+'<div class="tablewrap" id="tw"><table><thead><tr><th>Nome</th><th>Papel</th><th>E-mail</th><th>Telefone</th><th>Recebe NF</th></tr></thead><tbody>'+ls.map(function(x){return '<tr><td><b>'+esc(x.nome)+'</b></td><td>'+esc(x.papel)+'</td><td>'+esc(x.email)+'</td><td>'+esc(x.tel||'—')+'</td><td style="cursor:pointer" title="Clique para trocar" onclick="cfNF(\''+esc(x.id)+'\')">'+(x.nf==='sim'?'<span class="tag t-ok">sim</span>':'<span class="tag t-gray">não</span>')+' <span style="color:#5A6B7F;font-size:11px">trocar</span></td></tr>'}).join('')+'</tbody></table></div>'+
+   '<div class="info">Na emissão da NF estes e-mails aparecem marcados; você ainda pode acrescentar outros na hora.</div>';
+}
+function cfNF(id){pedePin(function(){var x=(D.contatos||[]).filter(function(c){return c.id===id})[0];if(!x)return;var nv=x.nf==='sim'?'não':'sim';google.script.run.withSuccessHandler(function(){x.nf=nv;desenha();toast('Recebe NF: '+nv+' ✓')}).withFailureHandler(function(e){toast('Não gravou: '+(e.message||e))}).pgSalvar('ContatosFinanceiro',id,{nf:nv})})}
+function novoContato(){pedePin(function(){var c=CL[S.sel.cl],o=S.sel.t==='obra'?OB[S.sel.id]:null;
+  document.getElementById('mt').textContent='Novo Contato do Financeiro';
+  document.getElementById('mbody').innerHTML='<div class="mgrid"><div class="fld"><label>Nome</label><input id="ncN"></div><div class="fld"><label>Papel</label><select id="ncP"><option>Financeiro (NF e cobrança)</option><option>Contas a pagar</option><option>Fiscal do cliente</option><option>Engenheiro / coordenador</option></select></div><div class="fld"><label>E-mail</label><input id="ncE"></div><div class="fld"><label>Telefone</label><input id="ncT"></div><div class="fld"><label>Recebe a NF</label><select id="ncF"><option value="sim">Sim</option><option value="não">Não</option></select></div><div class="fld"><label>Vale para</label><select id="ncV"><option value="cl">Todo o cliente</option>'+(o?'<option value="ob">Só este projeto</option>':'')+'</select></div></div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="ncOk">Salvar</button>';abrirModal();
+  document.getElementById('ncOk').onclick=function(){var g=function(i){return document.getElementById(i).value.trim()};if(!g('ncN')||!/@/.test(g('ncE'))){toast('Preencha nome e e-mail.');return}
+    var x={id:'CF'+Date.now(),cl:g('ncV')==='ob'?'':c.id,ob:g('ncV')==='ob'?o.id:'',nome:g('ncN'),papel:g('ncP'),email:g('ncE'),tel:g('ncT'),nf:g('ncF')};
+    google.script.run.withSuccessHandler(function(){D.contatos=(D.contatos||[]).concat([x]);fecharModal();desenha();toast('Contato salvo ✓')}).withFailureHandler(function(e){toast('Não gravou: '+(e.message||e))}).pgInserir('ContatosFinanceiro',x)}})}
+/* 5 — cadastro protegido: editar pede o PIN de edição (definido pelo Ilacir na primeira vez) */
+var PIN_OK=0;
+function pedePin(depois){if(PIN_OK&&Date.now()-PIN_OK<10*60*1000)return depois();
+  document.getElementById('mt').textContent='Cadastro Protegido';
+  document.getElementById('mbody').innerHTML='<div class="info">Para alterar um cadastro já salvo, confirme que é você com o seu PIN de edição (na primeira vez, o PIN digitado passa a ser o seu). Fica liberado por 10 minutos.</div><div class="mgrid"><div class="fld"><label>PIN de edição</label><input id="pinV" type="password" inputmode="numeric" autocomplete="off"></div></div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="pinOk">Confirmar</button>';abrirModal();setTimeout(function(){document.getElementById('pinV').focus()},50);
+  document.getElementById('pinOk').onclick=function(){var v=document.getElementById('pinV').value;if(!/^\d{4,8}$/.test(v)){toast('PIN de 4 a 8 números.');return}
+    google.script.run.withSuccessHandler(function(r){if(r==='ok'||r==='criado'){PIN_OK=Date.now();fecharModal();if(r==='criado')toast('PIN criado ✓');depois()}else toast('PIN errado.')}).withFailureHandler(function(e){toast(e.message||e)}).pgPin(v)}}
+function paneHist(c,o){
+  var aba=o?'Obras':'Clientes',id=o?o.id:c.id;
+  google.script.run.withSuccessHandler(function(h){
+    var t=document.getElementById('htb');if(!t)return;
+    t.innerHTML=h.length?h.map(function(a){var q=a.quando.replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}).*/,'$3/$2/$1 $4');
+      var oq=a.campo==='(registro)'?(a.aba==='Parcelas'?'Parcela '+a.registro+' criada':'Registro criado'):(a.aba==='Parcelas'?'Parcela '+a.registro+' · ':'')+a.campo+': '+(a.antes||'—')+' → '+(a.depois||'—');
+      return '<tr><td>'+esc(q)+'</td><td>'+esc(a.quem)+'</td><td class="w">'+esc(oq)+(a.motivo?' <span class="tag t-gray">'+esc(a.motivo)+'</span>':'')+'</td></tr>'}).join(''):'<tr><td colspan="3">Nada registrado.</td></tr>';
+  }).withFailureHandler(erro).pjHistorico(aba,id);
+  return '<div class="tablewrap" style="overflow-y:auto"><table><thead><tr><th>Quando</th><th>Quem</th><th>O quê</th></tr></thead><tbody id="htb"><tr><td colspan="3">Carregando…</td></tr></tbody></table></div>';
+}
+
+/* ---------- edição ---------- */
+function editar(){if(S.sel.t==='obra'&&OB[S.sel.id].arq){toast('Projeto arquivado: só leitura. Desarquive para editar.');return}if(!PIN_OK||Date.now()-PIN_OK>=10*60*1000)return pedePin(editar);if(S.aba!=='cliente'&&S.aba!=='obra'){S.aba=S.sel.t==='obra'?'obra':'cliente'}S.edit=true;desenha()}
+function cancelaEdit(){S.edit=false;desenha()}
+function salvaEdit(){
+  var obra=S.aba==='obra',d={};
+  document.querySelectorAll('#pane input[data-k]').forEach(function(i){d[i.dataset.k]=i.value});
+  S.edit=false;
+  srv(obra?'pjSalvarObra':'pjSalvarCliente',[obra?S.sel.id:S.sel.cl,d],null,'Alteração gravada');
+}
+
+/* ---------- reconhecer pagamento ---------- */
+function abrirReconhecer(oid,idx){
+  if(!oid&&S.sel.t==='cliente'){
+    var abertos=obrasDe(S.sel.cl).filter(function(x){return !x.arq&&x.parc.some(aberta)});
+    if(!abertos.length){toast('Este cliente não tem parcela em aberto');return}
+    if(abertos.length===1){abrirReconhecer(abertos[0].id);return}
+    document.getElementById('mt').textContent='Reconhecer Pagamento — escolha o projeto';
+    document.getElementById('mbody').innerHTML='<div class="mgrid"><div class="fld s2"><label>Projeto com parcela em aberto</label><select id="rproj">'+abertos.map(function(x){return '<option value="'+x.id+'">'+esc(x.nome)+'</option>'}).join('')+'</select></div></div>';
+    document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn ok" onclick="abrirReconhecer(document.getElementById(\'rproj\').value)">Continuar</button>';
+    abrirModal();return;
+  }
+  var o=OB[oid||S.sel.id];
+  if(!o){toast('Selecione um projeto na árvore');return}
+  var ab=o.parc.map(function(p,i){return {p:p,i:i}}).filter(function(x){return aberta(x.p)});
+  if(!ab.length){toast('Este projeto não tem parcela em aberto');return}
+  if(idx===undefined)idx=ab[0].i;
+  var c=CL[o.cls[0]],pj=c.tipo==='PJ';
+  document.getElementById('mt').textContent='Reconhecer Pagamento';
+  document.getElementById('mbody').innerHTML='<div class="info">'+esc(c.nome)+' › '+esc(o.nome)+'</div><div class="mgrid">'+
+   '<div class="fld s2"><label>Parcela</label><select id="rp">'+ab.map(function(x){return '<option value="'+x.i+'"'+(x.i===idx?' selected':'')+'>'+esc(x.p.desc)+' · '+brl(x.p.bruto)+' · '+(x.p.nf?'NF '+x.p.nf:'sem NF')+' · '+esc(x.p.venc)+'</option>'}).join('')+'</select></div>'+
+   '<div class="fld"><label>Valor bruto da parcela</label><input id="rb" readonly></div>'+
+   '<div class="fld"><label>Retenções do tomador</label><select id="rr"><option value="6.15"'+(pj?' selected':'')+'>6,15% (IR + PIS/COFINS/CSLL)</option><option value="0"'+(pj?'':' selected')+'>Sem retenção (pessoa física)</option><option value="2.5">2,5%</option></select></div>'+
+   '<div class="fld"><label>Líquido esperado</label><input id="rl" readonly></div>'+
+   '<div class="fld"><label>Valor recebido (líquido)</label><input id="rv"></div>'+
+   '<div class="fld"><label>Data do recebimento</label><input id="rd" value="'+HOJE+'"></div>'+
+   '<div class="fld"><label>Onde entrou</label><select id="ro"><option>Conta da FG no Banco do Brasil</option><option>Fora do banco — recebido por Ilacir</option><option>Fora do banco — recebido por Thiago</option><option>Fora do banco — recebido por Rebeca</option></select></div>'+
+   '<div class="fld"><label>Nº da nota fiscal</label><input id="rn"></div>'+
+   '</div><div class="drop">Anexar comprovante (PDF ou imagem) — ou deixe o sistema achar o crédito no extrato do BB</div>'+
+   '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="rparc"> Pagamento parcial — manter o saldo em aberto</label>'+
+   '<div class="info" id="rinfo"></div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn ok" onclick="confirmaReceb(\''+o.id+'\')">Confirmar Recebimento</button>';
+  var at=function(){var p=o.parc[+document.getElementById('rp').value],r=+document.getElementById('rr').value;
+    var l=Math.round(p.bruto*(1-r/100)*100)/100;
+    document.getElementById('rb').value=brl(p.bruto);document.getElementById('rl').value=brl(l);
+    document.getElementById('rv').value=l.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    document.getElementById('rn').value=p.nf||'';
+    document.getElementById('rinfo').innerHTML='Ao confirmar: a parcela passa a <b>Paga</b>, o crédito é casado com o extrato do BB e o valor entra no rateio do mês'+(document.getElementById('ro').selectedIndex>0?' — <b>recebido fora do banco abate da parte do sócio</b>':'')+'. Se o valor recebido for menor que o esperado, a diferença vira retenção a conferir.'};
+  ['rp','rr','ro'].forEach(function(id){document.getElementById(id).addEventListener('change',at)});
+  at();abrirModal();
+}
+function confirmaReceb(oid){
+  var o=OB[oid],p=o.parc[+document.getElementById('rp').value];
+  var ro=document.getElementById('ro'),onde=ro.selectedIndex===0?'BB':ro.value.replace('Fora do banco — recebido por ','fora: ');
+  var d={valor:document.getElementById('rv').value,data:document.getElementById('rd').value,onde:onde,nf:document.getElementById('rn').value,parcial:document.getElementById('rparc').checked};
+  fecharModal();marca();srv('pjReconhecer',[p.id,d],null,'Recebimento gravado');
+}
+
+/* ---------- novo / inativar / histórico ---------- */
+function novo(tipo){
+  var T={cliente:['Novo Cliente',[['Tipo','<select><option>Pessoa jurídica</option><option>Pessoa física</option></select>'],['CPF / CNPJ','<input placeholder="00.000.000/0000-00">'],['Razão social / Nome','<input>'],['Grupo','<input placeholder="ex.: Real Engenharia">']],'Com o CNPJ, o sistema busca razão social e endereço na Receita.'],
+         obra:['Novo Projeto',[['Cliente','<select>'+D.clientes.map(function(c){return '<option'+(c.id===S.sel.cl?' selected':'')+'>'+c.id+' · '+esc(c.nome)+'</option>'}).join('')+'</select>'],['Nome do projeto','<input placeholder="Número Nome - Endereço (ex.: 1210 Real Natúria - Av. Parque 545)">'],['Endereço','<input>'],['Captação','<select><option>—</option><option>Ilacir</option><option>Thiago</option></select>']],'Cadastro Único: o projeto criado aqui aparece também no FG Painel, com o mesmo código OB.'],
+         parcela:['Nova Parcela',[['Descrição','<input>'],['Valor bruto','<input>'],['Vencimento','<input placeholder="dd/mm/aaaa">'],['NF','<select><option>Emitir quando o Ilacir mandar</option><option>Emitir automática no vencimento</option></select>']],'Cada parcela vira uma NF.']}[tipo];
+  document.getElementById('mt').textContent=T[0];
+  document.getElementById('mbody').innerHTML='<div class="mgrid">'+T[1].map(function(f){return '<div class="fld"><label>'+f[0]+'</label>'+f[1]+'</div>'}).join('')+'</div><div class="info">'+T[2]+'</div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="nvOk">Salvar</button>';
+  document.getElementById('nvOk').onclick=function(){
+    var v=[].slice.call(document.querySelectorAll('#mbody .mgrid input,#mbody .mgrid select')).map(function(e){return e.value});
+    if(tipo==='cliente'){var d={tipo:/física/.test(v[0])?'PF':'PJ',doc:v[1],nome:v[2],grupo:v[3]};fecharModal();marca();
+      srv('pjSalvarCliente',['',d],function(id){S.sel={t:'cliente',id:id,cl:id};S.aba='cliente'},'Cliente criado')}
+    else if(tipo==='obra'){var cl=v[0].split(' · ')[0];fecharModal();marca();
+      srv('pjSalvarObra',['',{cls:[cl],nome:v[1],end:v[2],capt:v[3]}],function(id){S.sel={t:'obra',id:id,cl:cl};S.aba='obra'},'Projeto criado')}
+    else if(tipo==='parcela'){fecharModal();marca();srv('pjNovaParcela',[S.sel.id,{desc:v[0],valor:v[1],venc:v[2]}],function(){S.aba='financeiro'},'Parcela criada')}
+  };
+  abrirModal();
+}
+function gerarParcelas(){toast('Gerar Parcelas entra com a tela de Propostas e Contratos')}
+function inativar(){
+  var o=S.sel.t==='obra'?OB[S.sel.id]:null,c=CL[S.sel.cl];
+  document.getElementById('mt').textContent=o?'Cancelar Projeto':'Inativar Cliente';
+  document.getElementById('mbody').innerHTML='<div>'+(o?'Cancelar o projeto <b>'+esc(o.nome)+'</b>?':'Inativar o cliente <b>'+esc(c.nome)+'</b>?')+'</div><div class="info">Nada se apaga: o registro vai para "Inativos / Arquivados" e pode ser reaberto. O motivo fica no Histórico.</div><div class="mgrid"><div class="fld s2"><label>Motivo</label><input></div></div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Voltar</button><button class="btn red" onclick="fecharModal();toast(\'Ainda não disponível: nada é gravado\')">'+(o?'Cancelar Projeto':'Inativar Cliente')+'</button>';
+  abrirModal();
+}
+function moverProjeto(){
+  var o=OB[S.sel.id],ida=pastaDe(o)==='and',t=totObra(o);
+  document.getElementById('mt').textContent=ida?'Mover para Concluídos':'Voltar para Em Andamento';
+  document.getElementById('mbody').innerHTML='<div>'+(ida?'Concluir':'Reabrir')+' o projeto <b>'+esc(o.nome)+'</b>?</div>'+
+    (ida&&(t.receber>0||t.conferir>0)?'<div class="info" style="background:#FCEBD3;border-color:#E3B877">Este projeto ainda tem '+brl(t.receber+t.conferir)+' em aberto. Ele continua contando em "A receber" até tudo ser recebido.</div>':'')+
+    '<div class="info">O projeto aparece na outra pasta com a mesma hierarquia (grupo › cliente › projeto). A mudança fica no Histórico e pode ser desfeita.</div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn '+(ida?'ok':'pri')+'" id="mvOk">'+(ida?'Mover para Concluídos':'Voltar para Em Andamento')+'</button>';
+  document.getElementById('mvOk').onclick=function(){fecharModal();marca();var cl=S.sel.cl;
+    srv('pjMover',[o.id,ida],function(){var pk=ida?'con':'and';S.open['F:'+pk]=1;S.open['G:'+pk+':'+grupoDe(CL[cl])]=1;S.open['C:'+pk+':'+cl]=1},
+      ida?'Projeto movido para Projetos Concluídos':'Projeto voltou para Projetos em Andamento')};
+  abrirModal();
+}
+function arquivar(){
+  var o=OB[S.sel.id],t=totObra(o),aberto=t.receber+t.conferir;
+  document.getElementById('mt').textContent='Arquivar Projeto';
+  if(aberto>0){
+    document.getElementById('mbody').innerHTML='<div>O projeto <b>'+esc(o.nome)+'</b> ainda tem <b>'+brl(aberto)+'</b> em aberto.</div><div class="info" style="background:#FCEBD3;border-color:#E3B877">Projeto com valor em aberto não pode ser arquivado. Primeiro receba as parcelas ou marque cada uma como "não será recebida", com o motivo.</div>';
+    document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Fechar</button><button class="btn pri" onclick="fecharModal();S.aba=\'financeiro\';desenha()">Ver Parcelas em Aberto</button>';
+    abrirModal();return;
+  }
+  document.getElementById('mbody').innerHTML='<div>Arquivar o projeto <b>'+esc(o.nome)+'</b>?</div><div class="mgrid"><div class="fld"><label>Motivo</label><select id="amot"><option>Encerrado há muito tempo</option><option>Contrato rescindido</option><option>Proposta não fechou</option><option>Outro</option></select></div><div class="fld"><label>Observação</label><input id="aobs"></div></div><div class="info">O projeto sai da árvore e fica no Arquivo (link no pé da árvore e botão Arquivo). Nada se apaga e os números não mudam: NF, recebimentos, rateio e relatórios continuam contando este projeto. Pode ser desarquivado a qualquer momento.</div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="aOk">Arquivar Projeto</button>';
+  document.getElementById('aOk').onclick=function(){
+    var mot=document.getElementById('amot').value,ob=document.getElementById('aobs').value,cl=S.sel.cl;
+    fecharModal();marca();
+    srv('pjArquivar',[o.id,mot+(ob?' — '+ob:'')],function(){inicial();
+      if(!obrasDe(cl).some(function(x){return !x.arq}))setTimeout(function(){toast('Projeto arquivado. O cliente também saiu da árvore (não tem outro projeto ativo).')},400)},'Projeto arquivado');
+  };
+  abrirModal();
+}
+function desarquivar(id){
+  var o=OB[id];fecharModal();marca();
+  srv('pjDesarquivar',[id],function(){seleciona({t:'obra',id:id,cl:o.cls[0],aba:'obra'})},'Projeto desarquivado');
+}
+function paneArquivo(){var L=D.obras.filter(function(o){return o.arq}).sort(function(a,b){return String(b.arqData).split('/').reverse().join('').localeCompare(String(a.arqData).split('/').reverse().join(''))});
+  var pg=S.pgArq||0,n=Math.max(1,Math.ceil(L.length/12)),f=L.slice(pg*12,pg*12+12);
+  var h='<div class="secthead"><b>Arquivo — projetos arquivados</b><span class="sp"></span><span class="crumb" style="display:inline">do mais novo para o mais velho · nada é apagado</span></div>';
+  if(!L.length)return h+'<div class="info">O Arquivo está vazio.</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,minmax(70px,auto));gap:8px;flex:1">'+f.map(function(o){return '<div class="box" style="padding:8px 12px;cursor:pointer" onclick="abrirArquivado(\''+o.id+'\')"><div style="font-weight:600;color:#A3271B;white-space:nowrap">'+esc(o.nome)+'</div><div style="font-size:12px;color:#4A5565;white-space:nowrap">'+o.id+' · '+esc(CL[o.cls[0]].nome)+'</div><div style="font-size:12px;white-space:nowrap">Arquivado em '+esc(o.arqData)+' · '+esc(o.arqMotivo)+'</div></div>'}).join('')+'</div>';
+  return h+'<div class="pgbar" style="justify-content:flex-end;gap:6px">Página '+(pg+1)+' de '+n+' <button class="mini" '+(pg?'':'disabled')+' onclick="S.pgArq--;desenha()">◀</button><button class="mini" '+(pg<n-1?'':'disabled')+' onclick="S.pgArq++;desenha()">▶</button></div>'}
+function abrirArquivo(){
+  var L=D.obras.filter(function(o){return o.arq});
+  document.getElementById('mt').textContent='Arquivo — projetos arquivados';
+  var h='<div class="search" style="flex:none"><input id="abus" placeholder="Procurar no Arquivo"></div>';
+  h+='<div class="tablewrap" style="max-height:52vh;overflow-y:auto"><table><thead><tr><th>Código</th><th>Projeto</th><th>Cliente</th><th>Arquivado em</th><th>Motivo</th><th></th></tr></thead><tbody id="atb"></tbody></table></div>';
+  if(!L.length)h+='<div class="info">O Arquivo está vazio. Para arquivar, abra um projeto na árvore e use "Arquivar Projeto" no cabeçalho.</div>';
+  document.getElementById('mbody').innerHTML=h;
+  var pinta=function(){var q=nrm(document.getElementById('abus').value);
+    document.getElementById('atb').innerHTML=L.filter(function(o){return !q||nrm([o.id,o.nome,CL[o.cls[0]].nome,o.arqMotivo].join(' ')).indexOf(q)>=0}).map(function(o){
+      return '<tr><td class="mono">'+o.id+'</td><td class="w">'+esc(o.nome)+'</td><td class="w">'+esc(CL[o.cls[0]].nome)+'</td><td>'+esc(o.arqData)+'</td><td class="w">'+esc(o.arqMotivo)+'</td><td><button class="btn" style="min-height:22px" onclick="abrirArquivado(\''+o.id+'\')">Abrir</button> <button class="btn pri" style="min-height:22px" onclick="desarquivar(\''+o.id+'\')">Desarquivar</button></td></tr>'}).join('')};
+  document.getElementById('abus').oninput=pinta;pinta();
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Fechar</button>';
+  document.querySelector('#modal .mbox').style.width='min(980px,100%)';
+  abrirModal();
+}
+function abrirArquivado(id){fecharModal();marca();var o=OB[id];S.edit=false;S.sel={t:'obra',id:id,cl:o.cls[0]};S.aba='obra';S.pgPar=0;desenha()}
+function naoRecebida(oid,i){
+  var o=OB[oid],p=o.parc[i];
+  document.getElementById('mt').textContent='Parcela Não Será Recebida';
+  document.getElementById('mbody').innerHTML='<div>'+esc(o.nome)+' › <b>'+esc(p.desc)+'</b> · '+brl(p.bruto)+'</div><div class="mgrid"><div class="fld"><label>Motivo</label><select id="nmot"><option>Recebido por fora / sem registro no banco</option><option>Desconto concedido</option><option>Cliente não pagou (perda)</option><option>Valor lançado errado</option><option>Outro</option></select></div><div class="fld"><label>Observação</label><input id="nobs"></div></div><div class="info">A parcela sai de "A receber" e fica como <b>Não recebida</b>, com o motivo no Histórico. Pode ser revertida. Se o dinheiro entrou mas não está no extrato do BB, prefira "Reconhecer Pagamento" com "Fora do banco".</div>';
+  document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="nOk">Confirmar</button>';
+  document.getElementById('nOk').onclick=function(){var ob=document.getElementById('nobs').value,mot=document.getElementById('nmot').value+(ob?' ('+ob+')':'');fecharModal();marca();srv('pjNaoRecebida',[p.id,mot],null,'Parcela baixada como não recebida')};
+  abrirModal();
+}
+function abrirModal(){document.getElementById('modal').classList.add('on')}
+function fecharModal(){document.getElementById('modal').classList.remove('on');document.querySelector('#modal .mbox').style.width=''}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target.id==='modal')fecharModal()});
+
+/* ---------- barra de botões ---------- */
+var SV={
+ voltar:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>',
+ inicio:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>',
+ mais:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+ din:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
+ lapis:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+ rel:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+ nf:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>',
+ caixa:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></svg>',
+ bloq:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>'
+};
+function desenhaToolbar(){
+  var ob=S.sel.t==='obra';
+  var B=[['voltar','Voltar','',voltar,SV.voltar],['inicio','Início','',function(){descartar(function(){FG_ir('inicio')})},SV.inicio],
+   ['nc','Novo Cliente','novo',function(){novo('cliente')},SV.mais],['no','Novo Projeto','novo',function(){novo('obra')},SV.mais],['ed','Editar','',editar,SV.lapis]];
+  var tb=document.getElementById('toolbar');tb.innerHTML='';
+  B.forEach(function(b){var e=document.createElement('button');e.type='button';e.className='tb '+b[2];e.innerHTML=b[4]+'<span>'+b[1]+'</span>';e.onclick=b[3];
+    var oa=ob&&OB[S.sel.id].arq;if((b[0]==='nf'&&!ob)||((b[0]==='rec'||b[0]==='nf')&&oa))e.disabled=true;if(b[0]==='ed'&&oa)e.disabled=true;if(b[0]==='voltar'&&!HIST.length&&!FG_VT)e.disabled=true;tb.appendChild(e)});
+}
+function voltar(){
+  if(S.edit){descartar(voltar);return}
+  if(!HIST.length&&FG_VT){FG_volta();return}
+  if(!HIST.length){document.getElementById('tree').innerHTML='<div style="padding:12px;color:#5A6676">Carregando…</div>';
+google.script.run.withSuccessHandler(function(d){aplica(d);inicial();if(FG_OB&&OB[FG_OB]){S.sel={t:'obra',id:FG_OB,cl:OB[FG_OB].cls[0]};S.aba='obra'}desenha()}).withFailureHandler(function(e){document.getElementById('tree').innerHTML='<div style="padding:12px;color:#8E2A1F">'+esc(e.message||e)+'</div>'}).pjCarregar();return}
+  var s=JSON.parse(HIST.pop());S.sel=s.sel;S.aba=s.aba;S.busca=s.busca;S.soAnd=s.soAnd;S.agrupar=s.agrupar;S.pg=s.pg;S.open=s.open;S.edit=false;S.pgPar=0;
+  document.getElementById('busca').value=S.busca;desenha();
+}
+
+/* ---------- busca e chaves ---------- */
+var tmr;
+document.getElementById('busca').addEventListener('input',function(e){clearTimeout(tmr);var v=e.target.value;tmr=setTimeout(function(){if(!S.busca&&v)marca();S.busca=v;S.pg=0;desenha()},180)});
+document.getElementById('chGrp').onclick=function(){marca();S.agrupar=!S.agrupar;S.pg=0;desenha()};
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('modal').classList.contains('on')){if(e.key==='Escape')fecharModal();return}
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+});
+
+(function(){var m=document.getElementById('modal'),d=document.querySelector('.dlg');if(m&&d&&m.parentNode!==d)d.appendChild(m)})();
+
+/* PRÉVIA 05/11 — sem botão gigante: as ações do formulário sobem para a linha de botões de cima (Ilacir 00:46) */
+function FG_acoesTopo(){var tb=document.getElementById('toolbar');if(!tb)return;[].slice.call(tb.querySelectorAll('.tb.ext')).forEach(function(e){e.remove()});
+var m=document.querySelector('.dlg>.modal.on'),src=m?[].slice.call(m.querySelectorAll('.mfoot button')):[].slice.call(document.querySelectorAll('#pane .acoes-topo button'));
+src.forEach(function(b){if(/^(Cancelar|Fechar)$/.test(b.textContent.trim()))return;var e=document.createElement('button');e.type='button';e.className='tb ext '+(/verm|bad|danger/.test(b.className)?'verm':'novo');e.textContent=b.textContent;e.onclick=function(){b.click()};tb.appendChild(e)});
+if(m){var c=m.querySelector('.mfoot');var x=[].slice.call(c.querySelectorAll('button')).filter(function(b){return /^(Cancelar|Fechar)$/.test(b.textContent.trim())})[0];if(x){var e=document.createElement('button');e.type='button';e.className='tb ext';e.textContent=x.textContent.trim();e.onclick=function(){x.click()};tb.appendChild(e)}}
+tb.style.gridTemplateColumns='repeat('+tb.children.length+',1fr)'}
+(function(){var m=document.getElementById('modal');if(m&&window.MutationObserver)new MutationObserver(function(){setTimeout(FG_acoesTopo,0)}).observe(m,{attributes:true,childList:true,subtree:true,attributeFilter:['class']});})();
+
+function juntaHead(){var h=document.getElementById('head'),k=document.getElementById('kpis');if(!h||!k)return;var w=h.parentNode;if(w.className.indexOf('headrow')<0){w=document.createElement('div');w.className='headrow';h.parentNode.insertBefore(w,h);w.appendChild(h);w.appendChild(k)}var t=h.querySelector('.headtitle');if(t&&!t.querySelector('.hico')){var tsv=document.querySelector('.titlebar svg');if(tsv){var ic=tsv.cloneNode(true);ic.setAttribute('class','hico');ic.setAttribute('width','26');ic.setAttribute('height','26');ic.style.cssText='vertical-align:-5px;margin-right:10px;flex:none';t.insertBefore(ic,t.firstChild)}}if(t){t.style.fontSize='';var fs=19;while(t.scrollWidth>h.clientWidth-28&&fs>12){fs--;t.style.fontSize=fs+'px'}}[].forEach.call(document.querySelectorAll('.headrow .kpi b,.headrow .kpi em,.headrow .kpi small'),function(e){e.style.fontSize='';var f=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&f>9){f-=0.5;e.style.fontSize=f+'px'}});}
+function desenha(){setTimeout(juntaHead,0);
+  document.querySelector('#chGrp .sw').classList.toggle('on',S.agrupar);
+  desenhaToolbar();desenhaArvore();mostraSelecao();desenhaPainel();
+}
+window.addEventListener('resize',function(){desenhaPainel()});
+/* divisor arrastável entre a árvore e o painel (como no Windows); a largura fica guardada neste navegador */
+(function(){
+  var d=document.getElementById('divisor'),b=document.querySelector('.body'),arr=false;
+  function aplica(w){w=Math.max(260,Math.min(w,Math.round(window.innerWidth*0.6)));b.style.setProperty('--larg',w+'px');return w}
+  try{var g=+localStorage.getItem('fgArvoreLarg');if(g)aplica(g)}catch(e){}
+  d.addEventListener('mousedown',function(e){arr=true;d.classList.add('arr');document.body.style.userSelect='none';e.preventDefault()});
+  window.addEventListener('mousemove',function(e){if(!arr)return;aplica(e.clientX-b.getBoundingClientRect().left-4)});
+  window.addEventListener('mouseup',function(){if(!arr)return;arr=false;d.classList.remove('arr');document.body.style.userSelect='';
+    try{localStorage.setItem('fgArvoreLarg',parseInt(getComputedStyle(b).getPropertyValue('--larg'))||350)}catch(e){}desenhaPainel()});
+  d.addEventListener('dblclick',function(){b.style.removeProperty('--larg');try{localStorage.removeItem('fgArvoreLarg')}catch(e){}desenhaPainel()});
+})();
+document.getElementById('tree').innerHTML='<div style="padding:12px;color:#5A6676">Carregando…</div>';
+google.script.run.withSuccessHandler(function(d){aplica(d);inicial();if(FG_OB&&OB[FG_OB]){S.sel={t:'obra',id:FG_OB,cl:OB[FG_OB].cls[0]};S.aba='obra'}desenha()}).withFailureHandler(function(e){document.getElementById('tree').innerHTML='<div style="padding:12px;color:#8E2A1F">'+esc(e.message||e)+'</div>'}).pjCarregar();
+</script>
+<div id="fgEntrar" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#E9EDF2;z-index:200;font-family:Segoe UI,Arial,sans-serif">
+ <div style="background:#fff;padding:34px 44px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;max-width:460px">
+  <div style="font-size:22px;font-weight:700;color:#1F3B5C;margin-bottom:10px">FG Gestão – Clientes e Projetos</div>
+  <div id="fgMsg" style="font-size:15px;color:#41505F;margin-bottom:18px">Entre com a conta Google autorizada.</div>
+  <button id="fgBt" style="font-size:17px;padding:10px 28px;border:0;border-radius:8px;background:#1F5FAF;color:#fff;cursor:pointer">Entrar com o Google</button>
+ </div></div>
+<div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
+<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div><script>(function(){var t=document.getElementById('fgTempo'),b=document.querySelector('.titlebar .usr');if(t&&b){t.style.cssText='font:12px Segoe UI,Arial,sans-serif;color:#C9D6E5;margin-left:auto;margin-right:14px;white-space:nowrap';b.style.marginLeft='0';b.parentNode.insertBefore(t,b);}else if(t){t.style.background='#fff';t.style.padding='1px 6px';}})()</script>
+<script>
+/* Ações: vão para o FG Gestão API (Apps Script), que confere o login do Firebase antes de agir. */
+(function(){
+  var API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec";
+  function chamada(fn,args,ok,er){
+    if(fn==='pjCarregar'&&window.__FGD&&!window.__fgPjIni){window.__fgPjIni=1;var d0=window.__FGD;setTimeout(function(){if(ok)ok(d0);window.__fgUsr&&window.__fgUsr()},0);return}
+    if(fn==='pjCarregar'){var ok0=ok;ok=function(d){if(ok0)ok0(d);setTimeout(function(){window.__fgUsr&&window.__fgUsr()},0)}}
+    var falha=function(m){if(er)er({message:m});else alert(m)};
+    if(!API){falha('A ligação com o Google ainda não foi publicada.');return}
+    if(!window.__fgAuth||!window.__fgAuth.currentUser){falha('Entre de novo com o Google.');return}
+    window.__fgAuth.currentUser.getIdToken().then(function(tk){
+      return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:fn,args:args,token:tk})});
+    }).then(function(r){return r.json()}).then(function(j){if(j.ok){if(ok)ok(j.r)}else falha(j.erro)}).catch(function(e){falha('Sem resposta do Google: '+(e&&e.message||e))});
+  }
+  function mk(ok,er){return new Proxy({},{get:function(t,k){
+    if(k==='withSuccessHandler')return function(f){return mk(f,er)};
+    if(k==='withFailureHandler')return function(f){return mk(ok,f)};
+    if(k==='withUserObject')return function(){return mk(ok,er)};
+    return function(){chamada(k,[].slice.call(arguments),ok,er)}}})}
+  Object.defineProperty(window,'google',{value:{script:{get run(){return mk(null,null)}}}});
+})();
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
+const t0 = performance.now();
+const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
+const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
+const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
+const $ = id => document.getElementById(id);
+const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+$('fgBt').onclick = () => signInWithPopup(auth, prov).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+let rodou = false;
+onAuthStateChanged(auth, async u => {
+  if (!u) { $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
+  $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  /* Ilacir 10/11: mostrar sempre com qual conta entrou, com Sair */
+  try { window.__fgSair = () => signOut(auth).then(() => location.reload()); window.__fgUsr = () => { const us = document.querySelector('.titlebar .usr'); if (us) us.innerHTML = u.email + ' · <a href="#" style="color:#fff;text-decoration:underline" onclick="window.__fgSair();return false">Sair</a>'; }; window.__fgUsr(); } catch (e) {}
+  try {
+    const s = await getDoc(doc(db, 'paginas', 'projetos'));
+    if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
+    window.__FGD = JSON.parse(s.get('json'));
+    const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
+    if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
+      const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
+      window.FG_volta = function () { if (history.length > 1) history.back(); else location.href = 'inicio.html'; }; }
+    $('fgCarregando').style.display = 'none';
+    $('fgTempo').textContent = 'aberto em ' + ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',') + ' s' + (quando ? ' · dados de ' + quando.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+    // confere com a planilha em segundo plano; se mudou algo, oferece atualizar (não recarrega sozinho para não perder o que estiver digitando)
+    const jsonAtual = s.get('json'), k = 'fgRv_projetos', ult = Number(sessionStorage.getItem(k) || 0);
+    if (API && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
+      u.getIdToken().then(tk => fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'fbPagina', args: ['projetos'], token: tk }) }))
+        .then(r => r.json()).then(async j => { if (!j.ok) return; const s2 = await getDoc(doc(db, 'paginas', 'projetos'));
+          if (s2.get('json') !== jsonAtual) {
+            /* Ilacir 10/11 15:26: aviso discreto demais — se não estiver digitando, atualiza sozinho; se estiver, faixa amarela grande no alto */
+            const ae = document.activeElement, digitando = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
+            if (!digitando && !document.querySelector('.modal.on')) { location.reload(); return; }
+            const f = document.createElement('div');
+            f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+            f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).';
+            f.onclick = () => location.reload(); document.body.appendChild(f);
+          }
+          else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
+    }
+  } catch (e) {
+    $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
+    $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
+  }
+});
+</script>
+</body>
+</html>
