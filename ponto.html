@@ -63,6 +63,7 @@ function chamar(acao,args,ok){if(ESPERA)return;ESPERA=true;desenhaBarra();
   .then(function(r){return r.json()}).then(function(j){ESPERA=false;if(j.ok){ERRO='';ok&&ok(j.r)}else{ERRO=j.erro||'Não deu certo.';toast(ERRO);desenha()}})
   .catch(function(e){ESPERA=false;ERRO='Sem resposta do Google: '+(e&&e.message||e);toast(ERRO);desenha()})}
 function carregar(){chamar('pontoEstado',[],function(r){E=r;desenha()})}
+function agoraHM(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
 function hm(m){return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2)}
 function dt(d){var p=d.split('/');return new Date(+p[2],+p[1]-1,+p[0])}
 /* ===== barra de botões (as ações ficam em cima, nunca embaixo do formulário) ===== */
@@ -71,6 +72,7 @@ function desenhaBarra(){if(!E)return;var s=E.situacao,b=[];
   if(tn==='Minha Senha de Liberação')b.push(['Gravar Minha Senha','gravarSenha()','pri']);
   else if(tn==='Corrigir Marcação')b.push(['Gravar Correção (senha do Ilacir)','corrigir()','pri']);
   else if(s.pendente)b.push(['Lançar e Liberar a Entrada','liberar()','verm']);
+  else if(s.pode&&s.tipo==='volta'&&E.voltaAs&&agoraHM()<E.voltaAs)b.push(['Volta do Almoço liberada às '+E.voltaAs,'','pri" disabled="disabled']);
   else if(s.pode)b.push(['Marcar '+NOMES[s.tipo],'marcar()','pri']);
   else b.push(['Dia completo ✓','','pri" disabled="disabled']);
   b.push(['Atualizar','carregar()','']);
@@ -120,6 +122,7 @@ function liberar(){var p=E.situacao.pendente,h={};p.faltam.forEach(function(t){h
   chamar('pontoLiberar',[h,$('aut').value,$('senha').value],function(r){E=r;TAB=0;toast('Lançado e liberado ✓ Agora marque a entrada.');desenha()})}
 function gravarSenha(){var n=$('sNova').value;if(n.length<6){toast('A nova senha precisa ter pelo menos 6 caracteres.');return}if(n!==$('sNova2').value){toast('As duas senhas novas não são iguais.');return}
   chamar('pontoSenhaDefinir',[n,$('sAtual').value],function(r){toast(r);carregar()})}
+setInterval(function(){if(E&&!ESPERA&&E.situacao&&E.situacao.tipo==='volta'&&E.voltaAs){var lib=agoraHM()>=E.voltaAs;if(lib!==window.__lib){window.__lib=lib;desenhaBarra()}}},5000);
 setInterval(function(){var e=$('relogio');if(e){var d=new Date();e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2)}},500);
 setInterval(function(){if(E&&!ESPERA&&document.visibilityState==='visible'&&!document.activeElement.matches('input,select'))carregar()},10*60*1000);
 </script>
