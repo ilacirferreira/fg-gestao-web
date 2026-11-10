@@ -426,8 +426,8 @@ if(I.bancoPend)AVISOS.push({g:'ate',t:I.bancoPend+' lançamento(s) do banco pend
 (I.pag||[]).filter(function(c){return c.sit!=='paga'&&dif(c.venc)>=0&&dif(c.venc)<=3}).forEach(function(c){AVISOS.push({g:dif(c.venc)===0?'urg':'ate',t:(dif(c.venc)===0?'Vence hoje: ':'Vence '+c.venc.slice(0,5)+': ')+c.conta,d:'Confira se já foi pago (Despesas › Contas a Pagar)',p:'Despesas',a:'Abrir Contas a Pagar'})});
 V.forEach(function(a){a.g='sab';a.d='(anotado em 05/11 — conferir se ainda vale) '+(a.d||'');AVISOS.push(a)});
 HOJE_REAL=hj;
-if(I.pag)PAGM_REAL=I.pag.slice().sort(function(a,b){return k(a.venc)<k(b.venc)?-1:1}).map(function(c){return [c.conta+(c.sit==='paga'?' ✓':''),c.venc.slice(0,5)]});
-if(I.lemb&&I.lemb.length)LEMB_REAL=I.lemb.map(function(l){return {d:l.d,t:l.t}});})();
+if(I.pag)PAGM_REAL=I.pag.slice().sort(function(a,b){return k(a.venc)<k(b.venc)?-1:1}).map(function(c){return [c.conta+(c.sit==='paga'?' ✓':''),c.venc.slice(0,5),c.k]});
+if(I.lemb&&(I.lemb.length||I.lembReal))LEMB_REAL=I.lemb.map(function(l){return {d:l.d,t:l.t,k:l.k}});})();
 if(window.__FG_TELAS){var TID={'Início':'inicio','Clientes e Projetos':'projetos','Notas Fiscais':'notas','Bancos':'bancos','Propostas e Contratos':'propostas','Sócios e Rateio':'socios','Despesas':'despesas','Colaboradores':'colaboradores','Documentos':'documentos','Caixa de Entrada':'caixa','Relatórios':'relatorios','ARTs':'arts','Configurações':'configuracoes'},ok=function(n){return !!window.__FG_TELAS[TID[n]]};
   for(var _i=PAGINAS.length-1;_i>=0;_i--)if(!ok(PAGINAS[_i][0]))PAGINAS.splice(_i,1);for(var _j=AVISOS.length-1;_j>=0;_j--)if(!ok(AVISOS[_j].p))AVISOS.splice(_j,1);if(D){D.ponto=null;D.pag=[];D.lemb=[]}PAGM_REAL=[];LEMB_REAL=[]}
 ptAvisosCli(D&&D.ponto).forEach(function(t){AVISOS.unshift({g:'urg',t:t,d:'Ponto marcado pela própria colaboradora · só o Ilacir corrige, com motivo',p:'Colaboradores',a:'Abrir o Ponto'})});
@@ -447,7 +447,9 @@ function novaSol(){toast('Ainda não disponível: abre Nova Solicitação (e-mai
 function novoEmail(){FG_rasc('Novo e-mail')}
 function procurar(){document.getElementById('busca').focus()}
 function sair(){toast('Ainda não disponível: sai do sistema.')}
-function irPara(p){toast('No sistema abre a página "'+p+'" no mesmo lugar (Voltar e Início sempre trazem de volta).')}
+/* Ilacir 10/11 16:23: aviso e lembrete levam de verdade para a página certa */
+var IR_ID={'Despesas':'despesas','Notas Fiscais':'notas','Bancos':'bancos','Colaboradores':'colaboradores','Caixa de Entrada':'caixa','Sócios':'socios','Sócios e Rateio':'socios','Configurações':'configuracoes','Relatórios':'relatorios','Propostas e Contratos':'propostas','Documentos':'documentos'};
+function irPara(p){var id=IR_ID[p];if(id&&typeof FG_ir==='function'){FG_ir(id);return}toast('Abra a página "'+p+'" pelos botões do alto.')}
 var CHEV='<svg class="chev{op}" viewBox="0 0 12 12"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 function chev(k){return CHEV.replace('{op}',S.ab[k]?' op':'')}
 function no(cls,sel,ab,nome,dir,click,ind){return '<div class="node '+cls+(sel?' sel':'')+'" style="margin-left:'+(ind||0)*14+'px" onclick="'+click+'">'+(ab===null?'<span class="nochev"></span>':chev(ab))+'<span class="nm">'+nome+'</span>'+(dir||'')+'</div>'}
@@ -500,7 +502,9 @@ var marcL={},marcV={};LEMB.forEach(function(l){marcL[+l.d.slice(0,2)]=1});PAGM.f
 var tt='';for(var i=0;i<42;i++){var dd=i-ini+1,cl='d',tx;if(dd<1){tx=dant+dd;cl+=' fo'}else if(dd>dm){tx=dd-dm;cl+=' fo'}else{tx=dd;if(a===HOJE.getFullYear()&&m===HOJE.getMonth()&&dd===HOJE.getDate())cl+=' hj';var fr=FERIADOS(a)[('0'+dd).slice(-2)+'/'+('0'+(m+1)).slice(-2)];if(fr){cl+=' fe';tt=fr}}h+='<div class="'+cl+'"'+(tt?' title="'+tt+'"':'')+'>'+tx+'</div>';tt=''}
 return '<div class="cal"><div class="calh"><button onclick="CALM.m--;if(CALM.m<0){CALM.m=11;CALM.a--}desenhaArvore()">‹</button><span>'+nm[m]+' de '+a+'</span><button onclick="CALM.m++;if(CALM.m>11){CALM.m=0;CALM.a++}desenhaArvore()">›</button></div><div class="calg">'+h+'</div></div>'}
 function lembCabe(){[].forEach.call(document.querySelectorAll('.lemb .it .lt'),function(e){e.style.fontSize='';var f=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&f>10){f-=0.5;e.style.fontSize=f+'px'}})}
-desenhaArvore=function(){document.getElementById('tree').innerHTML=calHtml()+'<div class="lemb"><h4>Lembretes <button title="Novo lembrete" onclick="toast(\'Ainda não disponível: abre a janela Novo Lembrete.\')">+</button></h4>'+LEMB.map(function(l){return '<div class="it" title="'+esc(l.t)+'"><input type="checkbox"><i class="lt">'+esc(l.t)+'</i><span>'+l.d+'</span></div>'}).join('')+'<div class="sub">Pagamentos do mês</div>'+PAGM.map(function(p){return '<div class="it" title="'+esc(p[0])+'"><input type="checkbox"><i class="lt">'+esc(p[0])+'</i><span>'+p[1]+'</span></div>'}).join('')+'</div>'};
+desenhaArvore=function(){document.getElementById('tree').innerHTML=calHtml()+'<div class="lemb"><h4>Lembretes <button title="Novo lembrete" onclick="toast(\'Ainda não disponível: abre a janela Novo Lembrete.\')">+</button></h4>'+LEMB.map(function(l){return '<div class="it" title="'+esc(l.t)+'"><input type="checkbox" title="Apagar este lembrete" onclick="lembMata(this,\''+esc(String(l.k||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\')"><i class="lt" style="cursor:pointer" onclick="irPara(\'Caixa de Entrada\')">'+esc(l.t)+'</i><span>'+l.d+'</span></div>'}).join('')+'<div class="sub">Pagamentos do mês</div>'+PAGM.map(function(p){return '<div class="it" title="'+esc(p[0])+'"><input type="checkbox" title="Apagar este lembrete" onclick="lembMata(this,\''+esc(String(p[2]||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\')"><i class="lt" style="cursor:pointer" onclick="irPara(\'Despesas\')">'+esc(p[0])+'</i><span>'+p[1]+'</span></div>'}).join('')+'</div>';setTimeout(lembCabe,0)};
+/* Ilacir 10/11 16:22: a caixinha MATA o lembrete (some e não volta) */
+function lembMata(cb,k){var it=cb.closest('.it'),t=it?it.textContent:'';if(!k){toast('Este lembrete é de exemplo; não dá para apagar.');cb.checked=false;return}it.style.opacity='.35';google.script.run.withSuccessHandler(function(){LEMB=LEMB.filter(function(l){return l.k!==k});PAGM=PAGM.filter(function(p){return p[2]!==k});it.remove();toast('Lembrete apagado ✓')}).withFailureHandler(function(er){it.style.opacity='';cb.checked=false;toast('Não apagou: '+(er&&er.message||er))}).inicioLembreteOcultar(k,t)}
 var _dpI=desenhaPainel;
 desenhaPainel=function(){var s=S.sel;if(s.t==='grp'||s.t==='av'){_dpI();document.getElementById('head').innerHTML='<div><div class="headtitle">FG Gestão</div></div>';kpisInicio();return;setTimeout(lembCabe,0)}
 var c=function(g){return AVISOS.filter(function(a){return a.g===g}).length};
@@ -570,7 +574,7 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
   <button id="fgBt" style="font-size:17px;padding:10px 28px;border:0;border-radius:8px;background:#1F5FAF;color:#fff;cursor:pointer">Entrar com o Google</button>
  </div></div>
 <div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
-<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div>
+<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div><script>(function(){var t=document.getElementById('fgTempo'),b=document.querySelector('.titlebar .usr');if(t&&b){t.style.cssText='font:12px Segoe UI,Arial,sans-serif;color:#C9D6E5;margin-left:auto;margin-right:14px;white-space:nowrap';b.style.marginLeft='0';b.parentNode.insertBefore(t,b);}else if(t){t.style.background='#fff';t.style.padding='1px 6px';}})()</script>
 <script>
 /* Ações: vão para o FG Gestão API (Apps Script), que confere o login do Firebase antes de agir. */
 (function(){
