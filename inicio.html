@@ -412,6 +412,17 @@ if(ds.length&&!D[ds[0]].saida)out.push(C.nome+' não marcou a saída de '+ds[0]+
 var dia0=D[hoje]||{},lim=(cfg.semPausaMaxMin!=null?+cfg.semPausaMaxMin:360)+(cfg.semPausaTolMin!=null?+cfg.semPausaTolMin:5);if(dia0.entrada&&!dia0.almoco&&!dia0.saida&&agora>mi(dia0.entrada.h)+lim)out.push(C.nome+' passou de '+Math.floor((lim-(cfg.semPausaTolMin!=null?+cfg.semPausaTolMin:5))/60)+'h sem pausa (entrada às '+dia0.entrada.h+')');
 var w=d.getDay();if(w>=1&&w<=5&&fer.indexOf(hoje)<0){var dia=D[hoje]||{},f=['entrada','almoco','volta','saida'].filter(function(t){return !dia[t]&&!(dia.saida&&(t==='almoco'||t==='volta'))&&hr[t]&&agora>mi(hr[t])+tol});
 if(f.length===4)out.push(C.nome+' não marcou a entrada hoje');else if(f.length)out.push(C.nome+' não marcou '+f.map(function(t){return NA[t]}).join(' nem ')+' hoje')}});return out}
+var HOJE_REAL=null,PAGM_REAL=null,LEMB_REAL=null;
+/* Ilacir 10/11 14:56: Início de verdade — hoje pelo relógio; avisos tirados do sistema; os anotados em 05/11 ficam em "Para Saber" como lista antiga a conferir */
+(function(){var V=AVISOS.splice(0,AVISOS.length);var I=(typeof D!=='undefined'&&D)||{},hj=new Date(),z=function(n){return ('0'+n).slice(-2)},hs=z(hj.getDate())+'/'+z(hj.getMonth()+1)+'/'+hj.getFullYear(),k=function(x){return x.slice(6)+x.slice(3,5)+x.slice(0,2)};
+var dif=function(d){var p=d.split('/');return Math.round((new Date(+p[2],+p[1]-1,+p[0])-new Date(hj.getFullYear(),hj.getMonth(),hj.getDate()))/864e5)};
+if((I.nfEmitir||[]).length)AVISOS.push({g:'ate',t:I.nfEmitir.length+' parcela(s) para emitir NF',d:I.nfEmitir.slice(0,5).join(' · '),p:'Notas Fiscais',a:'Emitir NF'});
+if(I.bancoPend)AVISOS.push({g:'ate',t:I.bancoPend+' lançamento(s) do banco pendente(s)',d:'a classificar, conciliar, confirmar ou verificar',p:'Bancos',a:'Abrir Pendências'});
+(I.pag||[]).filter(function(c){return c.sit!=='paga'&&dif(c.venc)>=0&&dif(c.venc)<=3}).forEach(function(c){AVISOS.push({g:dif(c.venc)===0?'urg':'ate',t:(dif(c.venc)===0?'Vence hoje: ':'Vence '+c.venc.slice(0,5)+': ')+c.conta,d:'Confira se já foi pago (Despesas › Contas a Pagar)',p:'Despesas',a:'Abrir Contas a Pagar'})});
+V.forEach(function(a){a.g='sab';a.d='(anotado em 05/11 — conferir se ainda vale) '+(a.d||'');AVISOS.push(a)});
+HOJE_REAL=hj;
+if(I.pag)PAGM_REAL=I.pag.slice().sort(function(a,b){return k(a.venc)<k(b.venc)?-1:1}).map(function(c){return [c.conta+(c.sit==='paga'?' ✓':''),c.venc.slice(0,5)]});
+if(I.lemb&&I.lemb.length)LEMB_REAL=I.lemb.map(function(l){return {d:l.d,t:l.t}});})();
 ptAvisosCli(D&&D.ponto).forEach(function(t){AVISOS.unshift({g:'urg',t:t,d:'Ponto marcado pela própria colaboradora · só o Ilacir corrige, com motivo',p:'Colaboradores',a:'Abrir o Ponto'})});
 
 var GRP=[['urg','Urgentes','pend'],['ate','Atenção','emit'],['sab','Para Saber','ano']];
@@ -449,7 +460,7 @@ function linhaAv(a){var g=GRP.filter(function(x){return x[0]===a.g})[0];return '
 function tabela(ls){var rows=ls.map(linhaAv);return ls.length?'<div class="tablewrap" id="tw"><table><thead><tr><th>Tipo</th><th>Aviso</th><th>Onde resolve</th><th></th></tr></thead><tbody>'+paginar(rows)+'</tbody></table></div>'+pgLine(rows.length):'<div class="info">Nenhum aviso.</div>'}
 function desenhaPainel(){var s=S.sel,head='',kp='',tabs=[],pane='';
 var c=function(g){return AVISOS.filter(function(a){return a.g===g}).length};
-kp=kpi('Urgentes',c('urg'),'resolver hoje','db')+kpi('Atenção',c('ate'),'esta semana')+kpi('Para Saber',c('sab'),'sem ação agora')+kpi('Hoje','segunda, 02/11/2026','feriado de Finados');
+kp=kpi('Urgentes',c('urg'),'resolver hoje','db')+kpi('Atenção',c('ate'),'esta semana')+kpi('Para Saber',c('sab'),'sem ação agora')+kpi('Hoje',['domingo','segunda','terça','quarta','quinta','sexta','sábado'][HOJE.getDay()]+', '+('0'+HOJE.getDate()).slice(-2)+'/'+('0'+(HOJE.getMonth()+1)).slice(-2)+'/'+HOJE.getFullYear(),'');
 if(s.t==='hoje'||s.t==='grp'){var ls=AVISOS.filter(function(a){return (s.t==='hoje'||a.g===s.g)&&casa(a)});
 head='<div><div class="crumb">Início</div><div class="headtitle">'+(new Date().getHours()<12?'Bom dia':new Date().getHours()<18?'Boa tarde':'Boa noite')+', Ilacir</div></div><div class="tags"><span class="tag t-gray">cada aviso leva ao lugar onde se resolve e some quando resolvido</span></div>';
 tabs=[s.t==='hoje'?'Avisos de Hoje':GRP.filter(function(g){return g[0]===s.g})[0][1]];pane=tabela(ls);
@@ -472,9 +483,9 @@ d.addEventListener('dblclick',function(){b.style.removeProperty('--larg');try{lo
 
 /* PRÉVIA 05/11 — Início: título FG Gestão; 4 caixas ao lado; páginas 4×3 em ordem alfabética; calendário + lembretes no lugar da árvore */
 TB=[['Voltar','voltar',''],['Início','inicio',''],['Sair','sair','']];
-var HOJE=new Date(2026,10,5),CALM={a:2026,m:10};
-var LEMB=[{d:'05/11',t:'Texto da parcela 08/12 (Real)'},{d:'10/11',t:'Resposta da Jéssica (Edna)'},{d:'15/11',t:'Prazo NF 146–148'}];
-var PAGM=[['Digital Contabilidade','10/11'],['Telefone e Internet','10/11'],['Energia (Neoenergia)','15/11'],['ISS (GDF)','20/11'],['FGTS e INSS (Edna)','20/11'],['PIS e COFINS (DARF)','25/11']];
+var HOJE=HOJE_REAL||new Date(),CALM={a:HOJE.getFullYear(),m:HOJE.getMonth()};
+var LEMB=LEMB_REAL||[{d:'05/11',t:'Texto da parcela 08/12 (Real)'},{d:'10/11',t:'Resposta da Jéssica (Edna)'},{d:'15/11',t:'Prazo NF 146–148'}];
+var PAGM=PAGM_REAL||[['Digital Contabilidade','10/11'],['Telefone e Internet','10/11'],['Energia (Neoenergia)','15/11'],['ISS (GDF)','20/11'],['FGTS e INSS (Edna)','20/11'],['PIS e COFINS (DARF)','25/11']];
 function calHtml(){var a=CALM.a,m=CALM.m,nm=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 var ini=new Date(a,m,1).getDay(),dm=new Date(a,m+1,0).getDate(),dant=new Date(a,m,0).getDate(),h='';
 ['D','S','T','Q','Q','S','S'].forEach(function(x){h+='<div class="dw">'+x+'</div>'});
@@ -491,7 +502,7 @@ var ps=PAGINAS.map(function(p){return p[0]}).sort(function(x,y){return x.localeC
 var cx=ps.map(function(n){var ic=PICO[n];return '<div class="pcx" onclick="irPara(\''+n+'\')">'+(ic?'<span class="pico" style="background:'+ic[0]+'"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+ic[1]+'</svg></span>':'')+esc(n)+'</div>'});while(cx.length<12)cx.push('<div class="pcx vz"></div>');
 document.getElementById('pane').innerHTML='<div class="pgrid">'+cx.join('')+'</div>'};
 function kpisInicio(){var c=function(g){return AVISOS.filter(function(a){return a.g===g}).length};
-document.getElementById('kpis').innerHTML='<div class="box kpi clk" onclick="sel({t:\'grp\',g:\'urg\'})" style="cursor:pointer"><small>Urgentes</small><b class="db">'+c('urg')+'</b><em>clique para ver</em></div><div class="box kpi" onclick="sel({t:\'grp\',g:\'ate\'})" style="cursor:pointer"><small>Atenção</small><b>'+c('ate')+'</b><em>clique para ver</em></div><div class="box kpi" onclick="sel({t:\'grp\',g:\'sab\'})" style="cursor:pointer"><small>Para Saber</small><b>'+c('sab')+'</b><em>clique para ver</em></div><div class="box kpi"><small>Hoje</small><b>quinta, 05/11/2026</b><em>&nbsp;</em></div>'}
+document.getElementById('kpis').innerHTML='<div class="box kpi clk" onclick="sel({t:\'grp\',g:\'urg\'})" style="cursor:pointer"><small>Urgentes</small><b class="db">'+c('urg')+'</b><em>clique para ver</em></div><div class="box kpi" onclick="sel({t:\'grp\',g:\'ate\'})" style="cursor:pointer"><small>Atenção</small><b>'+c('ate')+'</b><em>clique para ver</em></div><div class="box kpi" onclick="sel({t:\'grp\',g:\'sab\'})" style="cursor:pointer"><small>Para Saber</small><b>'+c('sab')+'</b><em>clique para ver</em></div><div class="box kpi"><small>Hoje</small><b>'+['domingo','segunda','terça','quarta','quinta','sexta','sábado'][HOJE.getDay()]+', '+('0'+HOJE.getDate()).slice(-2)+'/'+('0'+(HOJE.getMonth()+1)).slice(-2)+'/'+HOJE.getFullYear()+'</b><em>'+(FERIADOS(HOJE.getFullYear())[('0'+HOJE.getDate()).slice(-2)+'/'+('0'+(HOJE.getMonth()+1)).slice(-2)]||'&nbsp;')+'</em></div>'}
 S.sel={t:'inicio'};
 desenha();
 
@@ -574,18 +585,21 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
 const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
-$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+$('fgBt').onclick = () => signInWithPopup(auth, prov).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
 let rodou = false;
 onAuthStateChanged(auth, async u => {
   if (!u) { $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
   $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  /* Ilacir 10/11: mostrar sempre com qual conta entrou, com Sair */
+  try { window.__fgSair = () => signOut(auth).then(() => location.reload()); const us = document.querySelector('.titlebar .usr'); if (us) us.innerHTML = u.email + ' · <a href="#" style="color:#fff;text-decoration:underline" onclick="window.__fgSair();return false">Sair</a>'; } catch (e) {}
   try {
     const s = await getDoc(doc(db, 'paginas', 'inicio'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
