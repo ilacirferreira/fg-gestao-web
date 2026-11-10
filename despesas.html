@@ -420,6 +420,8 @@ var EMP_CTR={'28/06/2023|20000':3,'05/03/2026|3500':4},EMP_RES={};
 var SUPER_PIX={'31/08/2023|150':1,'21/09/2023|150':1,'18/10/2023|100':1,'24/10/2023|250':1,'28/11/2023|100':1,'06/02/2024|150':1,'21/11/2024|200':1,'04/12/2024|40':1,'18/03/2025|134.34':1,'04/06/2025|200':1,'17/09/2025|266':1,'16/10/2025|100':1,'22/04/2026|150':1,'04/05/2026|150':1,'28/05/2026|201':1,'28/05/2026|199':1,'24/06/2026|501':1,'15/07/2026|201':1};
 /* linha 111 da planilha do Ilacir (COMPRAS SUPERMERCADO) e a parte reembolsada por Pix ao Thiago/Ilacir (hoje em Retiradas) */
 var PLAN111={'2023-08':150,'2023-09':150,'2023-10':350,'2023-11':100,'2024-02':150,'2024-11':200,'2024-12':40,'2025-01':300,'2025-02':164.35,'2025-03':134.34,'2025-04':210.92,'2025-06':450.39,'2025-08':369.17,'2025-09':519,'2025-10':518.11,'2025-11':569.58,'2026-01':327.55,'2026-02':472.90,'2026-03':391.06,'2026-04':720.12,'2026-05':964.34,'2026-06':501,'2026-07':201};
+function supQuem(d){d=String(d||'');var m=d.match(/(?:\d\d:\d\d )?(.+)$/);return 'Pix '+((m?m[1]:d).replace(/^(\S+).*$/,'$1'))}
+var SUPOK=(function(){try{return JSON.parse((D&&D.supOk)||'{}')}catch(e){return {}}})();/* meses que o Ilacir conferiu: divergência com a planilha explicada, sem vermelho */
 var SUP_SOC={'2025-06':[['30/06/2025','Thiago',250.39]],'2026-01':[['13/01/2026','Thiago',255.71],['21/01/2026','Thiago',71.84]],'2026-02':[['10/02/2026','Thiago',472.98]],'2026-03':[['25/03/2026','Thiago',212.26],['25/03/2026','Thiago',178.80]],'2026-05':[['08/05/2026','Thiago',259],['08/05/2026','Thiago',100],['19/05/2026','Thiago',55.34]]};function ehSuper(data,v){return Math.round(v*100)===15000||!!SUPER_PIX[data+'|'+Math.round(v*100)/100]}
 L.forEach(function(l){var c2=Math.round(Math.abs(l.v)*100);if(l.cat==='Pessoal'&&l.top==='COMPRAS SUPERMERCADO'&&/EDNA DA SILVA/i.test(l.det||'')&&!ehSuper(l.data,Math.abs(l.v))&&c2%25000===0&&c2<=100000){l.det=(l.det||'')+' · 250/múltiplo = sábados (a planilha tinha em COMPRAS SUPERMERCADO, mas o comentário do mês não conta este Pix)';l.top='Sábados Trabalhados';l.topOrig='Sábados Trabalhados'}});
 L.forEach(function(l){if((l.cat==='Pessoal'||l.cat==='Compras da Empresa'||l.cat==='Gerais')&&/EDNA DA SILVA/i.test(l.det||'')&&ehSuper(l.data,Math.abs(l.v))&&!(l.cat==='Gerais'&&l.top==='COMPRAS SUPERMERCADO')){l.cat='Gerais';l.det=(l.det||'')+' · compras de supermercado (Ilacir 08/11; antes: '+(l.top||'')+')';l.top='COMPRAS SUPERMERCADO';l.topOrig='COMPRAS SUPERMERCADO'}});
@@ -834,9 +836,10 @@ var REC_GR=[['c','SALÁRIO MÊS CIVIL',/^SAL[AÁ]RIO M[EÊ]S/],['c','TRIÊNIO (5
 /* Ilacir 08/11: adiantamento lançado × recibo do contador (mês a mês). Igual → some da grade (o recibo já mostra). Diferente → vermelho forte. */
 /* Ilacir 08/11: COMPRAS SUPERMERCADO do sistema × linha 111 da planilha. Igual: normal. Diferente: vermelho forte explicando. */
 function supConc(a,la,DV){for(var m=1;m<=12;m++){var k=a+'-'+('0'+m).slice(-2),P=PLAN111[k];if(P==null)continue;
-  var ls=la.filter(function(l){return l.m===m&&l.cat==='Gerais'&&l.top==='COMPRAS SUPERMERCADO'}),S=Math.round(ls.reduce(function(t,l){return t+l.v},0)*100)/100;if(Math.abs(S-P)<0.015||!ls.length)continue;
+  var ls=la.filter(function(l){return l.m===m&&l.cat==='Gerais'&&l.top==='COMPRAS SUPERMERCADO'}),S=Math.round(ls.reduce(function(t,l){return t+l.v},0)*100)/100;if(Math.abs(S-P)<0.015||!ls.length||SUPOK[k])continue;
   var so=SUP_SOC[k]||[],ss=so.reduce(function(t,x){return t+x[2]},0);
-  DV['Gerais|COMPRAS SUPERMERCADO|'+m]='SUPERMERCADO '+('0'+m).slice(-2)+'/'+a+' — DIVERGE DA SUA PLANILHA (linha 111)\nSua planilha: '+num(P)+'\nNo sistema: '+num(S)+'\n'+ls.map(function(l){return '   '+l.data+'  '+num(l.v)+'  '+(l.fonte==='socio'?'pago pelo sócio (fora do BB)':'Pix Edna')}).join('\n')+'\nDiferença: '+num(Math.round((S-P)*100)/100)+(so.length?'\n\nPix ao sócio que parecem reembolso (ainda em Retiradas — falta aprovar):\n'+so.map(function(x){return '   '+x[0]+'  '+x[1]+'  '+num(x[2])}).join('\n')+'\n   total '+num(ss):'')}}
+  DV['Gerais|COMPRAS SUPERMERCADO|'+m]='SUPERMERCADO '+('0'+m).slice(-2)+'/'+a+' — DIVERGE DA SUA PLANILHA (linha 111)\nSua planilha: '+num(P)+'\nNo sistema: '+num(S)+'\n'+ls.map(function(l){return '   '+l.data+'  '+num(l.v)+'  '+(l.fonte==='socio'?'pago pelo sócio (fora do BB)':supQuem(l.det))}).join('\n')+'\nDiferença: '+num(Math.round((S-P)*100)/100)+(function(){/* Ilacir 10/11 15:02: mostra onde cada PIX ao sócio está HOJE (antes dizia sempre "ainda em Retiradas") */var fora=so.map(function(x){var l=L.filter(function(y){return y.data===x[0]&&Math.abs(y.v-x[2])<0.005&&/thiago|ilacir|rebeca/i.test(String(y.det||''))})[0];return {x:x,l:l}}).filter(function(o){return !(o.l&&o.l.cat==='Gerais'&&o.l.top==='COMPRAS SUPERMERCADO')});
+  return fora.length?'\n\nPix ao sócio do mesmo mês que não estão em Supermercado:\n'+fora.map(function(o){return '   '+o.x[0]+'  '+o.x[1]+'  '+num(o.x[2])+'  → hoje em '+(o.l?o.l.cat+(o.l.top?' › '+o.l.top:''):'(não achado)')}).join('\n'):''})()+(SUPOK[k]?'\n\nConferido por você: '+SUPOK[k]:'')}}
 /* Ilacir 08/11: pagamento RECORRENTE não feito → texto vermelho forte com comentário (não conta no total).
    Recorrente = pago em pelo menos 4 dos 6 meses anteriores; só até o último mês do extrato. */
 /* Ilacir 08/11: valor em vermelho só quando o valor é REAL (guia do contador ou e-mail); dedução = ???. */
@@ -1051,18 +1054,21 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
 const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
-$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+$('fgBt').onclick = () => signInWithPopup(auth, prov).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
 let rodou = false;
 onAuthStateChanged(auth, async u => {
   if (!u) { $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
   $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  /* Ilacir 10/11: mostrar sempre com qual conta entrou, com Sair */
+  try { window.__fgSair = () => signOut(auth).then(() => location.reload()); const us = document.querySelector('.titlebar .usr'); if (us) us.innerHTML = u.email + ' · <a href="#" style="color:#fff;text-decoration:underline" onclick="window.__fgSair();return false">Sair</a>'; } catch (e) {}
   try {
     const s = await getDoc(doc(db, 'paginas', 'despesas'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
