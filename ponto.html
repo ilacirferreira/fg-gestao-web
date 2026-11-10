@@ -70,18 +70,24 @@ function dt(d){var p=d.split('/');return new Date(+p[2],+p[1]-1,+p[0])}
 function desenhaBarra(){if(!E)return;var s=E.situacao,b=[];
   var tn=nomesTabs()[TAB]||'';
   if(tn==='Minha Senha de Liberação')b.push(['Gravar Minha Senha','gravarSenha()','pri']);
+  else if(tn==='Imprimir Folha do Mês')b.push(['Imprimir Folha de '+mesSel().nome,'imprimirFolha()','pri']);
   else if(tn==='Corrigir Marcação')b.push(['Gravar Correção (senha do Ilacir)','corrigir()','pri']);
   else if(s.pendente)b.push(['Lançar e Liberar a Entrada','liberar()','verm']);
   else if(s.pode&&s.tipo==='volta'&&E.voltaAs&&agoraHM()<E.voltaAs)b.push(['Volta do Almoço liberada às '+E.voltaAs,'','pri" disabled="disabled']);
   else if(s.pode)b.push(['Marcar '+NOMES[s.tipo],'marcar()','pri']);
   else b.push(['Dia completo ✓','','pri" disabled="disabled']);
+  if(s.pode&&s.tipo==='almoco'&&E.semPausa&&agoraHM()<=E.semPausa.limite&&!/Senha|Corrigir|Imprimir/.test(tn))b.splice(1,0,['Marcar Saída sem Almoço (dia até '+hTxt()+')','marcarSaidaSemAlmoco()','']);
   b.push(['Atualizar','carregar()','']);
   $('tbar').innerHTML=b.map(function(x){return '<button class="'+x[2]+'" '+(ESPERA?'disabled ':'')+'onclick="'+x[1]+'">'+(ESPERA&&x[2].indexOf('pri')===0?'Gravando…':x[0])+'</button>'}).join('')}
 function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
   $('quem').textContent=E.nome+' · '+E.eu;
   desenhaBarra();
   var av='';
+  if(E.cfg&&E.cfg.mensagem)av+='<div class="aviso bad" style="margin-bottom:8px;font-weight:600;text-align:center">'+esc(E.cfg.mensagem)+'</div>';
+  if(E.cfg&&E.cfg.mensagem2)av+='<div class="aviso info" style="margin-bottom:8px;font-weight:600;text-align:center">'+esc(E.cfg.mensagem2)+'</div>';
   if(E.teste)av+='<div class="aviso warn" title="Seu e-mail não está ligado a um colaborador: as marcações ficam como TESTE e não entram na folha de ninguém.">MODO TESTE — estas marcações não entram na folha da Edna.</div>';
+  if(+E.hoje.slice(0,2)<=5&&!E.teste)av+='<div class="aviso warn" style="margin-bottom:8px;cursor:pointer" onclick="TAB=nomesTabs().indexOf(\'Imprimir Folha do Mês\');desenha()">Imprima e assine a folha de ponto de '+mesesOpc()[0].nome+' — clique aqui.</div>';
+  if(E.semPausa)av+='<div class="aviso '+(agoraHM()>E.semPausa.pausaAte?'bad':'info')+'" style="margin-bottom:8px">'+(agoraHM()>E.semPausa.pausaAte?'Passou de '+hTxt()+' sem pausa: marque agora a Saída para Almoço.':'Pausa para almoço obrigatória até as '+E.semPausa.pausaAte+' (máximo de '+hTxt()+' sem pausa).')+'</div>';
   if(ERRO)av+='<div class="aviso bad" style="margin-bottom:8px" title="'+esc(ERRO)+'">Não gravou: '+esc(ERRO)+'</div>';
   if(s.pendente)av+='<div class="aviso bad" style="margin-top:'+(E.teste?'8':'0')+'px">'+esc(s.motivo)+'</div>';
   $('avisoTopo').innerHTML=av;$('avisoTopo').style.display=av?'block':'none';
@@ -92,12 +98,17 @@ function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
   if(TAB>=tabs.length)TAB=0;
   $('tabs').innerHTML=tabs.map(function(t,i){return '<div class="tab'+(i===TAB?' on':'')+'" onclick="TAB='+i+';desenha()">'+t+'</div>'}).join('');
   if(s.pendente&&TAB===0&&!E._foi){E._foi=1;TAB=1;return desenha()}
-  var tn=tabs[TAB];$('pane').innerHTML=TAB===0?paneMes():/^Liberar/.test(tn)?paneLiberar():tn==='Corrigir Marcação'?paneCorrigir():tn==='Minha Senha de Liberação'?paneSenha():paneComo();desenhaBarra()}
-function nomesTabs(){var s=E.situacao,d=dt(E.hoje),t=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona'),'Corrigir Marcação'];if(E.podeSenha)t.push('Minha Senha de Liberação');return t}
+  var tn=tabs[TAB];$('pane').innerHTML=TAB===0?paneMes():/^Liberar/.test(tn)?paneLiberar():tn==='Corrigir Marcação'?paneCorrigir():tn==='Imprimir Folha do Mês'?paneFolha():tn==='Minha Senha de Liberação'?paneSenha():paneComo();desenhaBarra()}
+function nomesTabs(){var s=E.situacao,d=dt(E.hoje),t=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona'),'Corrigir Marcação','Imprimir Folha do Mês'];if(E.podeSenha)t.push('Minha Senha de Liberação');return t}
 function paneCorrigir(){var o=['entrada','almoco','volta','saida'].map(function(t){return '<option value="'+t+'">'+NOMES[t]+'</option>'}).join('');
   return '<div class="aviso info" style="margin-bottom:12px" title="A correção é feita aqui, no computador da colaboradora, e liberada na frente dela com a senha do Ilacir. A hora original fica guardada.">Correção feita aqui, na frente da Edna, e liberada com a senha do Ilacir. A hora original fica guardada.</div><div class="form">'+
    '<div class="fld"><label>Dia</label><input id="cDia" value="'+esc(E.hoje)+'" style="min-width:150px"></div><div class="fld"><label>Marcação</label><select id="cTipo">'+o+'</select></div><div class="fld"><label>Hora certa</label><input id="cHora" type="time"></div>'+
    '<div class="fld" style="flex:1"><label>Motivo</label><input id="cMot" placeholder="ex.: esqueceu de marcar a volta do almoço"></div><div class="fld"><label>Senha do Ilacir</label><input id="cSenha" type="password" autocomplete="off"></div></div>'}
+function mesesOpc(){var d=dt(E.hoje),o=[];for(var i=1;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth()-i,1);o.push({k:x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2),nome:MESES[x.getMonth()]+'/'+x.getFullYear()})}return o}
+var MES_FOLHA=null;function mesSel(){var o=mesesOpc();return o.filter(function(x){return x.k===MES_FOLHA})[0]||o[+dt(E.hoje).getDate()<=10?0:1]}
+function paneFolha(){var o=mesesOpc(),m=mesSel();return '<div class="aviso info" style="margin-bottom:12px">No dia 1 de cada mês, imprima a folha do mês anterior, assine e entregue ao Ilacir. A folha sai em A4 com o timbre da FG.</div><div class="form"><div class="fld"><label>Mês</label><select onchange="MES_FOLHA=this.value;desenhaBarra()">'+o.map(function(x){return '<option value="'+x.k+'"'+(x.k===m.k?' selected':'')+'>'+x.nome+'</option>'}).join('')+'</select></div></div>'}
+function imprimirFolha(){var m=mesSel(),w=window.open('','_blank');if(!w){toast('O navegador bloqueou a janela: permita pop-ups desta página.');return}w.document.write('<p style="font:18px Arial;padding:30px">Montando a folha de '+m.nome+'…</p>');
+  chamar('pontoFolhaHtml',[m.k],function(h){w.document.open();w.document.write(h);w.document.close();setTimeout(function(){try{w.focus();w.print()}catch(e){}},600)})}
 function corrigir(){var d=$('cDia').value.trim(),t=$('cTipo').value,h=$('cHora').value,m=$('cMot').value.trim(),sn=$('cSenha').value;
   if(!/^\d\d\/\d\d\/\d{4}$/.test(d)){toast('Dia no formato dd/mm/aaaa.');return}if(!h){toast('Informe a hora certa.');return}if(m.length<5){toast('Escreva o motivo.');return}if(!sn){toast('O Ilacir digita a senha dele.');return}
   chamar('pontoCorrigirComSenha',[d,t,h,m,sn],function(r){E=r;TAB=0;toast('Correção gravada ✓ (a hora original ficou guardada)');desenha()})}
@@ -116,12 +127,15 @@ function paneSenha(){return '<div class="aviso info" style="margin-bottom:12px">
    '<div class="fld"><label>Senha atual (se já tiver)</label><input id="sAtual" type="password" autocomplete="off"></div>'+
    '<div class="fld"><label>Nova senha (mínimo 6)</label><input id="sNova" type="password" autocomplete="new-password"></div>'+
    '<div class="fld"><label>Repita a nova senha</label><input id="sNova2" type="password" autocomplete="new-password"></div></div>'}
+function hTxt(){var m=(E.cfg&&E.cfg.semPausaMaxMin!=null)?+E.cfg.semPausaMaxMin:360;return Math.floor(m/60)+'h'+(m%60?('0'+m%60).slice(-2):'')}
+function marcarSaidaSemAlmoco(){chamar('pontoMarcar',['saida'],function(r){E=r;TAB=0;var m=(r.dias[r.hoje]||{}).saida;toast('Saída marcada às '+(m?m.h:'')+' ✓ (dia sem almoço)');desenha()})}
 function marcar(){var t=E.situacao.tipo;chamar('pontoMarcar',[t],function(r){E=r;TAB=0;var m=(r.dias[r.hoje]||{})[t];toast(NOMES[t]+' marcada às '+(m?m.h:'')+' ✓');desenha()})}
 function liberar(){var p=E.situacao.pendente,h={};p.faltam.forEach(function(t){h[t]=$('h_'+t).value});
   if(!h.saida){toast('Informe a hora da saída.');return}if(!$('senha').value){toast('Digite a senha de quem autoriza.');return}
   chamar('pontoLiberar',[h,$('aut').value,$('senha').value],function(r){E=r;TAB=0;toast('Lançado e liberado ✓ Agora marque a entrada.');desenha()})}
 function gravarSenha(){var n=$('sNova').value;if(n.length<6){toast('A nova senha precisa ter pelo menos 6 caracteres.');return}if(n!==$('sNova2').value){toast('As duas senhas novas não são iguais.');return}
   chamar('pontoSenhaDefinir',[n,$('sAtual').value],function(r){toast(r);carregar()})}
+setInterval(function(){if(E&&!ESPERA&&E.semPausa){var st=agoraHM()>E.semPausa.pausaAte?2:agoraHM()>E.semPausa.limite?1:0;st=(agoraHM()>E.semPausa.limite?1:0)+(agoraHM()>E.semPausa.pausaAte?2:0);if(st!==window.__sp){window.__sp=st;desenha()}}},20000);
 setInterval(function(){if(E&&!ESPERA&&E.situacao&&E.situacao.tipo==='volta'&&E.voltaAs){var lib=agoraHM()>=E.voltaAs;if(lib!==window.__lib){window.__lib=lib;desenhaBarra()}}},5000);
 setInterval(function(){var e=$('relogio');if(e){var d=new Date();e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2)}},500);
 setInterval(function(){if(E&&!ESPERA&&document.visibilityState==='visible'&&!document.activeElement.matches('input,select'))carregar()},10*60*1000);
