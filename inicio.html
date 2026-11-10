@@ -409,7 +409,8 @@ function ptAvisosCli(P){if(!P||!P.colabs)return [];var d=new Date(),z=function(n
 var cfg=P.cfg||{},hr=cfg.horarios||{},tol=cfg.tolMin==null?60:+cfg.tolMin,fer=cfg.feriados||[],k=function(x){return x.slice(6)+x.slice(3,5)+x.slice(0,2)},NA={entrada:'a entrada',almoco:'a saída para o almoço',volta:'a volta do almoço',saida:'a saída'},out=[];
 Object.keys(P.colabs).forEach(function(c){var C=P.colabs[c];if(c==='teste'||!C.email)return;var D=C.dias||{},ds=Object.keys(D).filter(function(x){return k(x)<k(hoje)}).sort(function(a,b){return k(a)<k(b)?1:-1});
 if(ds.length&&!D[ds[0]].saida)out.push(C.nome+' não marcou a saída de '+ds[0]+' — a entrada de hoje está bloqueada');
-var w=d.getDay();if(w>=1&&w<=5&&fer.indexOf(hoje)<0){var dia=D[hoje]||{},f=['entrada','almoco','volta','saida'].filter(function(t){return !dia[t]&&hr[t]&&agora>mi(hr[t])+tol});
+var dia0=D[hoje]||{},lim=(cfg.semPausaMaxMin!=null?+cfg.semPausaMaxMin:360)+(cfg.semPausaTolMin!=null?+cfg.semPausaTolMin:5);if(dia0.entrada&&!dia0.almoco&&!dia0.saida&&agora>mi(dia0.entrada.h)+lim)out.push(C.nome+' passou de '+Math.floor((lim-(cfg.semPausaTolMin!=null?+cfg.semPausaTolMin:5))/60)+'h sem pausa (entrada às '+dia0.entrada.h+')');
+var w=d.getDay();if(w>=1&&w<=5&&fer.indexOf(hoje)<0){var dia=D[hoje]||{},f=['entrada','almoco','volta','saida'].filter(function(t){return !dia[t]&&!(dia.saida&&(t==='almoco'||t==='volta'))&&hr[t]&&agora>mi(hr[t])+tol});
 if(f.length===4)out.push(C.nome+' não marcou a entrada hoje');else if(f.length)out.push(C.nome+' não marcou '+f.map(function(t){return NA[t]}).join(' nem ')+' hoje')}});return out}
 ptAvisosCli(D&&D.ponto).forEach(function(t){AVISOS.unshift({g:'urg',t:t,d:'Ponto marcado pela própria colaboradora · só o Ilacir corrige, com motivo',p:'Colaboradores',a:'Abrir o Ponto'})});
 
