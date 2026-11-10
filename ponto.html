@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FG Gestão – Ponto</title>
+<!-- Ponto real (Ilacir 10/11/2026): a própria colaboradora marca; hora do servidor no clique; 4 marcações na ordem;
+     saída esquecida bloqueia a entrada do dia seguinte até liberar com a senha do Ilacir ou do Thiago. -->
+<style>
+:root{--bg:#DCE1E7;--panel:#fff;--soft:#F3F5F7;--line:#C3CAD3;--line2:#E1E5EA;--txt:#1E2733;--mut:#4A5565;--blue:#1F5FAD;--blue2:#163F75;
+--ok-bg:#DDF0E4;--ok:#1E5E38;--warn-bg:#FCEBD3;--warn:#7A4A0B;--bad-bg:#F8DEDA;--bad:#8E2A1F;--info-bg:#DDE8F7;--info:#163F75;--gray-bg:#E9ECF0}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font:16px "Segoe UI",Arial,sans-serif}
+.wrap{max-width:1500px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:10px 12px;gap:10px}
+.top{background:var(--blue2);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:4px;white-space:nowrap}
+.top b{font-size:19px}.top span{font-size:14px;opacity:.9}.top a{color:#fff;margin-left:14px;font-size:14px}
+.tbar{display:flex;gap:8px}.tbar button{flex:1;min-height:54px;font:600 18px "Segoe UI",Arial;border:1px solid var(--line);background:#fff;color:var(--txt);border-radius:4px;cursor:pointer;white-space:nowrap}
+.tbar button.pri{background:var(--blue);border-color:var(--blue);color:#fff;font-size:22px}.tbar button.verm{background:#B3261E;border-color:#B3261E;color:#fff}
+.tbar button:disabled{opacity:.55;cursor:default}
+.linha{display:flex;gap:10px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px 16px;flex:1;min-width:0;white-space:nowrap}
+.box small{display:block;color:var(--mut);font-size:15px}.box b{display:block;font-size:30px;margin-top:2px}.box em{display:block;font-style:normal;font-size:13px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+.box.relogio b{font-size:40px;color:var(--blue2)}.box.feito b{color:var(--ok)}.box.prox{border:2px solid var(--blue)}.box.prox b{color:var(--blue)}
+.aviso{border-radius:4px;padding:12px 16px;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aviso.bad{background:var(--bad-bg);color:var(--bad);border:1px solid #E5B3AC}.aviso.ok{background:var(--ok-bg);color:var(--ok)}.aviso.info{background:var(--info-bg);color:var(--info)}.aviso.warn{background:var(--warn-bg);color:var(--warn)}
+.painel{background:var(--panel);border:1px solid var(--line);border-radius:4px;flex:1;min-height:0;display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tab{flex:1;padding:10px 12px;cursor:pointer;color:var(--mut);white-space:nowrap;text-align:left;border-right:1px solid var(--line2)}
+.tab.on{color:var(--blue2);font-weight:600;background:var(--info-bg)}
+.pane{flex:1;min-height:0;overflow:hidden;padding:10px 14px}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line2);white-space:nowrap}th{color:var(--mut);font-weight:600;font-size:14px}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:13px}.t-ok{background:var(--ok-bg);color:var(--ok)}.t-info{background:var(--info-bg);color:var(--info)}.t-warn{background:var(--warn-bg);color:var(--warn)}.t-bad{background:var(--bad-bg);color:var(--bad)}.t-gray{background:var(--gray-bg);color:var(--mut)}
+.form{display:flex;gap:12px;align-items:flex-end;flex-wrap:nowrap}.fld{display:flex;flex-direction:column;gap:4px}.fld label{font-size:14px;color:var(--mut);white-space:nowrap}
+.fld input,.fld select{font:18px "Segoe UI",Arial;padding:8px 10px;border:1px solid var(--line);border-radius:4px;min-width:130px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1E2733;color:#fff;padding:12px 20px;border-radius:6px;font-size:17px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="display:none">
+  <div class="top"><b>FG Gestão – Ponto</b><span><span id="quem"></span><a href="#" id="sair">Sair</a></span></div>
+  <div class="tbar" id="tbar"></div>
+  <div id="avisoTopo"></div>
+  <div class="linha" id="caixas"></div>
+  <div class="painel"><div class="tabs" id="tabs"></div><div class="pane" id="pane"></div></div>
+</div>
+<div id="toast"></div>
+<div id="fgEntrar" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#E9EDF2;z-index:200;font-family:Segoe UI,Arial,sans-serif">
+ <div style="background:#fff;padding:34px 44px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;max-width:480px">
+  <div style="font-size:24px;font-weight:700;color:#1F3B5C;margin-bottom:10px">FG Gestão – Ponto</div>
+  <div id="fgMsg" style="font-size:16px;color:#41505F;margin-bottom:18px">Entre com a sua conta Google.</div>
+  <button id="fgBt" style="font:600 18px Segoe UI,Arial;padding:12px 28px;background:#1F5FAD;color:#fff;border:0;border-radius:6px;cursor:pointer">Entrar com o Google</button>
+ </div>
+</div>
+<div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 22px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
+<script>
+var API="https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec";
+var E=null,TAB=0,ESPERA=false,DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var TIPOS=['entrada','almoco','volta','saida'],NOMES={entrada:'Entrada',almoco:'Saída para Almoço',volta:'Volta do Almoço',saida:'Saída'};
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},3500)}
+function chamar(acao,args,ok){if(ESPERA)return;ESPERA=true;desenhaBarra();
+  window.__fgAuth.currentUser.getIdToken().then(function(tk){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:acao,args:args||[],token:tk})})})
+  .then(function(r){return r.json()}).then(function(j){ESPERA=false;if(j.ok){ok&&ok(j.r)}else{toast(j.erro||'Não deu certo.');desenha()}})
+  .catch(function(e){ESPERA=false;toast('Sem resposta do Google: '+(e&&e.message||e));desenha()})}
+function carregar(){chamar('pontoEstado',[],function(r){E=r;desenha()})}
+function hm(m){return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2)}
+function dt(d){var p=d.split('/');return new Date(+p[2],+p[1]-1,+p[0])}
+/* ===== barra de botões (as ações ficam em cima, nunca embaixo do formulário) ===== */
+function desenhaBarra(){if(!E)return;var s=E.situacao,b=[];
+  if(TAB===2&&E.podeSenha)b.push(['Gravar Minha Senha','gravarSenha()','pri']);
+  else if(s.pendente)b.push(['Lançar e Liberar a Entrada','liberar()','verm']);
+  else if(s.pode)b.push(['Marcar '+NOMES[s.tipo],'marcar()','pri']);
+  else b.push(['Dia completo ✓','','pri" disabled="disabled']);
+  b.push(['Atualizar','carregar()','']);
+  $('tbar').innerHTML=b.map(function(x){return '<button class="'+x[2]+'" '+(ESPERA?'disabled ':'')+'onclick="'+x[1]+'">'+(ESPERA&&x[2].indexOf('pri')===0?'Gravando…':x[0])+'</button>'}).join('')}
+function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
+  $('quem').textContent=E.nome+' · '+E.eu;
+  desenhaBarra();
+  var av='';
+  if(E.teste)av+='<div class="aviso warn" title="Seu e-mail não está ligado a um colaborador: as marcações ficam como TESTE e não entram na folha de ninguém.">MODO TESTE — estas marcações não entram na folha da Edna.</div>';
+  if(s.pendente)av+='<div class="aviso bad" style="margin-top:'+(E.teste?'8':'0')+'px">'+esc(s.motivo)+'</div>';
+  $('avisoTopo').innerHTML=av;$('avisoTopo').style.display=av?'block':'none';
+  var d=dt(E.hoje);
+  $('caixas').innerHTML='<div class="box relogio"><small>'+DIAS_SEM[d.getDay()]+', '+E.hoje+'</small><b id="relogio">--:--</b><em title="A marcação grava a hora do servidor do Google, no momento do clique.">a marcação usa a hora do Google</em></div>'+
+    TIPOS.map(function(t){var m=hoje[t],prox=s.pode&&s.tipo===t;return '<div class="box'+(m?' feito':prox?' prox':'')+'"><small>'+NOMES[t]+'</small><b>'+(m?m.h:'—')+'</b><em>'+(m?(m.o==='correcao'?'corrigida (era '+esc(m.ori)+')':'marcada ✓'):prox?'próxima marcação':'&nbsp;')+'</em></div>'}).join('');
+  var tabs=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona')];if(E.podeSenha)tabs.push('Minha Senha de Liberação');
+  if(TAB>=tabs.length)TAB=0;
+  $('tabs').innerHTML=tabs.map(function(t,i){return '<div class="tab'+(i===TAB?' on':'')+'" onclick="TAB='+i+';desenha()">'+t+'</div>'}).join('');
+  if(s.pendente&&TAB===0&&!E._foi){E._foi=1;TAB=1;return desenha()}
+  $('pane').innerHTML=TAB===0?paneMes():TAB===1?(s.pendente?paneLiberar():paneComo()):paneSenha();desenhaBarra()}
+function paneMes(){var ks=Object.keys(E.dias).filter(function(k){return k.slice(3)===E.hoje.slice(3)}).sort(),tot=0;
+  if(!ks.length)return '<div class="aviso info">Nenhuma marcação neste mês ainda.</div>';
+  var lin=ks.slice(-12).reverse().map(function(k){var x=E.dias[k];if(x.min)tot+=x.min;return '<tr><td><b>'+k.slice(0,5)+' '+DIAS_SEM[dt(k).getDay()]+'</b></td>'+TIPOS.map(function(t){var m=x[t];return '<td>'+(m?m.h+(m.o==='autorizada'?' <span class="tag t-warn" title="'+esc(m.mot)+'">autorizada por '+esc(m.a)+'</span>':m.o==='correcao'?' <span class="tag t-info" title="Era '+esc(m.ori)+'. Motivo: '+esc(m.mot)+'">corrigida</span>':''):'—')+'</td>'}).join('')+'<td>'+(x.min!=null?hm(x.min):'—')+'</td></tr>'}).join('');
+  return '<table><thead><tr><th>Dia</th>'+TIPOS.map(function(t){return '<th>'+NOMES[t]+'</th>'}).join('')+'<th>Horas</th></tr></thead><tbody>'+lin+'</tbody></table>'+(ks.length>12?'<div class="aviso info" style="margin-top:8px">Mostrando os 12 dias mais recentes. A folha completa fica com o Ilacir.</div>':'')}
+function paneComo(){return '<div class="aviso info">São 4 marcações por dia, nesta ordem: Entrada, Saída para Almoço, Volta do Almoço e Saída. Clique no botão azul de cima na hora de cada uma.</div><div class="aviso info" style="margin-top:8px">Não dá para marcar hora passada. Se esquecer a saída, no dia seguinte a entrada fica bloqueada até o Ilacir ou o Thiago lançar a hora com a senha.</div>'}
+function paneLiberar(){var p=E.situacao.pendente;
+  if(!E.autorizadores.length)return '<div class="aviso bad">O Ilacir e o Thiago ainda não cadastraram a senha de liberação. Avise o Ilacir.</div>';
+  return '<div class="aviso info" style="margin-bottom:12px">Para o Ilacir ou o Thiago: informe a(s) hora(s) que faltam de '+p.data+' e digite a sua senha. Fica gravado "lançada no dia seguinte, autorizada por" quem liberou.</div><div class="form">'+
+   p.faltam.map(function(t){return '<div class="fld"><label>'+NOMES[t]+(t==='saida'?' *':' (em branco = sem almoço)')+'</label><input id="h_'+t+'" type="time" step="60"></div>'}).join('')+
+   '<div class="fld"><label>Quem autoriza</label><select id="aut">'+E.autorizadores.map(function(a){return '<option>'+esc(a)+'</option>'}).join('')+'</select></div>'+
+   '<div class="fld"><label>Senha de quem autoriza</label><input id="senha" type="password" autocomplete="off"></div></div>'}
+function paneSenha(){return '<div class="aviso info" style="margin-bottom:12px">Esta senha libera a entrada quando a saída do dia anterior não foi marcada. Só você a conhece: o sistema guarda apenas um código embaralhado.</div><div class="form">'+
+   '<div class="fld"><label>Senha atual (se já tiver)</label><input id="sAtual" type="password" autocomplete="off"></div>'+
+   '<div class="fld"><label>Nova senha (mínimo 6)</label><input id="sNova" type="password" autocomplete="new-password"></div>'+
+   '<div class="fld"><label>Repita a nova senha</label><input id="sNova2" type="password" autocomplete="new-password"></div></div>'}
+function marcar(){var t=E.situacao.tipo;chamar('pontoMarcar',[t],function(r){E=r;TAB=0;var m=(r.dias[r.hoje]||{})[t];toast(NOMES[t]+' marcada às '+(m?m.h:'')+' ✓');desenha()})}
+function liberar(){var p=E.situacao.pendente,h={};p.faltam.forEach(function(t){h[t]=$('h_'+t).value});
+  if(!h.saida){toast('Informe a hora da saída.');return}if(!$('senha').value){toast('Digite a senha de quem autoriza.');return}
+  chamar('pontoLiberar',[h,$('aut').value,$('senha').value],function(r){E=r;TAB=0;toast('Lançado e liberado ✓ Agora marque a entrada.');desenha()})}
+function gravarSenha(){var n=$('sNova').value;if(n.length<6){toast('A nova senha precisa ter pelo menos 6 caracteres.');return}if(n!==$('sNova2').value){toast('As duas senhas novas não são iguais.');return}
+  chamar('pontoSenhaDefinir',[n,$('sAtual').value],function(r){toast(r);carregar()})}
+setInterval(function(){var e=$('relogio');if(e){var d=new Date();e.textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2)}},500);
+setInterval(function(){if(E&&!ESPERA&&document.visibilityState==='visible'&&!document.activeElement.matches('input,select'))carregar()},10*60*1000);
+</script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
+const auth = getAuth(app); window.__fgAuth = auth;
+const $ = id => document.getElementById(id);
+$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+$('sair').onclick = e => { e.preventDefault(); signOut(auth); };
+onAuthStateChanged(auth, async u => {
+  if (!u) { $('fgCarregando').style.display = 'none'; $('app').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
+  $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  try {
+    const tk = await u.getIdToken();
+    const j = await (await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'pontoEstado', args: [], token: tk }) })).json();
+    if (!j.ok) throw new Error(j.erro || 'sem acesso');
+    window.E = j.r; E = j.r; $('fgCarregando').style.display = 'none'; $('app').style.display = 'flex'; desenha();
+  } catch (e) {
+    $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
+    $('fgMsg').textContent = 'Não abriu: ' + e.message;
+  }
+});
+</script>
+</body>
+</html>
