@@ -680,5 +680,12 @@ onAuthStateChanged(auth, async u => {
   }
 });
 </script>
+<script>
+/* Ilacir 10/11 16:26: "não gosto de barras de rolagem, só quando for imprescindível" — a árvore da esquerda encolhe as linhas até caber */
+(function(){function cabe(){var t=document.getElementById('tree');if(!t)return;var ns=[].slice.call(t.querySelectorAll('.node'));ns.forEach(function(n){n.style.minHeight='';n.style.paddingTop='';n.style.paddingBottom='';n.style.fontSize='';n.style.marginTop='';n.style.marginBottom=''});
+if(t.scrollHeight<=t.clientHeight+1)return;var h=26;while(t.scrollHeight>t.clientHeight+1&&h>17){h--;ns.forEach(function(n){n.style.minHeight=h+'px';n.style.paddingTop='0';n.style.paddingBottom='0';n.style.marginTop='0';n.style.marginBottom='0'})}
+var f=parseFloat(getComputedStyle(ns[0]||t).fontSize)||13,f0=f;while(t.scrollHeight>t.clientHeight+1&&f>f0-2){f-=0.5;ns.forEach(function(n){n.style.fontSize=f+'px'})}}
+window.FG_arvoreCabe=cabe;var t=document.getElementById('tree');if(t&&window.MutationObserver){var pend=0;new MutationObserver(function(){if(pend)return;pend=1;requestAnimationFrame(function(){pend=0;cabe()})}).observe(t,{childList:true,subtree:true});window.addEventListener('resize',cabe);setTimeout(cabe,0)}})();
+</script>
 </body>
 </html>
