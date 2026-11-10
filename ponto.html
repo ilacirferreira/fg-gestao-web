@@ -53,21 +53,23 @@ table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:7px 10px
 <div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 22px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
 <script>
 var API="https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec";
-var E=null,TAB=0,ESPERA=false,DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var E=null,TAB=0,ESPERA=false,ERRO='',DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 var TIPOS=['entrada','almoco','volta','saida'],NOMES={entrada:'Entrada',almoco:'Saída para Almoço',volta:'Volta do Almoço',saida:'Saída'};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},3500)}
 function chamar(acao,args,ok){if(ESPERA)return;ESPERA=true;desenhaBarra();
   window.__fgAuth.currentUser.getIdToken().then(function(tk){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:acao,args:args||[],token:tk})})})
-  .then(function(r){return r.json()}).then(function(j){ESPERA=false;if(j.ok){ok&&ok(j.r)}else{toast(j.erro||'Não deu certo.');desenha()}})
-  .catch(function(e){ESPERA=false;toast('Sem resposta do Google: '+(e&&e.message||e));desenha()})}
+  .then(function(r){return r.json()}).then(function(j){ESPERA=false;if(j.ok){ERRO='';ok&&ok(j.r)}else{ERRO=j.erro||'Não deu certo.';toast(ERRO);desenha()}})
+  .catch(function(e){ESPERA=false;ERRO='Sem resposta do Google: '+(e&&e.message||e);toast(ERRO);desenha()})}
 function carregar(){chamar('pontoEstado',[],function(r){E=r;desenha()})}
 function hm(m){return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2)}
 function dt(d){var p=d.split('/');return new Date(+p[2],+p[1]-1,+p[0])}
 /* ===== barra de botões (as ações ficam em cima, nunca embaixo do formulário) ===== */
 function desenhaBarra(){if(!E)return;var s=E.situacao,b=[];
-  if(TAB===2&&E.podeSenha)b.push(['Gravar Minha Senha','gravarSenha()','pri']);
+  var tn=nomesTabs()[TAB]||'';
+  if(tn==='Minha Senha de Liberação')b.push(['Gravar Minha Senha','gravarSenha()','pri']);
+  else if(tn==='Corrigir Marcação')b.push(['Gravar Correção (senha do Ilacir)','corrigir()','pri']);
   else if(s.pendente)b.push(['Lançar e Liberar a Entrada','liberar()','verm']);
   else if(s.pode)b.push(['Marcar '+NOMES[s.tipo],'marcar()','pri']);
   else b.push(['Dia completo ✓','','pri" disabled="disabled']);
@@ -78,21 +80,30 @@ function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
   desenhaBarra();
   var av='';
   if(E.teste)av+='<div class="aviso warn" title="Seu e-mail não está ligado a um colaborador: as marcações ficam como TESTE e não entram na folha de ninguém.">MODO TESTE — estas marcações não entram na folha da Edna.</div>';
+  if(ERRO)av+='<div class="aviso bad" style="margin-bottom:8px" title="'+esc(ERRO)+'">Não gravou: '+esc(ERRO)+'</div>';
   if(s.pendente)av+='<div class="aviso bad" style="margin-top:'+(E.teste?'8':'0')+'px">'+esc(s.motivo)+'</div>';
   $('avisoTopo').innerHTML=av;$('avisoTopo').style.display=av?'block':'none';
   var d=dt(E.hoje);
   $('caixas').innerHTML='<div class="box relogio"><small>'+DIAS_SEM[d.getDay()]+', '+E.hoje+'</small><b id="relogio">--:--</b><em title="A marcação grava a hora do servidor do Google, no momento do clique.">a marcação usa a hora do Google</em></div>'+
     TIPOS.map(function(t){var m=hoje[t],prox=s.pode&&s.tipo===t;return '<div class="box'+(m?' feito':prox?' prox':'')+'"><small>'+NOMES[t]+'</small><b>'+(m?m.h:'—')+'</b><em>'+(m?(m.o==='correcao'?'corrigida (era '+esc(m.ori)+')':'marcada ✓'):prox?'próxima marcação':'&nbsp;')+'</em></div>'}).join('');
-  var tabs=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona')];if(E.podeSenha)tabs.push('Minha Senha de Liberação');
+  var tabs=nomesTabs();
   if(TAB>=tabs.length)TAB=0;
   $('tabs').innerHTML=tabs.map(function(t,i){return '<div class="tab'+(i===TAB?' on':'')+'" onclick="TAB='+i+';desenha()">'+t+'</div>'}).join('');
   if(s.pendente&&TAB===0&&!E._foi){E._foi=1;TAB=1;return desenha()}
-  $('pane').innerHTML=TAB===0?paneMes():TAB===1?(s.pendente?paneLiberar():paneComo()):paneSenha();desenhaBarra()}
+  var tn=tabs[TAB];$('pane').innerHTML=TAB===0?paneMes():/^Liberar/.test(tn)?paneLiberar():tn==='Corrigir Marcação'?paneCorrigir():tn==='Minha Senha de Liberação'?paneSenha():paneComo();desenhaBarra()}
+function nomesTabs(){var s=E.situacao,d=dt(E.hoje),t=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona'),'Corrigir Marcação'];if(E.podeSenha)t.push('Minha Senha de Liberação');return t}
+function paneCorrigir(){var o=['entrada','almoco','volta','saida'].map(function(t){return '<option value="'+t+'">'+NOMES[t]+'</option>'}).join('');
+  return '<div class="aviso info" style="margin-bottom:12px" title="A correção é feita aqui, no computador da colaboradora, e liberada na frente dela com a senha do Ilacir. A hora original fica guardada.">Correção feita aqui, na frente da Edna, e liberada com a senha do Ilacir. A hora original fica guardada.</div><div class="form">'+
+   '<div class="fld"><label>Dia</label><input id="cDia" value="'+esc(E.hoje)+'" style="min-width:150px"></div><div class="fld"><label>Marcação</label><select id="cTipo">'+o+'</select></div><div class="fld"><label>Hora certa</label><input id="cHora" type="time"></div>'+
+   '<div class="fld" style="flex:1"><label>Motivo</label><input id="cMot" placeholder="ex.: esqueceu de marcar a volta do almoço"></div><div class="fld"><label>Senha do Ilacir</label><input id="cSenha" type="password" autocomplete="off"></div></div>'}
+function corrigir(){var d=$('cDia').value.trim(),t=$('cTipo').value,h=$('cHora').value,m=$('cMot').value.trim(),sn=$('cSenha').value;
+  if(!/^\d\d\/\d\d\/\d{4}$/.test(d)){toast('Dia no formato dd/mm/aaaa.');return}if(!h){toast('Informe a hora certa.');return}if(m.length<5){toast('Escreva o motivo.');return}if(!sn){toast('O Ilacir digita a senha dele.');return}
+  chamar('pontoCorrigirComSenha',[d,t,h,m,sn],function(r){E=r;TAB=0;toast('Correção gravada ✓ (a hora original ficou guardada)');desenha()})}
 function paneMes(){var ks=Object.keys(E.dias).filter(function(k){return k.slice(3)===E.hoje.slice(3)}).sort(),tot=0;
   if(!ks.length)return '<div class="aviso info">Nenhuma marcação neste mês ainda.</div>';
   var lin=ks.slice(-12).reverse().map(function(k){var x=E.dias[k];if(x.min)tot+=x.min;return '<tr><td><b>'+k.slice(0,5)+' '+DIAS_SEM[dt(k).getDay()]+'</b></td>'+TIPOS.map(function(t){var m=x[t];return '<td>'+(m?m.h+(m.o==='autorizada'?' <span class="tag t-warn" title="'+esc(m.mot)+'">autorizada por '+esc(m.a)+'</span>':m.o==='correcao'?' <span class="tag t-info" title="Era '+esc(m.ori)+'. Motivo: '+esc(m.mot)+'">corrigida</span>':''):'—')+'</td>'}).join('')+'<td>'+(x.min!=null?hm(x.min):'—')+'</td></tr>'}).join('');
   return '<table><thead><tr><th>Dia</th>'+TIPOS.map(function(t){return '<th>'+NOMES[t]+'</th>'}).join('')+'<th>Horas</th></tr></thead><tbody>'+lin+'</tbody></table>'+(ks.length>12?'<div class="aviso info" style="margin-top:8px">Mostrando os 12 dias mais recentes. A folha completa fica com o Ilacir.</div>':'')}
-function paneComo(){return '<div class="aviso info">São 4 marcações por dia, nesta ordem: Entrada, Saída para Almoço, Volta do Almoço e Saída. Clique no botão azul de cima na hora de cada uma.</div><div class="aviso info" style="margin-top:8px">Não dá para marcar hora passada. Se esquecer a saída, no dia seguinte a entrada fica bloqueada até o Ilacir ou o Thiago lançar a hora com a senha.</div>'}
+function paneComo(){return '<div class="aviso info">São 4 marcações por dia, nesta ordem: Entrada, Saída para Almoço, Volta do Almoço e Saída. Clique no botão azul de cima na hora de cada uma.</div><div class="aviso info" style="margin-top:8px">Marcação errada ou esquecida: aba Corrigir Marcação, com o Ilacir do lado. Não dá para marcar hora passada. Se esquecer a saída, no dia seguinte a entrada fica bloqueada até o Ilacir ou o Thiago lançar a hora com a senha.</div>'}
 function paneLiberar(){var p=E.situacao.pendente;
   if(!E.autorizadores.length)return '<div class="aviso bad">O Ilacir e o Thiago ainda não cadastraram a senha de liberação. Avise o Ilacir.</div>';
   return '<div class="aviso info" style="margin-bottom:12px">Para o Ilacir ou o Thiago: informe a(s) hora(s) que faltam de '+p.data+' e digite a sua senha. Fica gravado "lançada no dia seguinte, autorizada por" quem liberou.</div><div class="form">'+
