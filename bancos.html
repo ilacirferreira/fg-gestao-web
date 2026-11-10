@@ -211,6 +211,10 @@ body .pgline .mini{width:24px;height:22px;min-width:24px;min-height:22px;border-
 .dicai{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border-radius:50%;background:#DCEAFB;color:#1F5FAD;border:1px solid #9DBAE3;font:700 12px/1 Georgia,serif;cursor:help;vertical-align:middle;flex:none}
 .dicai:hover{background:#1F5FAD;color:#fff}
 
+/* Ilacir 10/11 15:31: setinhas de página bem visíveis */
+.toolbar .pgtb .pgline,.toolbar .pgtb .pgbar{font-size:15px!important;font-weight:600;color:#1F3B5C}
+.toolbar .pgtb button{min-width:48px!important;min-height:40px!important;font-size:20px!important;font-weight:700;border-radius:6px}
+
 /* barra de módulos (navegação entre páginas) */
 .mods{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:4px}
 .mod{display:flex;align-items:center;justify-content:center;gap:6px;min-height:30px;padding:3px 6px;border:1px solid #9FB2C9;border-radius:3px;background:#E7EDF4;color:#1F3B5C;font-size:12.5px;cursor:pointer;white-space:nowrap;text-decoration:none}
@@ -403,7 +407,7 @@ function rgSalvar(){var a=document.getElementById('rgA').value.trim(),b=document
 function rgSel(k){if(REDT)return;RSEL=RSEL===k?null:k;desenha()}
 function rgInativar(){if(RSEL==null)return;var k=RSEL,ina=RINAT.indexOf(k)>=0;if(ina)RINAT.splice(RINAT.indexOf(k),1);else RINAT.push(k);RSEL=null;google.script.run.withSuccessHandler(function(){toast(ina?'Regra reativada ✓':'Regra inativada ✓ — saiu da lista. Os lançamentos que ela já classificou ficam como estão.')}).withFailureHandler(function(e){toast('Não gravou: '+(e&&e.message||e))}).pgConfig('regrasInativas',JSON.stringify(RINAT));desenha()}
 function rgVer(){RVER=!RVER;RSEL=null;desenha()}
-function regrasHtml(){var r=[['Tarifa','Bancárias › Tarifas'],['GDF CONTA ARRECADACAO','Impostos › GDF (ISS e outros)'],['RFB-DARF / RECEITA FEDERAL','Impostos › Federais (DARF)'],['FGTS','Pessoal › Encargos (FGTS)'],['PIX ao Thiago, 2 ou ao Ilacir','Retiradas › (quem recebeu)'],['PIX a Edna','Pessoal › Edna'],['Centavos 01 (antes: final 1 real)','Compras da Empresa › Supermercado'],['DIGITAL CONTABILIDADE','Terceiros › Contabilidade'],['COND DO OFFICE THE UNION','Gerais › Condomínio The Union'],['PJBANK (boleto, desde ago/2026)','Gerais › Condomínio The Union'],['CLARO','Gerais › Telefone e Internet'],['CEB / NEOENERGIA','Gerais › Energia'],['DIB CLEAN','Gerais › Limpeza'],['RAYANE MARTINS','Gerais › Limpeza (faxina)'],['CONSELHO REGIONAL','Conselhos e Taxas › CREA'],['BRADESCO SAUDE, DETRAN','Fora da FG › Pessoal do Ilacir'],['CNPJ/CPF do cliente + líquido da NF','Recebimentos › NF (projeto)']];r=r.map(function(x){var e=RED[x[0]];return [x[0],e?e[1]:x[1],e?e[0]:x[0]]});var ativas=r.filter(function(x){return RINAT.indexOf(x[0])<0}),inat=r.filter(function(x){return RINAT.indexOf(x[0])>=0});var lista=RVER?inat:ativas;
+function regrasHtml(){var r=[['Tarifa','Bancárias › Tarifas'],['GDF CONTA ARRECADACAO','Impostos › GDF (ISS e outros)'],['RFB-DARF / RECEITA FEDERAL','Impostos › Federais (DARF)'],['FGTS','Pessoal › Encargos (FGTS)'],['PIX ao Thiago, 2 ou ao Ilacir','Retiradas › (quem recebeu)'],['PIX a Edna','Pessoal › Edna'],['Centavos 01 (antes: final 1 real)','Gerais › Compras Supermercado'],['DIGITAL CONTABILIDADE','Terceiros › Contabilidade'],['COND DO OFFICE THE UNION','Gerais › Condomínio The Union'],['PJBANK (boleto, desde ago/2026)','Gerais › Condomínio The Union'],['CLARO','Gerais › Telefone e Internet'],['CEB / NEOENERGIA','Gerais › Energia'],['DIB CLEAN','Gerais › Limpeza'],['RAYANE MARTINS','Gerais › Limpeza (faxina)'],['CONSELHO REGIONAL','Conselhos e Taxas › CREA'],['BRADESCO SAUDE, DETRAN','Fora da FG › Pessoal do Ilacir'],['CNPJ/CPF do cliente + líquido da NF','Recebimentos › NF (projeto)']];r=r.map(function(x){var e=RED[x[0]];return [x[0],e?e[1]:x[1],e?e[0]:x[0]]});var ativas=r.filter(function(x){return RINAT.indexOf(x[0])<0}),inat=r.filter(function(x){return RINAT.indexOf(x[0])>=0});var lista=RVER?inat:ativas;
 var tb=function(rr){return '<div class="tablewrap" style="overflow:visible"><table style="table-layout:auto;width:100%;font-size:12.5px"><thead><tr><th>Se o histórico do banco contém</th><th>Classifica como</th></tr></thead><tbody>'+rr.map(function(x){var on=RSEL===x[0];return '<tr style="cursor:pointer'+(on?';background:#DCEAFB;outline:2px solid #1F5FAD':'')+(RVER?';color:#8A97A6':'')+'" onclick="rgSel(\''+esc(x[0]).replace(/'/g,"\\'")+'\')">'+(on&&REDT?'<td><input id="rgA" value="'+esc(x[2])+'" style="width:100%;font:inherit;padding:2px 4px;border:1px solid #1F5FAD;background:#FFFBEA" onkeydown="if(event.key===\'Enter\')rgSalvar();if(event.key===\'Escape\')rgCancelar()"></td><td><input id="rgB" value="'+esc(x[1])+'" style="width:100%;font:inherit;padding:2px 4px;border:1px solid #1F5FAD;background:#FFFBEA" onkeydown="if(event.key===\'Enter\')rgSalvar();if(event.key===\'Escape\')rgCancelar()"></td>':'<td style="white-space:nowrap">'+esc(x[2])+'</td><td style="white-space:nowrap">'+esc(x[1])+'</td>')+'</tr>'}).join('')+'</tbody></table></div>'};var mt=Math.ceil(lista.length/2);
 var bts=REDT?'<button class="btn pri" onclick="rgSalvar()">Salvar Regra</button><button class="btn" onclick="rgCancelar()">Cancelar Edição</button>':'<button class="btn pri" onclick="toast(\'Ainda não disponível: abre a ficha Nova Regra nesta mesma área.\')">Nova Regra</button>'+(RSEL!=null&&!RVER?'<button class="btn pri" onclick="rgEditar()">Editar Regra</button>':'')+(RSEL!=null?'<button class="btn '+(RVER?'pri':'verm')+'" onclick="rgInativar()">'+(RVER?'Reativar Regra':'Inativar Regra')+'</button>':'')+'<button class="btn" onclick="rgVer()">'+(RVER?'Ver Regras Ativas':'Regras Inativas ('+inat.length+')')+'</button>';
 return '<div class="acoes-topo">'+bts+'</div><div title="Clique numa regra para selecionar; depois Inativar Regra (ou Reativar, em Regras Inativas). Nada se apaga: fica registrado quem e quando." style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start">'+(lista.length?tb(lista.slice(0,mt))+tb(lista.slice(mt)):'<div class="dica">Nenhuma regra inativa.</div>')+'</div>'}
@@ -462,7 +466,12 @@ function tag(st){var x=ST[st]||['t-gray',st];return '<span class="tag '+x[0]+'">
 function desenhaPainel(){
 var s=S.sel,head='',kp='',tabs=[],pane='';
 var crumb='Bancos › Banco do Brasil';
-if(s.t==='mes'||s.t==='grp'||s.t==='cat'){
+/* Ilacir 10/11: procurar vale para TODOS os extratos de uma vez, com a soma do que foi achado (sem clicar mês a mês) */
+if(S.busca&&S.busca.length>=2){var lb=L.filter(function(l){return casa(l,S.busca)}).slice().sort(function(a,b){var k=function(d){d=String(d).split('/');return d[2]+d[1]+d[0]};return k(b.data)<k(a.data)?-1:k(b.data)>k(a.data)?1:0}),eb=0,sb=0;lb.forEach(function(l){if(l.v>0)eb+=l.v;else sb+=-l.v});
+head='<div><div class="crumb">'+crumb+' › Procura</div><div class="headtitle">“'+esc(S.busca)+'” em todos os extratos</div></div><div class="tags"><span class="tag t-info">'+lb.length+' linha(s)'+(lb.length?' · de '+lb[lb.length-1].data+' a '+lb[0].data:'')+'</span></div>';
+kp=kpi('Linhas achadas',lb.length,'mai/2023 até hoje')+kpi('Entradas',brl(eb),lb.filter(function(l){return l.v>0}).length+' crédito(s)','cr')+kpi('Saídas',brl(sb),lb.filter(function(l){return l.v<0}).length+' débito(s)','db')+kpi('Total',(eb-sb<0?'− ':'')+brl(Math.abs(eb-sb)),'entradas − saídas');
+tabs=['Linhas Achadas'];pane=paneExtrato(lb,true);
+}else if(s.t==='mes'||s.t==='grp'||s.t==='cat'){
 var lm=linhasMes(s.a,s.m),r=resumo(lm);
 crumb+=' › '+s.a+' › '+MESES[s.m-1]+(s.t!=='mes'?' › '+(s.g>0?'Entradas':'Saídas'):'')+(s.t==='cat'?' › '+s.c:'');
 var tit=s.t==='mes'?MESES[s.m-1]+' de '+s.a:(s.t==='grp'?(s.g>0?'Entradas':'Saídas'):s.c)+' — '+MC[s.m-1]+'/'+s.a;
@@ -570,7 +579,8 @@ var CONTA=[['Banco','Banco do Brasil S.A. (001)',1],['Titular','FG ENGENHARIA LT
 function paneConta(){return '<div class="secthead"><b>Dados da Conta</b><span class="sp"></span><button class="btn" onclick="editarConta()">Editar</button></div><div class="ficha">'+CONTA.map(function(c){var L=(c[1]||'').length;return '<div class="fld'+(L>60?' s3':L>28?' s2':'')+'"><label>'+c[0]+'</label><div class="v'+(c[2]===2?' sis':'')+(c[1]?'':' vz')+'">'+(c[1]?esc(c[1]):'a preencher')+'</div></div>'}).join('')+'</div>'+
 '<div class="info dica">Só o Ilacir vê e altera os dados da conta. Cartão e senhas nunca são guardados. Agência, conta e gerente: você preenche (não copio do extrato). Campos em cinza vêm do sistema.</div>'}
 function editarConta(){abrirModal('Editar Dados da Conta','<div class="info">Cadastro protegido: para editar, confirme que é você (no sistema: a senha da conta Google do Ilacir, pedida de novo na hora). Toda alteração fica no histórico, com o valor antes e o depois.</div><div class="mgrid">'+CONTA.filter(function(c){return c[2]!==2}).map(function(c){return '<div class="fld"><label>'+c[0]+'</label><input value="'+esc(c[1])+'"'+(c[0]==='Banco'||c[0]==='Titular'||c[0]==='CNPJ do titular'?' readonly':'')+'></div>'}).join('')+'</div>',[['Cancelar','fecharModal()',''],['Confirmar Identidade e Salvar','fecharModal();toast(\'Ainda não disponível: no sistema pede a confirmação e salva.\')','pri']])}
-function paneExtratos(){var rows=[];anos().forEach(function(a){mesesDe(a).forEach(function(m){var r=resumo(linhasMes(a,m));rows.push('<tr class="clk" onclick="'+selJ({t:'mes',a:a,m:m})+'"><td><b>'+MC[m-1]+'/'+a+'</b></td><td>PDF</td><td class="r">'+r.n+'</td><td class="r">'+num(r.ini)+'</td><td class="r"><b>'+num(r.fim)+'</b></td><td><span class="tag t-ok">Lido e conferido</span></td><td>'+(r.p?'<span class="npend">'+r.p+' pendente(s)</span>':'')+'</td></tr>')})});
+function xpAnexar(a,m){var i=document.createElement('input');i.type='file';i.accept='application/pdf,.pdf';i.onchange=function(){var f=i.files[0];if(!f)return;if(f.size>20e6){toast('Arquivo grande demais (máx. 20 MB).');return}var rd=new FileReader();rd.onload=function(){toast('Guardando o extrato de '+MC[m-1]+'/'+a+'…');google.script.run.withSuccessHandler(function(o){D.extratosPdf=o;toast('PDF de '+MC[m-1]+'/'+a+' guardado ✓');desenhaPainel()}).withFailureHandler(function(e){toast(e.message||e)}).bcExtratoPdf(a,m,f.name,f.type||'application/pdf',String(rd.result).split(',')[1])};rd.readAsDataURL(f)};i.click()}
+function paneExtratos(){var rows=[];anos().forEach(function(a){mesesDe(a).forEach(function(m){var r=resumo(linhasMes(a,m));var kx=a+'-'+('0'+m).slice(-2),px=(D.extratosPdf||{})[kx]||[],ux=px.length?px[px.length-1].url:'';rows.push('<tr class="clk" title="'+(ux?'Clique para abrir o PDF do extrato':'Sem o PDF guardado: clique em Anexar PDF; a linha abre o Extrato do Mês')+'" onclick="'+(ux?'window.open(\''+esc(ux)+'\',\'_blank\')':selJ({t:'mes',a:a,m:m}))+'"><td><b>'+MC[m-1]+'/'+a+'</b></td><td>'+(ux?'<span class="tag t-ok">✓ PDF</span>'+(px.length>1?' <span class="tag t-gray">'+px.length+' arquivos</span>':''):'<button class="btn" style="min-height:26px" onclick="event.stopPropagation();xpAnexar('+a+','+m+')">Anexar PDF</button>')+'</td><td class="r">'+r.n+'</td><td class="r">'+num(r.ini)+'</td><td class="r"><b>'+num(r.fim)+'</b></td><td><span class="tag t-ok">Lido e conferido</span></td><td>'+(r.p?'<span class="npend">'+r.p+' pendente(s)</span>':'')+'</td></tr>')})});
 return '<div class="tablewrap" id="tw"><table><thead><tr><th>Mês</th><th>Arquivo</th><th class="r">Linhas</th><th class="r">Saldo anterior</th><th class="r">Saldo final</th><th>Leitura</th><th>Pendências</th></tr></thead><tbody>'+paginar(rows)+'</tbody></table></div>'+pgLine(rows.length)}
 function abrirProjeto(ob){toast('No sistema abre Clientes e Projetos já no projeto '+ob+' — '+(D.obras[ob]||''))}
 /* ---------- ficha da linha ---------- */
@@ -709,18 +719,21 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
 const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
-$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+$('fgBt').onclick = () => signInWithPopup(auth, prov).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
 let rodou = false;
 onAuthStateChanged(auth, async u => {
   if (!u) { $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
   $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  /* Ilacir 10/11: mostrar sempre com qual conta entrou, com Sair */
+  try { window.__fgSair = () => signOut(auth).then(() => location.reload()); const us = document.querySelector('.titlebar .usr'); if (us) us.innerHTML = u.email + ' · <a href="#" style="color:#fff;text-decoration:underline" onclick="window.__fgSair();return false">Sair</a>'; } catch (e) {}
   try {
     const s = await getDoc(doc(db, 'paginas', 'bancos'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
@@ -736,7 +749,15 @@ onAuthStateChanged(auth, async u => {
     if (API && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
       u.getIdToken().then(tk => fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'fbPagina', args: ['bancos'], token: tk }) }))
         .then(r => r.json()).then(async j => { if (!j.ok) return; const s2 = await getDoc(doc(db, 'paginas', 'bancos'));
-          if (s2.get('json') !== jsonAtual) { const b = $('fgTempo'); b.innerHTML = '<a href="#" style="color:#1F5FAF;font-weight:600" onclick="location.reload();return false">Há dados novos — clique para atualizar</a>'; }
+          if (s2.get('json') !== jsonAtual) {
+            /* Ilacir 10/11 15:26: aviso discreto demais — se não estiver digitando, atualiza sozinho; se estiver, faixa amarela grande no alto */
+            const ae = document.activeElement, digitando = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
+            if (!digitando && !document.querySelector('.modal.on')) { location.reload(); return; }
+            const f = document.createElement('div');
+            f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+            f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).';
+            f.onclick = () => location.reload(); document.body.appendChild(f);
+          }
           else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
     }
   } catch (e) {
