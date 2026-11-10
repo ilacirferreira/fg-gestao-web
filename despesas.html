@@ -272,6 +272,10 @@ table.h1 .opc{display:none}table.h2 .opc2{display:none}
 .dt{color:#2F4A66;font-weight:700;font-size:13.5px;cursor:pointer;margin-top:auto}
 .tb.ok{background:#2E8B57;border-color:#2E8B57;color:#fff}.tb.verm{background:#F8DEDA;border-color:#E9B3AB;color:#8E2A1F}
 .grade td,.grade th{padding-top:1px!important;padding-bottom:1px!important;line-height:1.25}
+
+/* Ilacir 10/11 15:31: setinhas de página bem visíveis */
+.toolbar .pgtb .pgline,.toolbar .pgtb .pgbar{font-size:15px!important;font-weight:600;color:#1F3B5C}
+.toolbar .pgtb button{min-width:48px!important;min-height:40px!important;font-size:20px!important;font-weight:700;border-radius:6px}
 </style>
 </head>
 <body>
@@ -1084,7 +1088,15 @@ onAuthStateChanged(auth, async u => {
     if (API && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
       u.getIdToken().then(tk => fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'fbPagina', args: ['despesas'], token: tk }) }))
         .then(r => r.json()).then(async j => { if (!j.ok) return; const s2 = await getDoc(doc(db, 'paginas', 'despesas'));
-          if (s2.get('json') !== jsonAtual) { const b = $('fgTempo'); b.innerHTML = '<a href="#" style="color:#1F5FAF;font-weight:600" onclick="location.reload();return false">Há dados novos — clique para atualizar</a>'; }
+          if (s2.get('json') !== jsonAtual) {
+            /* Ilacir 10/11 15:26: aviso discreto demais — se não estiver digitando, atualiza sozinho; se estiver, faixa amarela grande no alto */
+            const ae = document.activeElement, digitando = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
+            if (!digitando && !document.querySelector('.modal.on')) { location.reload(); return; }
+            const f = document.createElement('div');
+            f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+            f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).';
+            f.onclick = () => location.reload(); document.body.appendChild(f);
+          }
           else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
     }
   } catch (e) {
