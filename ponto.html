@@ -92,6 +92,9 @@ function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
   if(E.agenda&&E.agenda.length)av+='<div class="aviso info" style="margin-bottom:8px;text-align:left"><b>Compromissos:</b> '+E.agenda.map(function(x){return (x.data===E.hoje?'<b>hoje</b>':esc(x.data.slice(0,5)))+(x.hora?' '+esc(x.hora):'')+' — '+esc(x.texto)}).join(' · ')+'</div>';
   if(E.teste)av+='<div class="aviso warn" title="Seu e-mail não está ligado a um colaborador: as marcações ficam como TESTE e não entram na folha de ninguém.">MODO TESTE — estas marcações não entram na folha da Edna.</div>';
   if(+E.hoje.slice(0,2)<=5&&!E.teste)av+='<div class="aviso warn" style="margin-bottom:8px;cursor:pointer" onclick="TAB=nomesTabs().indexOf(\'Imprimir Folha do Mês\');desenha()">Imprima e assine a folha de ponto de '+mesesOpc()[0].nome+' — clique aqui.</div>';
+  /* Ilacir 10/11 18:24: nunca mais de 6 horas de trabalho */
+  if(E.saidaAte){var fal=minAte(E.saidaAte);/* Ilacir 10/11 18:25: com 5h30 de trabalho, avisa que o expediente se encerra em 30 minutos */
+    av+='<div class="aviso '+(fal<=30?'bad':'info')+'" style="margin-bottom:8px;font-weight:600;text-align:center;'+(fal<=30?'font-size:18px':'')+'">'+(fal<=0?'Você chegou a 6 horas de trabalho: marque agora a Saída.':fal<=30?'Seu expediente se encerra em '+fal+' minuto'+(fal>1?'s':'')+' (às '+E.saidaAte+'). Marque a Saída até lá.':'Jornada máxima de 6 horas: marque a saída até as '+E.saidaAte+'.')+'</div>'}
   if(E.semPausa)av+='<div class="aviso '+(agoraHM()>E.semPausa.pausaAte?'bad':'info')+'" style="margin-bottom:8px">'+(agoraHM()>E.semPausa.pausaAte?'Passou de '+hTxt()+' sem pausa: marque agora a Saída para Almoço.':'Pausa para almoço obrigatória até as '+E.semPausa.pausaAte+' (máximo de '+hTxt()+' sem pausa).')+'</div>';
   if(ERRO)av+='<div class="aviso bad" style="margin-bottom:8px" title="'+esc(ERRO)+'">Não gravou: '+esc(ERRO)+'</div>';
   if(s.pendente)av+='<div class="aviso bad" style="margin-top:'+(E.teste?'8':'0')+'px">'+esc(s.motivo)+'</div>';
@@ -176,6 +179,9 @@ function paneSenha(){return '<div class="aviso info" style="margin-bottom:12px">
    '<div class="fld"><label>Senha atual (se já tiver)</label><input id="sAtual" type="password" autocomplete="off"></div>'+
    '<div class="fld"><label>Nova senha (mínimo 6)</label><input id="sNova" type="password" autocomplete="new-password"></div>'+
    '<div class="fld"><label>Repita a nova senha</label><input id="sNova2" type="password" autocomplete="new-password"></div></div>'}
+function minAte(hm){var a=agoraHM().split(':'),b=String(hm).split(':');return (+b[0]*60+ +b[1])-(+a[0]*60+ +a[1])}
+/* redesenha a cada minuto perto do fim do expediente (aviso dos 30 minutos) */
+setInterval(function(){if(E&&!ESPERA&&E.saidaAte){var f=minAte(E.saidaAte);if(f<=31&&f>=-1)desenha()}},60000);
 function hTxt(){var m=(E.cfg&&E.cfg.semPausaMaxMin!=null)?+E.cfg.semPausaMaxMin:360;return Math.floor(m/60)+'h'+(m%60?('0'+m%60).slice(-2):'')}
 function marcarSaidaSemAlmoco(){chamar('pontoMarcar',['saida'],function(r){E=r;TAB=0;var m=(r.dias[r.hoje]||{}).saida;toast('Saída marcada às '+(m?m.h:'')+' ✓ (dia sem almoço)');desenha()})}
 function marcar(){var t=E.situacao.tipo;chamar('pontoMarcar',[t],function(r){E=r;TAB=0;var m=(r.dias[r.hoje]||{})[t];toast(NOMES[t]+' marcada às '+(m?m.h:'')+' ✓');desenha()})}
