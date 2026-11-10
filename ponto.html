@@ -46,7 +46,7 @@ table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:7px 10px
 <div id="fgEntrar" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#E9EDF2;z-index:200;font-family:Segoe UI,Arial,sans-serif">
  <div style="background:#fff;padding:34px 44px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;max-width:480px">
   <div style="font-size:24px;font-weight:700;color:#1F3B5C;margin-bottom:10px">FG Gestão – Ponto</div>
-  <div id="fgMsg" style="font-size:16px;color:#41505F;margin-bottom:18px">Entre com a sua conta Google.</div>
+  <div id="fgMsg" style="font-size:16px;color:#41505F;margin-bottom:18px">Entre com a sua conta Google. Na janela do Google, escolha a sua conta (ou "Usar outra conta").</div>
   <button id="fgBt" style="font:600 18px Segoe UI,Arial;padding:12px 28px;background:#1F5FAD;color:#fff;border:0;border-radius:6px;cursor:pointer">Entrar com o Google</button>
  </div>
 </div>
@@ -118,7 +118,9 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
-$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+/* 10/11: o computador da Edna já tem a conta da FG aberta no Google — sempre mostrar a escolha de conta */
+const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+$('fgBt').onclick = () => signInWithPopup(auth, prov).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
 $('sair').onclick = e => { e.preventDefault(); signOut(auth); };
 onAuthStateChanged(auth, async u => {
   if (!u) { $('fgCarregando').style.display = 'none'; $('app').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
