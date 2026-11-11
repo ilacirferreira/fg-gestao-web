@@ -2,6 +2,21 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<!--fg-versao--><script>(function(){try{
+var R='ilacirferreira/fg-gestao-web',pg=(location.pathname.split('/').pop()||'index.html'),
+ss=function(k,v){try{if(v===undefined)return sessionStorage.getItem(k);sessionStorage.setItem(k,v)}catch(e){}},
+ult=0,pub=Date.parse(document.lastModified)||Date.now();
+function ver(){if(Date.now()-ult<120000)return;ult=Date.now();
+fetch('https://api.github.com/repos/'+R+'/commits?path='+encodeURIComponent(pg)+'&per_page=1',{cache:'no-store'})
+.then(function(r){return r.ok?r.json():null}).then(function(a){if(!a||!a[0])return;
+var sha=a[0].sha.slice(0,7),dt=Date.parse(a[0].commit.committer.date),ida=Date.now()-dt;
+if(dt<=pub+5000||new URLSearchParams(location.search).get('v')===sha)return;
+if(ida<120000){setTimeout(function(){ult=0;ver()},120000-ida+5000);return}
+if(ss('fgv_'+pg)===sha)return;ss('fgv_'+pg,sha);
+var u=new URL(location.href);u.searchParams.set('v',sha);location.replace(u.toString());
+}).catch(function(){})}
+ver();document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')ver()});
+}catch(e){}})();</script><!--/fg-versao-->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FG Gestão – Início</title>
 <style>
