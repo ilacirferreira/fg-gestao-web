@@ -11,20 +11,20 @@
 --ok-bg:#DDF0E4;--ok:#1E5E38;--warn-bg:#FCEBD3;--warn:#7A4A0B;--bad-bg:#F8DEDA;--bad:#8E2A1F;--info-bg:#DDE8F7;--info:#163F75;--gray-bg:#E9ECF0}
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--txt);font:16px "Segoe UI",Arial,sans-serif}
-.wrap{max-width:1500px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:10px 12px;gap:10px}
-.top{background:var(--blue2);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:4px;white-space:nowrap}
+.wrap{max-width:1500px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:8px 12px;gap:8px}
+.top{background:var(--blue2);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:7px 16px;border-radius:4px;white-space:nowrap}
 .top b{font-size:19px}.top span{font-size:14px;opacity:.9}.top a{color:#fff;margin-left:14px;font-size:14px}
-.tbar{display:flex;gap:8px}.tbar button{flex:1;min-height:54px;font:600 18px "Segoe UI",Arial;border:1px solid var(--line);background:#fff;color:var(--txt);border-radius:4px;cursor:pointer;white-space:nowrap}
-.tbar button.pri{background:var(--blue);border-color:var(--blue);color:#fff;font-size:22px}.tbar button.verm{background:#B3261E;border-color:#B3261E;color:#fff}
+.tbar{display:flex;gap:8px}.tbar button{flex:1;min-height:44px;font:600 17px "Segoe UI",Arial;border:1px solid var(--line);background:#fff;color:var(--txt);border-radius:4px;cursor:pointer;white-space:nowrap}
+.tbar button.pri{background:var(--blue);border-color:var(--blue);color:#fff;font-size:20px}.tbar button.verm{background:#B3261E;border-color:#B3261E;color:#fff}
 .tbar button:disabled{opacity:.55;cursor:default}
 .linha{display:flex;gap:10px}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px 16px;flex:1;min-width:0;white-space:nowrap}
-.box small{display:block;color:var(--mut);font-size:15px}.box b{display:block;font-size:30px;margin-top:2px}.box em{display:block;font-style:normal;font-size:13px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
-.box.relogio b{font-size:40px;color:var(--blue2)}.box.feito b{color:var(--ok)}.box.prox{border:2px solid var(--blue)}.box.prox b{color:var(--blue)}
-.aviso{border-radius:4px;padding:12px 16px;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 14px;flex:1;min-width:0;white-space:nowrap}
+.box small{display:block;color:var(--mut);font-size:15px}.box b{display:block;font-size:24px;margin-top:0;line-height:1.15}.box em{display:block;font-style:normal;font-size:13px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+.box.relogio b{font-size:30px;color:var(--blue2)}.box.feito b{color:var(--ok)}.box.prox{border:2px solid var(--blue)}.box.prox b{color:var(--blue)}
+.aviso{border-radius:4px;padding:6px 14px;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .aviso.bad{background:var(--bad-bg);color:var(--bad);border:1px solid #E5B3AC}.aviso.ok{background:var(--ok-bg);color:var(--ok)}.aviso.info{background:var(--info-bg);color:var(--info)}.aviso.warn{background:var(--warn-bg);color:var(--warn)}
 .painel{background:var(--panel);border:1px solid var(--line);border-radius:4px;flex:1;min-height:0;display:flex;flex-direction:column}
-.tabs{display:flex;border-bottom:1px solid var(--line)}.tab{flex:1;padding:10px 12px;cursor:pointer;color:var(--mut);white-space:nowrap;text-align:left;border-right:1px solid var(--line2)}
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tab{flex:1;padding:8px 12px;cursor:pointer;color:var(--mut);white-space:nowrap;text-align:left;border-right:1px solid var(--line2)}
 .tab.on{color:var(--blue2);font-weight:600;background:var(--info-bg)}
 .pane{flex:1;min-height:0;overflow:hidden;padding:10px 14px}
 .btn{font:inherit;font-size:15px;min-height:34px;padding:0 14px;border:1px solid #9FB3C8;background:#fff;color:#1F3B5C;border-radius:6px;cursor:pointer;white-space:nowrap}.btn:hover{background:#EEF4FB}.btn.pri{background:#1F5FAD;border-color:#1F5FAD;color:#fff;font-weight:600}.btn.pri:hover{background:#174C8C}
@@ -46,7 +46,7 @@ table{border-collapse:collapse;width:100%}td.fit{overflow:hidden}th,td{text-alig
 <div class="wrap" id="app" style="display:none">
   <div class="top"><b>FG Gestão – Ponto</b><span><span id="quem"></span><a href="#" id="sair">Sair</a></span></div>
   <div class="tbar" id="tbar"></div>
-  <div id="avisoTopo"></div>
+  <div id="avisoTopo" style="display:flex;flex-direction:column;gap:6px"></div>
   <div class="linha" id="caixas"></div>
   <div class="painel"><div class="tabs" id="tabs"></div><div class="pane" id="pane"></div></div>
 </div>
@@ -69,10 +69,12 @@ function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTi
 /* Ilacir 10/11 18:09: chave deste computador (a página só abre no computador liberado com a senha do Ilacir) */
 function fgAparelho(){var k=window.__fgAp||'';try{k=k||localStorage.getItem('fgAparelho')||''}catch(e){}if(!k){var a=new Uint8Array(24);crypto.getRandomValues(a);k=Array.prototype.map.call(a,function(x){return ('0'+x.toString(16)).slice(-2)}).join('')}window.__fgAp=k;try{localStorage.setItem('fgAparelho',k)}catch(e){}return k}
 window.fgAparelho=fgAparelho;
-function chamar(acao,args,ok){if(ESPERA)return;ESPERA=true;desenhaBarra();args=(args||[]).concat([{__ap:fgAparelho()}]);
+/* Ilacir 11/11 10:57: abrir e-mails não pode travar o ponto. bg = chamada de fundo: não mostra "Gravando…" nem bloqueia o botão; o erro fica na própria aba */
+function chamar(acao,args,ok,bg){if(!bg){if(ESPERA)return;ESPERA=true;desenhaBarra()}args=(args||[]).concat([{__ap:fgAparelho()}]);
   window.__fgAuth.currentUser.getIdToken().then(function(tk){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({acao:acao,args:args||[],token:tk})})})
-  .then(function(r){return r.json()}).then(function(j){ESPERA=false;if(j.ok){ERRO='';ok&&ok(j.r)}else{ERRO=j.erro||'Não deu certo.';toast(ERRO);desenha()}})
-  .catch(function(e){ESPERA=false;ERRO='Sem resposta do Google: '+(e&&e.message||e);toast(ERRO);desenha()})}
+  .then(function(r){return r.json()}).then(function(j){if(!bg)ESPERA=false;if(j.ok){if(!bg)ERRO='';ok&&ok(j.r)}else{var m=j.erro||'Não deu certo.';if(bg)bg(m);else{ERRO=m;toast(m);desenha()}}})
+  .catch(function(e){var m='Sem resposta do Google: '+(e&&e.message||e);if(!bg)ESPERA=false;if(bg)bg(m);else{ERRO=m;toast(m);desenha()}})}
+function ecErro(m){EC.carr=false;EC.erro=/muitas vezes|too many times/i.test(m)?'Os e-mails da FG não abriram agora: o Google limitou o uso do Gmail da FG por hoje. Amanhã volta ao normal; até lá, use o Gmail.':'Os e-mails não abriram: '+m;toast(EC.erro);desenha()}
 function carregar(){chamar('pontoEstado',[],function(r){E=r;desenha()})}
 function agoraHM(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
 function hm(m){return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2)}
@@ -94,18 +96,20 @@ function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
   $('quem').textContent=E.nome+' · '+E.eu;
   desenhaBarra();
   var av='';
-  if(E.cfg&&E.cfg.mensagem)av+='<div class="aviso bad" style="margin-bottom:8px;font-weight:600;text-align:center">'+esc(E.cfg.mensagem)+'</div>';
-  if(E.cfg&&E.cfg.mensagem2)av+='<div class="aviso info" style="margin-bottom:8px;font-weight:600;text-align:center">'+esc(E.cfg.mensagem2)+'</div>';
+  /* Ilacir 11/11 10:57: as duas mensagens fixas numa faixa só, lado a lado */
+  var fx=[];if(E.cfg&&E.cfg.mensagem)fx.push('<div class="aviso bad" style="flex:1;font-weight:600;text-align:center">'+esc(E.cfg.mensagem)+'</div>');
+  if(E.cfg&&E.cfg.mensagem2)fx.push('<div class="aviso info" style="flex:1;font-weight:600;text-align:center">'+esc(E.cfg.mensagem2)+'</div>');
+  if(fx.length)av+='<div style="display:flex;gap:8px;min-width:0">'+fx.join('')+'</div>';
   /* Ilacir 10/11 17:58: compromissos da agenda do Início para ela (e para Todos) */
-  if(E.agenda&&E.agenda.length)av+='<div class="aviso info" style="margin-bottom:8px;text-align:left"><b>Compromissos:</b> '+E.agenda.map(function(x){return (x.data===E.hoje?'<b>hoje</b>':esc(x.data.slice(0,5)))+(x.hora?' '+esc(x.hora):'')+' — '+esc(x.texto)}).join(' · ')+'</div>';
+  if(E.agenda&&E.agenda.length)av+='<div class="aviso info" style="text-align:left"><b>Compromissos:</b> '+E.agenda.map(function(x){return (x.data===E.hoje?'<b>hoje</b>':esc(x.data.slice(0,5)))+(x.hora?' '+esc(x.hora):'')+' — '+esc(x.texto)}).join(' · ')+'</div>';
   if(E.teste)av+='<div class="aviso warn" title="Seu e-mail não está ligado a um colaborador: as marcações ficam como TESTE e não entram na folha de ninguém.">MODO TESTE — estas marcações não entram na folha da Edna.</div>';
-  if(+E.hoje.slice(0,2)<=5&&!E.teste)av+='<div class="aviso warn" style="margin-bottom:8px;cursor:pointer" onclick="TAB=nomesTabs().indexOf(\'Imprimir Folha do Mês\');desenha()">Imprima e assine a folha de ponto de '+mesesOpc()[0].nome+' — clique aqui.</div>';
+  if(+E.hoje.slice(0,2)<=5&&!E.teste)av+='<div class="aviso warn" style="cursor:pointer" onclick="TAB=nomesTabs().indexOf(\'Imprimir Folha do Mês\');desenha()">Imprima e assine a folha de ponto de '+mesesOpc()[0].nome+' — clique aqui.</div>';
   /* Ilacir 10/11 18:24: nunca mais de 6 horas de trabalho */
   if(E.saidaAte){var fal=minAte(E.saidaAte);/* Ilacir 10/11 18:25: com 5h30 de trabalho, avisa que o expediente se encerra em 30 minutos */
-    av+='<div class="aviso '+(fal<=30?'bad':'info')+'" style="margin-bottom:8px;font-weight:600;text-align:center;'+(fal<=30?'font-size:18px':'')+'">'+(fal<=0?'Você chegou a 6 horas de trabalho: marque agora a Saída.':fal<=30?'Seu expediente se encerra em '+fal+' minuto'+(fal>1?'s':'')+' (às '+E.saidaAte+'). Marque a Saída até lá.':'Jornada máxima de 6 horas: marque a saída até as '+E.saidaAte+'.')+'</div>'}
-  if(E.semPausa)av+='<div class="aviso '+(agoraHM()>E.semPausa.pausaAte?'bad':'info')+'" style="margin-bottom:8px">'+(agoraHM()>E.semPausa.pausaAte?'Passou de '+hTxt()+' sem pausa: marque agora a Saída para Almoço.':'Pausa para almoço obrigatória até as '+E.semPausa.pausaAte+' (máximo de '+hTxt()+' sem pausa).')+'</div>';
+    av+='<div class="aviso '+(fal<=30?'bad':'info')+'" style="font-weight:600;text-align:center;'+(fal<=30?'font-size:18px':'')+'">'+(fal<=0?'Você chegou a 6 horas de trabalho: marque agora a Saída.':fal<=30?'Seu expediente se encerra em '+fal+' minuto'+(fal>1?'s':'')+' (às '+E.saidaAte+'). Marque a Saída até lá.':'Jornada máxima de 6 horas: marque a saída até as '+E.saidaAte+'.')+'</div>'}
+  if(E.semPausa)av+='<div class="aviso '+(agoraHM()>E.semPausa.pausaAte?'bad':'info')+'">'+(agoraHM()>E.semPausa.pausaAte?'Passou de '+hTxt()+' sem pausa: marque agora a Saída para Almoço.':'Pausa para almoço obrigatória até as '+E.semPausa.pausaAte+' (máximo de '+hTxt()+' sem pausa).')+'</div>';
   if(ERRO)av+='<div class="aviso bad" style="margin-bottom:8px" title="'+esc(ERRO)+'">Não gravou: '+esc(ERRO)+'</div>';
-  if(s.pendente)av+='<div class="aviso bad" style="margin-top:'+(E.teste?'8':'0')+'px">'+esc(s.motivo)+'</div>';
+  if(s.pendente)av+='<div class="aviso bad">'+esc(s.motivo)+'</div>';
   $('avisoTopo').innerHTML=av;$('avisoTopo').style.display=av?'block':'none';
   var d=dt(E.hoje);
   $('caixas').innerHTML='<div class="box relogio"><small>'+DIAS_SEM[d.getDay()]+', '+E.hoje+'</small><b id="relogio">--:--</b><em title="A marcação grava a hora do servidor do Google, no momento do clique.">a marcação usa a hora do Google</em></div>'+
@@ -129,20 +133,20 @@ function imprimirFolha(){var m=mesSel(),w=window.open('','_blank');if(!w){toast(
 /* Etapa 2 (10/11): os dados dela, só leitura — cadastro, holerites com VR/VT e recibos assinados */
 /* Ilacir 10/11 22:21: E-MAILS DA FG pela página dela (sem a senha da conta da FG). Vê tudo e manda direto. */
 var EC={pasta:'entrada',pag:0,busca:'',lista:null,conv:null,sel:'',form:null,anx:[],ctt:null,carr:false};
-function ecCarrega(){EC.carr=true;chamar('ecListar',[EC.pasta,EC.pag,EC.busca],function(r){EC.lista=r;EC.carr=false;desenha()})}
-function ecAbre(id){EC.sel=id;EC.conv=null;EC.form=null;desenha();chamar('ecAbrir',[id],function(r){EC.conv=r;desenha()})}
+function ecCarrega(){EC.carr=true;EC.erro='';chamar('ecListar',[EC.pasta,EC.pag,EC.busca],function(r){EC.lista=r;EC.carr=false;desenha()},ecErro)}
+function ecAbre(id){EC.sel=id;EC.conv=null;EC.form=null;desenha();chamar('ecAbrir',[id],function(r){EC.conv=r;desenha()},ecErro)}
 function ecNovo(tipo,m){var c=EC.conv,re=function(a){return /^(re|res|enc|fwd?):/i.test(a)?a:(tipo==='encaminhar'?'Enc: ':'Re: ')+a};
   EC.anx=[];EC.form={tipo:tipo,msgId:m?m.id:'',para:tipo==='responder'?m.deEmail:tipo==='responderTodos'?[m.deEmail].concat(String(m.para+','+(m.cc||'')).split(',').map(function(x){var mm=x.match(/<([^>]+)>/);return (mm?mm[1]:x).trim().toLowerCase()}).filter(function(x){return x&&x.indexOf('fgengenhariadf@')<0})).join(', '):'',cc:'',assunto:m?re(m.assunto||c.assunto):'',texto:''};
-  if(!EC.ctt)chamar('ecContatos',[],function(r){EC.ctt=r||[];var dl=$('ecDl');if(dl)dl.innerHTML=EC.ctt.map(function(c){return '<option value="'+esc(c[0])+'">'+esc(c[1]||'')+'</option>'}).join('')});desenha();setTimeout(function(){var e=$(tipo==='novo'||tipo==='encaminhar'?'ecPara':'ecTexto');if(e)e.focus()},50)}
+  if(!EC.ctt)chamar('ecContatos',[],function(r){EC.ctt=r||[];var dl=$('ecDl');if(dl)dl.innerHTML=EC.ctt.map(function(c){return '<option value="'+esc(c[0])+'">'+esc(c[1]||'')+'</option>'}).join('')},function(){EC.ctt=[]});desenha();setTimeout(function(){var e=$(tipo==='novo'||tipo==='encaminhar'?'ecPara':'ecTexto');if(e)e.focus()},50)}
 function ecLeForm(){if(!EC.form)return;['para','cc','assunto','texto'].forEach(function(k){var e=$('ec_'+k);if(e)EC.form[k]=e.value})}
 function ecAnexar(inp){var fs=[].slice.call(inp.files||[]);ecLeForm();var n=fs.length;if(!n)return;fs.forEach(function(f){if(f.size>15*1024*1024){toast(f.name+': maior que 15 MB');if(!--n)desenha();return}var r=new FileReader();r.onload=function(){EC.anx.push({nome:f.name,tipo:f.type||'application/octet-stream',b64:String(r.result).split(',')[1],kb:Math.round(f.size/1024)});if(!--n)desenha()};r.readAsDataURL(f)})}
 function ecEnvia(){ecLeForm();var f=EC.form;if(!f.para.trim()){toast('Falta para quem enviar.');return}if(!f.assunto.trim()){toast('Falta o assunto.');return}
   if(!confirm('Enviar este e-mail como FG Engenharia para '+f.para+(f.cc?' (cc '+f.cc+')':'')+'?'))return;
-  chamar('ecEnviar',[{tipo:f.tipo,msgId:f.msgId,para:f.para,cc:f.cc,assunto:f.assunto,texto:f.texto,anexos:EC.anx.map(function(a){return {nome:a.nome,tipo:a.tipo,b64:a.b64}})}],function(r){toast(r||'Enviado ✓');EC.form=null;EC.anx=[];if(EC.sel)ecAbre(EC.sel);else desenha()})}
-function ecBaixa(msgId,i){chamar('ecAnexo',[msgId,i],function(a){var b=atob(a.b64),u=new Uint8Array(b.length);for(var k=0;k<b.length;k++)u[k]=b.charCodeAt(k);var url=URL.createObjectURL(new Blob([u],{type:a.tipo}));var l=document.createElement('a');l.href=url;l.download=a.nome;document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(url);l.remove()},2000)})}
-function paneEmail(){ecLeForm();if(!EC.lista&&!EC.carr&&!ESPERA)setTimeout(ecCarrega,0);
+  toast('Enviando…');chamar('ecEnviar',[{tipo:f.tipo,msgId:f.msgId,para:f.para,cc:f.cc,assunto:f.assunto,texto:f.texto,anexos:EC.anx.map(function(a){return {nome:a.nome,tipo:a.tipo,b64:a.b64}})}],function(r){toast(r||'Enviado ✓');EC.form=null;EC.anx=[];if(EC.sel)ecAbre(EC.sel);else desenha()},function(m){toast('Não enviou: '+m)})}
+function ecBaixa(msgId,i){toast('Baixando o anexo…');chamar('ecAnexo',[msgId,i],function(a){var b=atob(a.b64),u=new Uint8Array(b.length);for(var k=0;k<b.length;k++)u[k]=b.charCodeAt(k);var url=URL.createObjectURL(new Blob([u],{type:a.tipo}));var l=document.createElement('a');l.href=url;l.download=a.nome;document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(url);l.remove()},2000)},ecErro)}
+function paneEmail(){ecLeForm();if(!EC.lista&&!EC.carr&&!EC.erro)setTimeout(ecCarrega,0);
   var L=EC.lista,topo='<div style="display:flex;gap:6px;padding:8px;border-bottom:1px solid #E3E8EE;align-items:center"><button class="btn'+(EC.pasta==='entrada'?' pri':'')+'" onclick="EC.pasta=\'entrada\';EC.pag=0;EC.lista=null;desenha()">Entrada</button><button class="btn'+(EC.pasta==='enviados'?' pri':'')+'" onclick="EC.pasta=\'enviados\';EC.pag=0;EC.lista=null;desenha()">Enviados</button><input id="ecBusca" placeholder="Procurar…" value="'+esc(EC.busca)+'" onkeydown="if(event.key===\'Enter\'){EC.busca=this.value;EC.pag=0;EC.lista=null;desenha()}" style="flex:1;min-width:60px;font-size:15px;padding:6px;border:1px solid #9FB3C8;border-radius:6px"><button class="btn pri" onclick="EC.sel=\'\';EC.conv=null;ecNovo(\'novo\')">Novo E-mail</button></div>';
-  var lst=!L?'<div class="aviso info" style="margin:10px">Abrindo os e-mails da FG…</div>':!L.itens.length?'<div class="aviso info" style="margin:10px">Nenhum e-mail.</div>':L.itens.map(function(x){return '<div class="it'+(x.id===EC.sel?' sel':'')+(x.novo?' nv':'')+'" onclick="ecAbre(\''+x.id+'\')"><div class="l1"><b>'+(x.novo?'● ':'')+esc(EC.pasta==='enviados'?'Para: '+x.para:x.de)+'</b><span style="color:#5A6676;font-size:13px">'+esc(x.quando)+'</span></div><div class="l2">'+(x.anexo?'📎 ':'')+esc(x.assunto)+(x.n>1?' ('+x.n+')':'')+'</div><div class="l3">'+esc(x.trecho)+'</div></div>'}).join('');
+  var lst=EC.erro&&!L?'<div class="aviso bad" style="margin:10px;white-space:normal">'+esc(EC.erro)+' <button class="btn" onclick="EC.erro=\'\';desenha()">Tentar de novo</button></div>':!L?'<div class="aviso info" style="margin:10px">Abrindo os e-mails da FG…</div>':!L.itens.length?'<div class="aviso info" style="margin:10px">Nenhum e-mail.</div>':L.itens.map(function(x){return '<div class="it'+(x.id===EC.sel?' sel':'')+(x.novo?' nv':'')+'" onclick="ecAbre(\''+x.id+'\')"><div class="l1"><b>'+(x.novo?'● ':'')+esc(EC.pasta==='enviados'?'Para: '+x.para:x.de)+'</b><span style="color:#5A6676;font-size:13px">'+esc(x.quando)+'</span></div><div class="l2">'+(x.anexo?'📎 ':'')+esc(x.assunto)+(x.n>1?' ('+x.n+')':'')+'</div><div class="l3">'+esc(x.trecho)+'</div></div>'}).join('');
   var pg=L?'<div style="display:flex;justify-content:space-between;padding:6px 8px;border-top:1px solid #E3E8EE"><button class="btn"'+(EC.pag?'':' disabled')+' onclick="EC.pag--;EC.lista=null;desenha()">‹ Mais novos</button><button class="btn"'+(L.mais?'':' disabled')+' onclick="EC.pag++;EC.lista=null;desenha()">Mais antigos ›</button></div>':'';
   var dir='';
   if(EC.form){var f=EC.form;dir='<div class="ecf"><b style="font-size:17px;color:#1F3B5C">'+({novo:'Novo e-mail',responder:'Responder',responderTodos:'Responder a todos',encaminhar:'Encaminhar'})[f.tipo]+'</b> <span style="color:#5A6676">· sai como FG Engenharia (fgengenhariadf@gmail.com)</span>'+
@@ -157,9 +161,9 @@ function paneEmail(){ecLeForm();if(!EC.lista&&!EC.carr&&!ESPERA)setTimeout(ecCar
   else dir='<div class="aviso info">Clique num e-mail para ler, ou em Novo E-mail.</div>';
   return '<div class="ecw"><div class="ecl">'+topo+'<div class="lst">'+lst+'</div>'+pg+'</div><div class="ecr">'+dir+'</div></div>'}
 /* Ilacir 10/11 18:03: Calendário e Lembretes na página da colaboradora — os compromissos dela e os de "Todos" */
-var AGM=null,AGC=null,AGD_SEL='';
+var AGM=null,AGC=null,AGD_SEL='',AGM_C=0;
 function agK(d){var p=String(d).split('/');return p[2]+p[1]+p[0]}
-function paneAgenda(){if(!AGM){if(!ESPERA)setTimeout(function(){chamar('agendaMinha',[],function(r){AGM=r||[];desenha()})},0);return '<div class="aviso info">Abrindo a agenda…</div>'}
+function paneAgenda(){if(!AGM){if(!AGM_C){AGM_C=1;setTimeout(function(){chamar('agendaMinha',[],function(r){AGM=r||[];AGM_C=0;desenha()},function(m){AGM_C=0;toast('A agenda não abriu: '+m)})},0)};return '<div class="aviso info">Abrindo a agenda…</div>'}
   var h0=dt(E.hoje);if(!AGC)AGC={a:h0.getFullYear(),m:h0.getMonth()};var a=AGC.a,m=AGC.m,ini=new Date(a,m,1).getDay(),dm=new Date(a,m+1,0).getDate(),z=function(n){return ('0'+n).slice(-2)};
   var g='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:16px">'+['D','S','T','Q','Q','S','S'].map(function(x){return '<div style="font-weight:700;color:#5A6676">'+x+'</div>'}).join('');
   for(var i=0;i<42;i++){var dd=i-ini+1;if(dd<1||dd>dm){g+='<div></div>';continue}var dk=z(dd)+'/'+z(m+1)+'/'+a,n=AGM.filter(function(x){return x.data===dk}),hj=dk===E.hoje,sel=dk===AGD_SEL;
