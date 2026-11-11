@@ -212,6 +212,10 @@ body .pgline .mini{width:24px;height:22px;min-width:24px;min-height:22px;border-
 .dicai{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border-radius:50%;background:#DCEAFB;color:#1F5FAD;border:1px solid #9DBAE3;font:700 12px/1 Georgia,serif;cursor:help;vertical-align:middle;flex:none}
 .dicai:hover{background:#1F5FAD;color:#fff}
 
+/* Ilacir 10/11 15:31: setinhas de página bem visíveis */
+.toolbar .pgtb .pgline,.toolbar .pgtb .pgbar{font-size:15px!important;font-weight:600;color:#1F3B5C}
+.toolbar .pgtb button{min-width:48px!important;min-height:40px!important;font-size:20px!important;font-weight:700;border-radius:6px}
+
 .toolbar{grid-template-columns:repeat(6,1fr)}
 .node.raiz{background:#1F3B5C;border-color:#1F3B5C;color:#fff;margin:2px 0}
 .node.raiz:hover{background:#2A4C74}
@@ -515,7 +519,7 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
   <button id="fgBt" style="font-size:17px;padding:10px 28px;border:0;border-radius:8px;background:#1F5FAF;color:#fff;cursor:pointer">Entrar com o Google</button>
  </div></div>
 <div id="fgCarregando" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 20px Segoe UI,Arial,sans-serif;color:#1F3B5C;z-index:150;background:#E9EDF2">Abrindo…</div>
-<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div>
+<div id="fgTempo" style="position:fixed;right:10px;bottom:6px;font:12px Segoe UI,Arial,sans-serif;color:#6B7785;z-index:120"></div><script>(function(){var t=document.getElementById('fgTempo'),b=document.querySelector('.titlebar .usr');if(t&&b){t.style.cssText='font:12px Segoe UI,Arial,sans-serif;color:#C9D6E5;margin-left:auto;margin-right:14px;white-space:nowrap';b.style.marginLeft='0';b.parentNode.insertBefore(t,b);}else if(t){t.style.background='#fff';t.style.padding='1px 6px';}})()</script>
 <script>
 /* Ações: vão para o FG Gestão API (Apps Script), que confere o login do Firebase antes de agir. */
 (function(){
@@ -538,18 +542,21 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
-const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
+const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
-$('fgBt').onclick = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
+const prov = new GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+$('fgBt').onclick = () => signInWithPopup(auth, prov).catch(e => { $('fgMsg').textContent = 'Não entrou: ' + e.message; });
 let rodou = false;
 onAuthStateChanged(auth, async u => {
   if (!u) { $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex'; return; }
   $('fgEntrar').style.display = 'none'; $('fgCarregando').style.display = 'flex';
+  /* Ilacir 10/11: mostrar sempre com qual conta entrou, com Sair */
+  try { window.__fgSair = () => signOut(auth).then(() => location.reload()); const us = document.querySelector('.titlebar .usr'); if (us) us.innerHTML = u.email + ' · <a href="#" style="color:#fff;text-decoration:underline" onclick="window.__fgSair();return false">Sair</a>'; } catch (e) {}
   try {
     const s = await getDoc(doc(db, 'paginas', 'documentos'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
@@ -565,7 +572,15 @@ onAuthStateChanged(auth, async u => {
     if (API && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
       u.getIdToken().then(tk => fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'fbPagina', args: ['documentos'], token: tk }) }))
         .then(r => r.json()).then(async j => { if (!j.ok) return; const s2 = await getDoc(doc(db, 'paginas', 'documentos'));
-          if (s2.get('json') !== jsonAtual) { const b = $('fgTempo'); b.innerHTML = '<a href="#" style="color:#1F5FAF;font-weight:600" onclick="location.reload();return false">Há dados novos — clique para atualizar</a>'; }
+          if (s2.get('json') !== jsonAtual) {
+            /* Ilacir 10/11 15:26: aviso discreto demais — se não estiver digitando, atualiza sozinho; se estiver, faixa amarela grande no alto */
+            const ae = document.activeElement, digitando = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
+            if (!digitando && !document.querySelector('.modal.on')) { location.reload(); return; }
+            const f = document.createElement('div');
+            f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+            f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).';
+            f.onclick = () => location.reload(); document.body.appendChild(f);
+          }
           else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
     }
   } catch (e) {
@@ -573,6 +588,34 @@ onAuthStateChanged(auth, async u => {
     $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
   }
 });
+</script>
+<script>
+/* Ilacir 10/11 16:26: "não gosto de barras de rolagem, só quando for imprescindível" — a árvore da esquerda encolhe as linhas até caber */
+(function(){function cabe(){var t=document.getElementById('tree');if(!t)return;var ns=[].slice.call(t.querySelectorAll('.node'));ns.forEach(function(n){n.style.minHeight='';n.style.paddingTop='';n.style.paddingBottom='';n.style.fontSize='';n.style.marginTop='';n.style.marginBottom=''});
+if(t.scrollHeight<=t.clientHeight+1)return;var h=26;while(t.scrollHeight>t.clientHeight+1&&h>17){h--;ns.forEach(function(n){n.style.minHeight=h+'px';n.style.paddingTop='0';n.style.paddingBottom='0';n.style.marginTop='0';n.style.marginBottom='0'})}
+var f=parseFloat(getComputedStyle(ns[0]||t).fontSize)||13,f0=f;while(t.scrollHeight>t.clientHeight+1&&f>f0-2){f-=0.5;ns.forEach(function(n){n.style.fontSize=f+'px'})}}
+window.FG_arvoreCabe=cabe;var t=document.getElementById('tree');if(t&&window.MutationObserver){var pend=0;new MutationObserver(function(){if(pend)return;pend=1;requestAnimationFrame(function(){pend=0;cabe()})}).observe(t,{childList:true,subtree:true});window.addEventListener('resize',cabe);setTimeout(cabe,0)}})();
+</script>
+<script>
+/* Ilacir 10/11 18:37: painel bloqueia depois de X minutos sem mouse e teclado; volta com a senha de 8 dígitos (Configurações › Bloqueio de Tela) */
+(function(){if(window.__fgTrava)return;window.__fgTrava=1;
+var LIM=5*60000,K='fgUltAtiv',KB='fgTravada',on=false,mem={};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){if(v===undefined)return mem[k];if(v===null)delete mem[k];else mem[k]=v}}
+function marca(){if(!on)ls(K,String(Date.now()))}
+['mousemove','mousedown','keydown','wheel','touchstart'].forEach(function(ev){document.addEventListener(ev,marca,{passive:true,capture:true})});
+function tira(){on=false;var d=document.getElementById('fgTravaTela');if(d)d.remove()}
+function trava(){if(on)return;on=true;ls(KB,'1');var d=document.createElement('div');d.id='fgTravaTela';d.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#1F3B5C;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,Arial,sans-serif';
+ d.innerHTML='<div style="background:#fff;padding:30px 44px;border-radius:12px;text-align:center;min-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.35)"><div style="font-size:24px;font-weight:700;color:#1F3B5C">FG Gestão bloqueado</div><div style="margin:10px 0 18px;color:#41505F;font-size:16px">Digite a sua senha de 8 números</div><input id="fgTravaPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:28px;letter-spacing:8px;text-align:center;width:280px;padding:8px;border:1px solid #9FB3C8;border-radius:8px"><div id="fgTravaErr" style="color:#B23B2E;margin-top:12px;min-height:22px;font-size:15px"></div></div>';
+ document.body.appendChild(d);var i=d.querySelector('#fgTravaPin');setTimeout(function(){i.focus()},50);i.oninput=function(){i.value=i.value.replace(/\D/g,'').slice(0,8);if(i.value.length===8)confere(i.value)}}
+function confere(pin){var i=document.getElementById('fgTravaPin'),er=document.getElementById('fgTravaErr');i.disabled=true;er.textContent='Conferindo…';
+ google.script.run.withSuccessHandler(function(r){if(r===true){ls(KB,null);ls(K,String(Date.now()));tira()}else{i.disabled=false;i.value='';er.textContent=r||'Senha errada.';i.focus()}}).withFailureHandler(function(e){i.disabled=false;i.value='';er.textContent=(e&&e.message)||String(e);i.focus()}).telaBloqueioConfere(pin)}
+function liga(min){LIM=(min||5)*60000;if(ls(KB)==='1'){trava();return}var u=+ls(K)||0;if(u&&Date.now()-u>=LIM){trava();return}marca();
+ setInterval(function(){if(on)return;var u=+ls(K)||0;if(Date.now()-u>=LIM)trava()},5000);
+ window.addEventListener('storage',function(e){if(e.key===KB){if(e.newValue==='1')trava();else tira()}})}
+window.FG_travaLiga=function(min){liga(min)};
+var tent=0;(function pergunta(){var a=window.__fgAuth,rap=!!document.getElementById('fgEntrar');if(rap&&!(a&&a.currentUser)){if(tent++<600)setTimeout(pergunta,1000);return}
+ try{google.script.run.withSuccessHandler(function(s){if(s&&s.tem)liga(s.min)}).withFailureHandler(function(){}).telaBloqueioSituacao()}catch(e){if(tent++<600)setTimeout(pergunta,1000)}})();
+})();
 </script>
 </body>
 </html>
