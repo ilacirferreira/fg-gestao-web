@@ -113,7 +113,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.pri:hover{background:var(--blue2)}
 .btn.ok{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
 .btn.red{background:#B23B2E;border-color:#B23B2E;color:#fff}
-.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow:hidden}
+.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto}
 table{width:100%;border-collapse:collapse}
 th{font-weight:600;text-align:left;vertical-align:top;padding:5px 8px;background:#EEF1F4;border-bottom:1px solid var(--line);color:#3A4554;font-size:12px}
 td{padding:4px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
@@ -211,6 +211,10 @@ body .pgline .mini{width:24px;height:22px;min-width:24px;min-height:22px;border-
 .dicai{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border-radius:50%;background:#DCEAFB;color:#1F5FAD;border:1px solid #9DBAE3;font:700 12px/1 Georgia,serif;cursor:help;vertical-align:middle;flex:none}
 .dicai:hover{background:#1F5FAD;color:#fff}
 
+/* Ilacir 10/11 15:31: setinhas de página bem visíveis */
+.toolbar .pgtb .pgline,.toolbar .pgtb .pgbar{font-size:15px!important;font-weight:600;color:#1F3B5C}
+.toolbar .pgtb button{min-width:48px!important;min-height:40px!important;font-size:20px!important;font-weight:700;border-radius:6px}
+
 .toolbar{grid-template-columns:repeat(6,1fr)}
 .node.raiz{background:#1F3B5C;border-color:#1F3B5C;color:#fff;margin:2px 0}
 .node.raiz:hover{background:#2A4C74}
@@ -276,10 +280,6 @@ table.h1 .opc{display:none}
 .lemb .sub{font-size:12px;font-weight:700;color:#7A4A0B;margin:8px 0 3px}
 .duv{font-size:11px;color:#8E2A1F;font-style:italic}
 .lemb .it{display:flex;align-items:center;gap:6px;min-width:0}.lemb .it .lt{font-style:normal;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lemb .it span{flex:none}
-
-/* Ilacir 10/11 15:31: setinhas de página bem visíveis */
-.toolbar .pgtb .pgline,.toolbar .pgtb .pgbar{font-size:15px!important;font-weight:600;color:#1F3B5C}
-.toolbar .pgtb button{min-width:48px!important;min-height:40px!important;font-size:20px!important;font-weight:700;border-radius:6px}
 </style>
 </head>
 <body>
@@ -426,13 +426,12 @@ var HOJE_REAL=null,PAGM_REAL=null,LEMB_REAL=null;
 var dif=function(d){var p=d.split('/');return Math.round((new Date(+p[2],+p[1]-1,+p[0])-new Date(hj.getFullYear(),hj.getMonth(),hj.getDate()))/864e5)};
 if((I.nfEmitir||[]).length)AVISOS.push({g:'ate',t:I.nfEmitir.length+' parcela(s) para emitir NF',d:I.nfEmitir.slice(0,5).join(' · '),p:'Notas Fiscais',a:'Emitir NF'});
 if(I.bancoPend)AVISOS.push({g:'ate',t:I.bancoPend+' lançamento(s) do banco pendente(s)',d:'a classificar, conciliar, confirmar ou verificar',p:'Bancos',a:'Abrir Pendências'});
+(I.impDif||[]).forEach(function(c){AVISOS.push({g:'urg',t:'Guia com diferença: '+c.conta+(c.venc?' (vence '+String(c.venc).slice(0,5)+')':''),d:c.txt.replace(/^CONFERÊNCIA ⚠ /,''),p:'Despesas',a:'Abrir Contas a Pagar'})});
 (I.pag||[]).filter(function(c){return c.sit!=='paga'&&dif(c.venc)>=0&&dif(c.venc)<=3}).forEach(function(c){AVISOS.push({g:dif(c.venc)===0?'urg':'ate',t:(dif(c.venc)===0?'Vence hoje: ':'Vence '+c.venc.slice(0,5)+': ')+c.conta,d:'Confira se já foi pago (Despesas › Contas a Pagar)',p:'Despesas',a:'Abrir Contas a Pagar'})});
 V.forEach(function(a){a.g='sab';a.d='(anotado em 05/11 — conferir se ainda vale) '+(a.d||'');AVISOS.push(a)});
 HOJE_REAL=hj;
 if(I.pag)PAGM_REAL=I.pag.slice().sort(function(a,b){return k(a.venc)<k(b.venc)?-1:1}).map(function(c){return [c.conta+(c.sit==='paga'?' ✓':''),c.venc.slice(0,5),c.k]});
 if(I.lemb&&(I.lemb.length||I.lembReal))LEMB_REAL=I.lemb.map(function(l){return {d:l.d,t:l.t,k:l.k}});})();
-if(window.__FG_TELAS){var TID={'Início':'inicio','Clientes e Projetos':'projetos','Notas Fiscais':'notas','Bancos':'bancos','Propostas e Contratos':'propostas','Sócios e Rateio':'socios','Despesas':'despesas','Colaboradores':'colaboradores','Documentos':'documentos','Caixa de Entrada':'caixa','Relatórios':'relatorios','ARTs':'arts','Configurações':'configuracoes'},ok=function(n){return !!window.__FG_TELAS[TID[n]]};
-  for(var _i=PAGINAS.length-1;_i>=0;_i--)if(!ok(PAGINAS[_i][0]))PAGINAS.splice(_i,1);for(var _j=AVISOS.length-1;_j>=0;_j--)if(!ok(AVISOS[_j].p))AVISOS.splice(_j,1);if(D){D.ponto=null;D.pag=[];D.lemb=[]}PAGM_REAL=[];LEMB_REAL=[]}
 ptAvisosCli(D&&D.ponto).forEach(function(t){AVISOS.unshift({g:'urg',t:t,d:'Ponto marcado pela própria colaboradora · só o Ilacir corrige, com motivo',p:'Colaboradores',a:'Abrir o Ponto'})});
 
 var GRP=[['urg','Urgentes','pend'],['ate','Atenção','emit'],['sab','Para Saber','ano']];
@@ -637,11 +636,6 @@ onAuthStateChanged(auth, async u => {
     const s = await getDoc(doc(db, 'paginas', 'inicio'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
     window.__FGD = JSON.parse(s.get('json'));
-    const em = String(u.email).toLowerCase();
-    if (em !== 'ilacirferreira@gmail.com') {   // Ilacir 10/11: só as telas liberadas (a conta da FG só quando estiver "sem administrador")
-      try { const a = await getDoc(doc(db, 'acesso', em)); if (em !== 'fgengenhariadf@gmail.com' || (a.exists() && a.get('semAdmin') === true)) window.__FG_TELAS = a.exists() ? (a.get('telas') || {}) : {}; }
-      catch (e) { if (em !== 'fgengenhariadf@gmail.com') window.__FG_TELAS = {}; }
-    }
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
       const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
