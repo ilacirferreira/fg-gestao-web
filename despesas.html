@@ -1091,6 +1091,8 @@ Object.keys(alvo).forEach(function(k){var o=alvo[k],i=document.createElement('sp
 /* 05/11 21:15 — todo "Enviar E-mail" cria um Rascunho para Aprovar na Caixa de Entrada (nada sai sem o Ilacir aprovar) */
 function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSuccessHandler(function(){toast('Rascunho criado na Caixa de Entrada ✓');setTimeout(function(){FG_ir('caixa')},700)}).withFailureHandler(function(e){toast('Não criou: '+(e&&e.message||e))}).rsNovo(origem+' · '+(document.querySelector('#head .headtitle')||{textContent:''}).textContent.replace(/\s+/g,' ').trim(),'','',origem,'')}
 
+/* Ilacir 11/11 17:55: ao entrar em Despesas, abrir direto no Resumo (grade do ano), não na Visão Geral (aqui no fim, depois de tudo definido) */
+if(S.sel&&S.sel.t==='painel'&&!window.__fgIniGrade){window.__fgIniGrade=1;sel({t:'grade',a:ANO_U()})}
 </script>
 
 <div id="fgEntrar" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#E9EDF2;z-index:200;font-family:Segoe UI,Arial,sans-serif">
