@@ -464,8 +464,8 @@ function seleciona(a){
 
 /* ---------- painel direito ---------- */
 function abasDe(){
-  return S.sel.t==='obra'?[['obra','Projeto'],['cliente','Cliente'],['contrato','Contrato'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['historico','Histórico'],['arquivo','Arquivo']]
-                         :[['cliente','Cliente'],['obras','Projetos'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['historico','Histórico'],['arquivo','Arquivo']];
+  return S.sel.t==='obra'?[['obra','Projeto'],['cliente','Cliente'],['contrato','Contrato'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['emails','E-mails'],['historico','Histórico'],['arquivo','Arquivo']]
+                         :[['cliente','Cliente'],['obras','Projetos'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['emails','E-mails'],['historico','Histórico'],['arquivo','Arquivo']];
 }
 function desenhaPainel(){
   var c=CL[S.sel.cl],o=S.sel.t==='obra'?OB[S.sel.id]:null;
@@ -494,7 +494,7 @@ function desenhaPainel(){
   // abas
   document.getElementById('tabs').innerHTML=ab.map(function(a){return '<button class="tab'+(a[0]===S.aba?' on':'')+'" data-a="'+a[0]+'" type="button">'+a[1]+'</button>'}).join('');
   var P=document.getElementById('pane');
-  P.innerHTML=({obra:paneObra,cliente:paneCliente,contrato:paneContrato,financeiro:paneFinanceiro,notas:paneNotas,documentos:paneDocs,historico:paneHist,obras:paneObras,contatos:paneContatos,arquivo:paneArquivo})[S.aba](c,o,t);
+  P.innerHTML=({obra:paneObra,cliente:paneCliente,contrato:paneContrato,financeiro:paneFinanceiro,notas:paneNotas,documentos:paneDocs,historico:paneHist,emails:paneEmails,obras:paneObras,contatos:paneContatos,arquivo:paneArquivo})[S.aba](c,o,t);
   if(S.aba==='financeiro'||S.aba==='obras'||S.aba==='notas')ajustaTabela();
   // barra de status
   var all=tot([].concat.apply([],D.obras.map(function(x){return x.parc})),0);
@@ -629,6 +629,18 @@ function pedePin(depois){if(PIN_OK&&Date.now()-PIN_OK<10*60*1000)return depois()
   document.getElementById('mfoot').innerHTML='<button class="btn" onclick="fecharModal()">Cancelar</button><button class="btn pri" id="pinOk">Confirmar</button>';abrirModal();setTimeout(function(){document.getElementById('pinV').focus()},50);
   document.getElementById('pinOk').onclick=function(){var v=document.getElementById('pinV').value;if(!/^\d{4,8}$/.test(v)){toast('PIN de 4 a 8 números.');return}
     google.script.run.withSuccessHandler(function(r){if(r==='ok'||r==='criado'){PIN_OK=Date.now();fecharModal();if(r==='criado')toast('PIN criado ✓');depois()}else toast('PIN errado.')}).withFailureHandler(function(e){toast(e.message||e)}).pgPin(v)}}
+/* Ilacir 10/11 (item 10): todos os e-mails da FG ligados à obra (ou às obras do cliente), por data */
+function paneEmails(c,o){
+  var aba=o?'Obras':'Clientes',id=o?o.id:c.id;
+  google.script.run.withSuccessHandler(function(r){
+    var t=document.getElementById('etb'),s=document.getElementById('esit');if(!t)return;if(s)s.textContent=r.situacao+' · '+r.lista.length+' e-mail(s).';
+    var multi=!o;
+    t.innerHTML=r.lista.length?r.lista.map(function(e){var q=e.data.replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}).*/,'$3/$2/$1 $4');
+      var quem=e.sentido==='Enviado'?'→ '+e.para:e.de;
+      return '<tr title="'+esc(e.resumo)+'"><td style="white-space:nowrap">'+esc(q)+'</td><td><span class="tag '+(e.sentido==='Enviado'?'t-info':'t-gray')+'">'+e.sentido+'</span></td>'+(multi?'<td>'+esc((OB[e.ob]||{}).nome||e.ob)+'</td>':'')+'<td class="w" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(quem)+'</td><td class="w"><b>'+esc(e.assunto||'(sem assunto)')+'</b>'+(e.anexos?' <span class="tag t-gray">📎 '+esc(e.anexos)+'</span>':'')+'<div style="color:#5B6B7D;font-size:12px;max-height:34px;overflow:hidden">'+esc(e.resumo)+'</div></td><td><a class="btn" style="min-height:24px;padding:0 8px" target="_blank" href="'+esc(e.link)+'">Abrir</a></td></tr>'}).join(''):'<tr><td colspan="6">Nenhum e-mail ligado ainda.</td></tr>';
+  }).withFailureHandler(erro).pjEmails(aba,id);
+  return '<div class="info dica" id="esit">Carregando…</div><div class="tablewrap" style="overflow-y:auto"><table><thead><tr><th>Data</th><th></th>'+(o?'':'<th>Projeto</th>')+'<th>De / Para</th><th>Assunto</th><th></th></tr></thead><tbody id="etb"><tr><td colspan="6">Carregando…</td></tr></tbody></table></div>';
+}
 function paneHist(c,o){
   var aba=o?'Obras':'Clientes',id=o?o.id:c.id;
   google.script.run.withSuccessHandler(function(h){
@@ -858,6 +870,27 @@ window.addEventListener('resize',function(){desenhaPainel()});
 })();
 document.getElementById('tree').innerHTML='<div style="padding:12px;color:#5A6676">Carregando…</div>';
 google.script.run.withSuccessHandler(function(d){aplica(d);inicial();if(FG_OB&&OB[FG_OB]){S.sel={t:'obra',id:FG_OB,cl:OB[FG_OB].cls[0]};S.aba='obra'}desenha()}).withFailureHandler(function(e){document.getElementById('tree').innerHTML='<div style="padding:12px;color:#8E2A1F">'+esc(e.message||e)+'</div>'}).pjCarregar();
+</script>
+<script>
+/* Ilacir 10/11 18:37: painel bloqueia depois de X minutos sem mouse e teclado; volta com a senha de 8 dígitos (Configurações › Bloqueio de Tela) */
+(function(){if(window.__fgTrava)return;window.__fgTrava=1;
+var LIM=5*60000,K='fgUltAtiv',KB='fgTravada',on=false,mem={};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){if(v===undefined)return mem[k];if(v===null)delete mem[k];else mem[k]=v}}
+function marca(){if(!on)ls(K,String(Date.now()))}
+['mousemove','mousedown','keydown','wheel','touchstart'].forEach(function(ev){document.addEventListener(ev,marca,{passive:true,capture:true})});
+function tira(){on=false;var d=document.getElementById('fgTravaTela');if(d)d.remove()}
+function trava(){if(on)return;on=true;ls(KB,'1');var d=document.createElement('div');d.id='fgTravaTela';d.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#1F3B5C;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,Arial,sans-serif';
+ d.innerHTML='<div style="background:#fff;padding:30px 44px;border-radius:12px;text-align:center;min-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.35)"><div style="font-size:24px;font-weight:700;color:#1F3B5C">FG Gestão bloqueado</div><div style="margin:10px 0 18px;color:#41505F;font-size:16px">Digite a sua senha de 8 números</div><input id="fgTravaPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" style="font-size:28px;letter-spacing:8px;text-align:center;width:280px;padding:8px;border:1px solid #9FB3C8;border-radius:8px"><div id="fgTravaErr" style="color:#B23B2E;margin-top:12px;min-height:22px;font-size:15px"></div></div>';
+ document.body.appendChild(d);var i=d.querySelector('#fgTravaPin');setTimeout(function(){i.focus()},50);i.oninput=function(){i.value=i.value.replace(/\D/g,'').slice(0,8);if(i.value.length===8)confere(i.value)}}
+function confere(pin){var i=document.getElementById('fgTravaPin'),er=document.getElementById('fgTravaErr');i.disabled=true;er.textContent='Conferindo…';
+ google.script.run.withSuccessHandler(function(r){if(r===true){ls(KB,null);ls(K,String(Date.now()));tira()}else{i.disabled=false;i.value='';er.textContent=r||'Senha errada.';i.focus()}}).withFailureHandler(function(e){i.disabled=false;i.value='';er.textContent=(e&&e.message)||String(e);i.focus()}).telaBloqueioConfere(pin)}
+function liga(min){LIM=(min||5)*60000;if(ls(KB)==='1'){trava();return}var u=+ls(K)||0;if(u&&Date.now()-u>=LIM){trava();return}marca();
+ setInterval(function(){if(on)return;var u=+ls(K)||0;if(Date.now()-u>=LIM)trava()},5000);
+ window.addEventListener('storage',function(e){if(e.key===KB){if(e.newValue==='1')trava();else tira()}})}
+window.FG_travaLiga=function(min){liga(min)};
+var tent=0;(function pergunta(){var a=window.__fgAuth,rap=!!document.getElementById('fgEntrar');if(rap&&!(a&&a.currentUser)){if(tent++<600)setTimeout(pergunta,1000);return}
+ try{google.script.run.withSuccessHandler(function(s){if(s&&s.tem)liga(s.min)}).withFailureHandler(function(){}).telaBloqueioSituacao()}catch(e){if(tent++<600)setTimeout(pergunta,1000)}})();
+})();
 </script>
 <div id="fgEntrar" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#E9EDF2;z-index:200;font-family:Segoe UI,Arial,sans-serif">
  <div style="background:#fff;padding:34px 44px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);text-align:center;max-width:460px">
