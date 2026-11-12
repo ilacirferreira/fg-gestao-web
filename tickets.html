@@ -379,7 +379,10 @@ function no(cls,sel,nome,dir,click,ind){return '<div class="node '+cls+(sel?' se
 function desenhaArvore(){var h='';
  h+=no('raiz b',false,'Meus Tickets','',"tog('f');desenhaArvore()");
  if(S.ab.f)FILTROS.forEach(function(f){var n=T.filter(function(t){return f[2](t)&&casa(t)}).length;if(f[0]==='arq'&&!n)return;h+=no((f[0]==='comigo'?'emit ':f[0]==='venc'&&n?'pend ':'')+'b',eq({t:'f',f:f[0]}),f[1],'<span class="cnt">'+n+'</span>',selJ({t:'f',f:f[0]}),1)});
- var obs={};T.forEach(function(t){if(t.arquivado)return;obs[t.obra]=obs[t.obra]||{n:t.obra_nome,ab:0,tot:0};obs[t.obra].tot++;if(t.estado!=='fechado')obs[t.obra].ab++});
+ /* Ilacir 12/11 07:32: Assuntos Internos numa barra azul própria, separada dos projetos, sempre visível */
+ var ni=T.filter(function(t){return t.obra==='OB0000'&&!t.arquivado}),nia=ni.filter(function(t){return t.estado!=='fechado'}).length;
+ h+=no('raiz b'+(eq({t:'ob',o:'OB0000'})?' sel':''),false,'Assuntos Internos','<span class="vl">'+nia+' aberto(s) · '+ni.length+'</span>',selJ({t:'ob',o:'OB0000'}));
+ var obs={};T.forEach(function(t){if(t.arquivado||t.obra==='OB0000')return;obs[t.obra]=obs[t.obra]||{n:t.obra_nome,ab:0,tot:0};obs[t.obra].tot++;if(t.estado!=='fechado')obs[t.obra].ab++});
  h+=no('raiz b',false,'Por Projeto','<span class="vl">'+Object.keys(obs).length+'</span>',"tog('ob');desenhaArvore()");
  if(S.ab.ob)Object.keys(obs).sort(function(a,b){return obs[a].n.localeCompare(obs[b].n,'pt')}).forEach(function(o){h+=no('ob b',eq({t:'ob',o:o}),esc(obs[o].n),'<span class="cnt">'+obs[o].ab+' aberto(s) · '+obs[o].tot+'</span>',selJ({t:'ob',o:o}),1)});
  document.getElementById('tree').innerHTML=h}
