@@ -79,7 +79,7 @@ var API="https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7C
 var E=null,TAB=0,ESPERA=false,ERRO='',DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 var TIPOS=['entrada','almoco','volta','saida'],NOMES={entrada:'Entrada',almoco:'Saída para Almoço',volta:'Volta do Almoço',saida:'Saída'};
 function $(id){return document.getElementById(id)}
-var COR_PESSOA={ilacir:'#1F5FA8',thiago:'#2E7D32',edna:'#7B3FA0',rebeca:'#C2620A'};var COR_MAIS=['#00838F','#6D4C41','#AD1457','#455A64'];
+var COR_PESSOA={ilacir:'#1F5FA8',thiago:'#2E7D32',edna:'#E07000',rebeca:'#00838F'};var COR_MAIS=['#7B3FA0','#6D4C41','#AD1457','#455A64'];
 function corPessoa(n){var k=String(n||'').trim().split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COR_PESSOA[k])return COR_PESSOA[k];var h=0;for(var i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))%997;return COR_MAIS[h%COR_MAIS.length]}
 function pes(n){return '<b style="color:'+corPessoa(n)+'">'+esc(n)+'</b>'}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
