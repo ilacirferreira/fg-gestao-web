@@ -128,7 +128,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.pri:hover{background:var(--blue2)}
 .btn.ok{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
 .btn.red{background:#B23B2E;border-color:#B23B2E;color:#fff}
-.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow:hidden}
+.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto}
 table{width:100%;border-collapse:collapse}
 th{font-weight:600;text-align:left;vertical-align:top;padding:5px 8px;background:#EEF1F4;border-bottom:1px solid var(--line);color:#3A4554;font-size:12px}
 td{padding:4px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
@@ -511,7 +511,7 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
 const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes","tickets"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
@@ -529,6 +529,8 @@ onAuthStateChanged(auth, async u => {
     const s = await getDoc(doc(db, 'paginas', 'caixa'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
     window.__FGD = JSON.parse(s.get('json'));
+    /* Ilacir 12/11 10:17: Tickets abre na hora com a lista da própria pessoa (tickets/<email>, só ela lê); o servidor confere depois */
+    if (s.ref && s.ref.id === 'tickets') { try { const st = await getDoc(doc(db, 'tickets', String(u.email || '').toLowerCase())); if (st.exists()) { const dd = JSON.parse(st.get('json')); dd.daCopia = 1; window.__FGD = dd; } } catch (e) {} }
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
       const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
@@ -551,6 +553,14 @@ onAuthStateChanged(auth, async u => {
           }
           else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
     }
+    if (!window.__fgVivo) { window.__fgVivo = 1; let base = jsonAtual;
+      onSnapshot(doc(db, 'paginas', 'caixa'), s3 => { if (!s3.exists() || s3.get('json') === base) return; base = s3.get('json');
+        const ae = document.activeElement, dig = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
+        if (!dig && !document.querySelector('.modal.on')) { location.reload(); return; }
+        if (document.getElementById('fgNovo')) return; const f = document.createElement('div'); f.id = 'fgNovo';
+        f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+        f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).'; f.onclick = () => location.reload(); document.body.appendChild(f);
+      }, () => {}); }
   } catch (e) {
     $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
     $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
