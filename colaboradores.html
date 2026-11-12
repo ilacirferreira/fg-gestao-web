@@ -668,6 +668,8 @@ onAuthStateChanged(auth, async u => {
     const s = await getDoc(doc(db, 'paginas', 'colaboradores'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
     window.__FGD = JSON.parse(s.get('json'));
+    /* Ilacir 12/11 10:17: Tickets abre na hora com a lista da própria pessoa (tickets/<email>, só ela lê); o servidor confere depois */
+    if (s.ref && s.ref.id === 'tickets') { try { const st = await getDoc(doc(db, 'tickets', String(u.email || '').toLowerCase())); if (st.exists()) { const dd = JSON.parse(st.get('json')); dd.daCopia = 1; window.__FGD = dd; } } catch (e) {} }
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
       const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
