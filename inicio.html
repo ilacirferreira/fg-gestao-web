@@ -659,7 +659,7 @@ function FG_rasc(origem){toast('Criando rascunho…');google.script.run.withSucc
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
 const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes","tickets"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
@@ -701,6 +701,14 @@ onAuthStateChanged(auth, async u => {
           }
           else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
     }
+    if (!window.__fgVivo) { window.__fgVivo = 1; let base = jsonAtual;
+      onSnapshot(doc(db, 'paginas', 'inicio'), s3 => { if (!s3.exists() || s3.get('json') === base) return; base = s3.get('json');
+        const ae = document.activeElement, dig = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
+        if (!dig && !document.querySelector('.modal.on')) { location.reload(); return; }
+        if (document.getElementById('fgNovo')) return; const f = document.createElement('div'); f.id = 'fgNovo';
+        f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+        f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).'; f.onclick = () => location.reload(); document.body.appendChild(f);
+      }, () => {}); }
   } catch (e) {
     $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
     $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
