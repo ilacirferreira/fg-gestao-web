@@ -661,7 +661,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
-const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
+const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes","tickets"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
