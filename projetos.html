@@ -479,7 +479,7 @@ function seleciona(a){
 
 /* ---------- painel direito ---------- */
 function abasDe(){
-  return S.sel.t==='obra'?[['obra','Projeto'],['cliente','Cliente'],['contrato','Contrato'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['emails','E-mails'],['historico','Histórico'],['arquivo','Arquivo']]
+  return S.sel.t==='obra'?[['obra','Projeto'],['cliente','Cliente'],['contrato','Contrato'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['emails','E-mails'],['tickets','Tickets'],['historico','Histórico'],['arquivo','Arquivo']]
                          :[['cliente','Cliente'],['obras','Projetos'],['financeiro','Parcelas e Recebimentos'],['notas','Notas Fiscais'],['contatos','Contatos do Financeiro'],['documentos','Documentos'],['emails','E-mails'],['historico','Histórico'],['arquivo','Arquivo']];
 }
 function desenhaPainel(){
@@ -508,8 +508,9 @@ function desenhaPainel(){
   document.getElementById('kpis').innerHTML=k.map(function(x){return '<div class="box kpi"><small>'+x[0]+'</small><b style="'+x[2]+'">'+x[1]+'</b><em>'+(x[5]||'&nbsp;')+'</em><div class="bar"><span style="width:'+x[3]+'%;background:'+x[4]+'"></span></div></div>'}).join('');
   // abas
   document.getElementById('tabs').innerHTML=ab.map(function(a){return '<button class="tab'+(a[0]===S.aba?' on':'')+'" data-a="'+a[0]+'" type="button">'+a[1]+'</button>'}).join('');
+  tabsCabe();
   var P=document.getElementById('pane');
-  P.innerHTML=({obra:paneObra,cliente:paneCliente,contrato:paneContrato,financeiro:paneFinanceiro,notas:paneNotas,documentos:paneDocs,historico:paneHist,emails:paneEmails,obras:paneObras,contatos:paneContatos,arquivo:paneArquivo})[S.aba](c,o,t);
+  P.innerHTML=({obra:paneObra,cliente:paneCliente,contrato:paneContrato,financeiro:paneFinanceiro,notas:paneNotas,documentos:paneDocs,historico:paneHist,emails:paneEmails,tickets:paneTickets,obras:paneObras,contatos:paneContatos,arquivo:paneArquivo})[S.aba](c,o,t);
   if(S.aba==='financeiro'||S.aba==='obras'||S.aba==='notas')ajustaTabela();
   // barra de status
   var all=tot([].concat.apply([],D.obras.map(function(x){return x.parc})),0);
@@ -655,6 +656,21 @@ function paneEmails(c,o){
       return '<tr title="'+esc(e.resumo)+'"><td style="white-space:nowrap">'+esc(q)+'</td><td><span class="tag '+(e.sentido==='Enviado'?'t-info':'t-gray')+'">'+e.sentido+'</span></td>'+(multi?'<td>'+esc((OB[e.ob]||{}).nome||e.ob)+'</td>':'')+'<td class="w" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(quem)+'</td><td class="w"><b>'+esc(e.assunto||'(sem assunto)')+'</b>'+(e.anexos?' <span class="tag t-gray">📎 '+esc(e.anexos)+'</span>':'')+'<div style="color:#5B6B7D;font-size:12px;max-height:34px;overflow:hidden">'+esc(e.resumo)+'</div></td><td><a class="btn" style="min-height:24px;padding:0 8px" target="_blank" href="'+esc(e.link)+'">Abrir</a></td></tr>'}).join(''):'<tr><td colspan="6">Nenhum e-mail ligado ainda.</td></tr>';
   }).withFailureHandler(erro).pjEmails(aba,id);
   return '<div class="info dica" id="esit">Carregando…</div><div class="tablewrap" style="overflow-y:auto"><table><thead><tr><th>Data</th><th></th>'+(o?'':'<th>Projeto</th>')+'<th>De / Para</th><th>Assunto</th><th></th></tr></thead><tbody id="etb"><tr><td colspan="6">Carregando…</td></tr></tbody></table></div>';
+}
+/* 12/11: com a aba Tickets as abas passaram da largura — todas com a mesma letra, a maior que caiba (texto nunca cortado) */
+function tabsCabe(){var b=document.getElementById('tabs');if(!b)return;var L=[].slice.call(b.querySelectorAll('.tab'));L.forEach(function(e){e.style.fontSize='';e.style.paddingLeft=e.style.paddingRight=''});if(b.scrollWidth<=b.clientWidth+1)return;var f=parseFloat(getComputedStyle(L[0]).fontSize),n=0;L.forEach(function(e){e.style.paddingLeft=e.style.paddingRight='4px'});while(n++<30&&f>10&&b.scrollWidth>b.clientWidth+1){f-=0.5;L.forEach(function(e){e.style.fontSize=f+'px'})}}
+window.addEventListener('resize',function(){setTimeout(tabsCabe,0)});
+/* Ilacir 12/11: Tickets do projeto — as decisões técnicas da obra (abertos e fechados), mais recentes primeiro */
+function paneTickets(c,o){
+  var EST={aberto:['t-warn','Aberto'],visto:['t-info','Visto'],respondido:['t-ok','Respondido'],recebido:['t-ok','Recebido'],fechado:['t-gray','Fechado']};
+  google.script.run.withSuccessHandler(function(L){
+    var t=document.getElementById('ktb'),s=document.getElementById('ksit');if(!t)return;
+    var ab=L.filter(function(x){return x.estado!=='fechado'&&!x.arquivado}).length,dec=L.filter(function(x){return x.estado==='fechado'&&!x.arquivado}).length;
+    if(s)s.textContent=L.length?ab+' em aberto · '+dec+' decisão(ões) registrada(s). Clique na linha para abrir o ticket.':'Nenhum ticket neste projeto ainda.';
+    t.innerHTML=L.filter(function(x){return !x.arquivado}).map(function(x){var e=EST[x.estado]||['t-gray',x.estado],q=String(x.criado_em).replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}).*/,'$3/$2/$1 $4');
+      return '<tr class="clk" style="cursor:pointer" onclick="FG_ir(\'tickets\',\'&tk='+x.id+'\')"><td style="white-space:nowrap">'+x.id+'</td><td style="white-space:nowrap">'+esc(q)+'</td><td style="white-space:nowrap">'+esc(x.item||'—')+'</td><td style="white-space:nowrap">'+esc(x.de)+' → '+esc(x.para)+'</td><td class="w"><b>'+esc(x.assunto)+'</b>'+(x.decisao?'<div style="color:#1E5E38;font-size:12.5px;font-weight:600">Decisão: '+esc(x.decisao)+'</div>':'')+'</td><td style="white-space:nowrap"><span class="tag '+(x.lembrete&&x.estado!=='fechado'?'t-info':e[0])+'">'+(x.lembrete&&x.estado!=='fechado'?'Lembrete':e[1])+'</span>'+(x.vencido?' <span class="tag t-bad">Vencido</span>':'')+'</td></tr>'}).join('')||'<tr><td colspan="6">Nenhum ticket neste projeto.</td></tr>';
+  }).withFailureHandler(erro).tkDoProjeto(o.id);
+  return '<div class="secthead"><span class="cm" id="ksit">Carregando…</span><span class="sp" style="flex:1"></span><button class="btn pri" onclick="FG_ir(\'tickets\',\'&ob='+o.id+'\')">Novo Ticket deste Projeto</button></div><div class="tablewrap" style="overflow-y:auto"><table><thead><tr><th>Nº</th><th>Aberto em</th><th>Item</th><th>De → Para</th><th>Assunto / Decisão</th><th>Estado</th></tr></thead><tbody id="ktb"><tr><td colspan="6">Carregando…</td></tr></tbody></table></div>';
 }
 function paneHist(c,o){
   var aba=o?'Obras':'Clientes',id=o?o.id:c.id;
@@ -942,7 +958,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
-const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
+const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes","tickets"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
