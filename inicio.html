@@ -268,7 +268,7 @@ table.h1 .opc{display:none}
 
 /* PRÉVIA 05/11 — Início */
 .left .boxhead{display:none}
-.pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:12px;height:100%;padding:4px}
+.pgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:12px;height:100%;padding:4px}
 .pcx{display:flex;align-items:center;justify-content:center;border:1px solid #9FB6D6;border-radius:8px;background:#F4F8FD;font-size:19px;font-weight:600;color:#163F75;cursor:pointer;white-space:nowrap}
 .pcx{gap:10px;flex-direction:column}.pico{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:12px;flex:none}
 .pcx:hover{background:#DCE8F8;border-color:#1F5FAD}
@@ -295,6 +295,9 @@ table.h1 .opc{display:none}
 .lemb .sub{font-size:12px;font-weight:700;color:#7A4A0B;margin:8px 0 3px}
 .duv{font-size:11px;color:#8E2A1F;font-style:italic}
 .lemb .it{display:flex;align-items:center;gap:6px;min-width:0}.lemb .it .lt{font-style:normal;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lemb .it span{flex:none}
+.pcx .pn{white-space:nowrap}.pcx .tkc{font-size:13.5px;font-weight:600;background:#fff;color:#163F75;border:1px solid #9FB6D6;border-radius:12px;padding:2px 10px;white-space:nowrap}
+.pcx.tk{background:#1F3B5C;border-color:#1F3B5C;color:#fff}.pcx.tk:hover{background:#2A4C74}
+.lemb .it.tki .lt{color:#163F75;font-weight:600}
 </style>
 </head>
 <body>
@@ -395,7 +398,7 @@ document.addEventListener('keydown',function(ev){var b=document.getElementById('
 function FERIADOS(a){var f={'01/01':'Confraternização Universal','21/04':'Tiradentes e Aniversário de Brasília','01/05':'Dia do Trabalho','07/09':'Independência','12/10':'Nossa Senhora Aparecida','02/11':'Finados','15/11':'Proclamação da República','20/11':'Consciência Negra','30/11':'Dia do Evangélico (DF)','25/12':'Natal'};
 var A=a%19,B=Math.floor(a/100),C=a%100,D=Math.floor(B/4),E=B%4,F=Math.floor((B+8)/25),G=Math.floor((B-F+1)/3),H=(19*A+B-D-G+15)%30,I=Math.floor(C/4),K=C%4,L=(32+2*E+2*I-H-K)%7,M=Math.floor((A+11*H+22*L)/451),mes=Math.floor((H+L-7*M+114)/31),dia=((H+L-7*M+114)%31)+1;
 var sx=new Date(a,mes-1,dia-2);f[('0'+sx.getDate()).slice(-2)+'/'+('0'+(sx.getMonth()+1)).slice(-2)]='Sexta-feira Santa';return f}
-var PICO={"ARTs": ["#7C3AED", "<path d=\"M7 3h7l5 5v13H7z\"/><path d=\"M14 3v5h5\"/><path d=\"M10 13h6M10 17h4\"/>"], "Clientes e Projetos": ["#B45309", "<path d=\"M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3\"/>"], "Notas Fiscais": ["#0E7490", "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6M9 16h4\"/>"], "Bancos": ["#1F5FAD", "<path d=\"M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18\"/>"], "Propostas e Contratos": ["#7C3AED", "<path d=\"M5 3h10l4 4v14H5z\"/><path d=\"M14 3v4h5\"/><path d=\"M8 17l3-1 5-5-2-2-5 5z\"/>"], "Sócios e Rateio": ["#15803D", "<path d=\"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path d=\"M17 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14 20c0-2.5 1.5-4.5 3-4.5s4 1.5 4 4.5\"/>"], "Despesas": ["#B91C1C", "<path d=\"M3 6h18v13H3z\"/><path d=\"M3 10h18M15 15h3\"/>"], "Colaboradores": ["#DB2777", "<path d=\"M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z\"/><path d=\"M3 21c0-4 3-6 7-6\"/><path d=\"M17 14a4 4 0 1 0 0 8 4 4 0 0 0 0-8z\"/><path d=\"M17 16v2l1.5 1\"/>"], "Documentos": ["#CA8A04", "<path d=\"M3 6h6l2 2h10v11H3z\"/>"], "Caixa de Entrada": ["#EA580C", "<path d=\"M3 6h18v12H3z\"/><path d=\"M3 6l9 7 9-7\"/>"], "Relatórios": ["#0D9488", "<path d=\"M4 20V10M10 20V4M16 20v-7M2 20h20\"/>"], "Configurações": ["#475569", "<path d=\"M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path d=\"M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1\"/>"]};
+var PICO={"Tickets": ["#0F766E", "<path d=\"M4 7a2 2 0 0 0 2-2h12a2 2 0 0 0 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 0-2 2H6a2 2 0 0 0-2-2v-3a2 2 0 0 0 0-4z\"/><path d=\"M9 9h6M9 12h6M9 15h4\"/>"], "ARTs": ["#7C3AED", "<path d=\"M7 3h7l5 5v13H7z\"/><path d=\"M14 3v5h5\"/><path d=\"M10 13h6M10 17h4\"/>"], "Clientes e Projetos": ["#B45309", "<path d=\"M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3\"/>"], "Notas Fiscais": ["#0E7490", "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6M9 16h4\"/>"], "Bancos": ["#1F5FAD", "<path d=\"M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18\"/>"], "Propostas e Contratos": ["#7C3AED", "<path d=\"M5 3h10l4 4v14H5z\"/><path d=\"M14 3v4h5\"/><path d=\"M8 17l3-1 5-5-2-2-5 5z\"/>"], "Sócios e Rateio": ["#15803D", "<path d=\"M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path d=\"M17 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14 20c0-2.5 1.5-4.5 3-4.5s4 1.5 4 4.5\"/>"], "Despesas": ["#B91C1C", "<path d=\"M3 6h18v13H3z\"/><path d=\"M3 10h18M15 15h3\"/>"], "Colaboradores": ["#DB2777", "<path d=\"M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z\"/><path d=\"M3 21c0-4 3-6 7-6\"/><path d=\"M17 14a4 4 0 1 0 0 8 4 4 0 0 0 0-8z\"/><path d=\"M17 16v2l1.5 1\"/>"], "Documentos": ["#CA8A04", "<path d=\"M3 6h6l2 2h10v11H3z\"/>"], "Caixa de Entrada": ["#EA580C", "<path d=\"M3 6h18v12H3z\"/><path d=\"M3 6l9 7 9-7\"/>"], "Relatórios": ["#0D9488", "<path d=\"M4 20V10M10 20V4M16 20v-7M2 20h20\"/>"], "Configurações": ["#475569", "<path d=\"M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z\"/><path d=\"M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1\"/>"]};
 var PAGINAS=[
 ['Clientes e Projetos','Clientes, projetos e parcelas','no teste'],
 ['Notas Fiscais','Emitir, substituir e cancelar','prévia v0.7'],
@@ -408,7 +411,8 @@ var PAGINAS=[
 ['ARTs','ARTs por projeto, com PDF e envio por e-mail','novo'],
 ['Caixa de Entrada','E-mails da FG por obra','a fazer na árvore'],
 ['Relatórios','Os 16 relatórios em PDF','a fazer na árvore'],
-['Configurações','Equipe, permissões e textos','a fazer na árvore']
+['Configurações','Equipe, permissões e textos','a fazer na árvore'],
+['Tickets','Decisões técnicas por projeto','novo']
 ];
 /* avisos reais de 02/11/2026 — sem valores (regra do Início) */
 var AVISOS=[
@@ -435,7 +439,10 @@ if(ds.length&&!D[ds[0]].saida)out.push(C.nome+' não marcou a saída de '+ds[0]+
 var dia0=D[hoje]||{},lim=(cfg.semPausaMaxMin!=null?+cfg.semPausaMaxMin:360)+(cfg.semPausaTolMin!=null?+cfg.semPausaTolMin:5);if(dia0.entrada&&!dia0.almoco&&!dia0.saida&&agora>mi(dia0.entrada.h)+lim)out.push(C.nome+' passou de '+Math.floor((lim-(cfg.semPausaTolMin!=null?+cfg.semPausaTolMin:5))/60)+'h sem pausa (entrada às '+dia0.entrada.h+')');
 var w=d.getDay();if(w>=1&&w<=5&&fer.indexOf(hoje)<0){var dia=D[hoje]||{},f=['entrada','almoco','volta','saida'].filter(function(t){return !dia[t]&&!(dia.saida&&(t==='almoco'||t==='volta'))&&hr[t]&&agora>mi(hr[t])+tol});
 if(f.length===4)out.push(C.nome+' não marcou a entrada hoje');else if(f.length)out.push(C.nome+' não marcou '+f.map(function(t){return NA[t]}).join(' nem ')+' hoje')}});return out}
-var HOJE_REAL=null,PAGM_REAL=null,LEMB_REAL=null;
+var HOJE_REAL=null,PAGM_REAL=null,LEMB_REAL=null,TK=null;
+function tkAvisos(){for(var i=AVISOS.length-1;i>=0;i--)if(AVISOS[i].tk)AVISOS.splice(i,1);if(!TK)return;
+(TK.vencidos||[]).forEach(function(t){AVISOS.push({tk:1,g:'ate',t:'Ticket vencido sem resposta: '+t.ob+' · '+t.a,d:'Para '+t.para+' · o prazo passou e o ticket voltou para você',p:'Tickets',a:'Abrir Ticket',id:t.id})});
+if(TK.aguardando)AVISOS.push({tk:1,g:'sab',t:TK.aguardando+' Ticket(s) aguardando resposta',d:'Tickets que você abriu e ainda não foram respondidos',p:'Tickets',a:'Ver Tickets'})}
 /* Ilacir 10/11 14:56: Início de verdade — hoje pelo relógio; avisos tirados do sistema; os anotados em 05/11 ficam em "Para Saber" como lista antiga a conferir */
 (function(){var V=AVISOS.splice(0,AVISOS.length);var I=(typeof D!=='undefined'&&D)||{},hj=new Date(),z=function(n){return ('0'+n).slice(-2)},hs=z(hj.getDate())+'/'+z(hj.getMonth()+1)+'/'+hj.getFullYear(),k=function(x){return x.slice(6)+x.slice(3,5)+x.slice(0,2)};
 var dif=function(d){var p=d.split('/');return Math.round((new Date(+p[2],+p[1]-1,+p[0])-new Date(hj.getFullYear(),hj.getMonth(),hj.getDate()))/864e5)};
@@ -443,6 +450,8 @@ if((I.nfEmitir||[]).length)AVISOS.push({g:'ate',t:I.nfEmitir.length+' parcela(s)
 if(I.bancoPend)AVISOS.push({g:'ate',t:I.bancoPend+' lançamento(s) do banco pendente(s)',d:'a classificar, conciliar, confirmar ou verificar',p:'Bancos',a:'Abrir Pendências'});
 (I.impDif||[]).forEach(function(c){AVISOS.push({g:'urg',t:'Guia com diferença: '+c.conta+(c.venc?' (vence '+String(c.venc).slice(0,5)+')':''),d:c.txt.replace(/^CONFERÊNCIA ⚠ /,''),p:'Despesas',a:'Abrir Contas a Pagar'})});
 (I.pag||[]).filter(function(c){return c.sit!=='paga'&&dif(c.venc)>=0&&dif(c.venc)<=3}).forEach(function(c){AVISOS.push({g:dif(c.venc)===0?'urg':'ate',t:(dif(c.venc)===0?'Vence hoje: ':'Vence '+c.venc.slice(0,5)+': ')+c.conta,d:'Confira se já foi pago (Despesas › Contas a Pagar)',p:'Despesas',a:'Abrir Contas a Pagar'})});
+/* Ilacir 12/11: Tickets — vencidos em Atenção (voltaram para quem abriu), aguardando em Para Saber */
+TK=I.tk||null;tkAvisos();
 V.forEach(function(a){a.g='sab';a.d='(anotado em 05/11 — conferir se ainda vale) '+(a.d||'');AVISOS.push(a)});
 HOJE_REAL=hj;
 if(I.pag)PAGM_REAL=I.pag.slice().sort(function(a,b){return k(a.venc)<k(b.venc)?-1:1}).map(function(c){return [c.conta+(c.sit==='paga'?' ✓':''),c.venc.slice(0,5),c.k]});
@@ -465,7 +474,7 @@ function novoEmail(){FG_rasc('Novo e-mail')}
 function procurar(){document.getElementById('busca').focus()}
 function sair(){toast('Ainda não disponível: sai do sistema.')}
 /* Ilacir 10/11 16:23: aviso e lembrete levam de verdade para a página certa */
-var IR_ID={'Despesas':'despesas','Notas Fiscais':'notas','Bancos':'bancos','Colaboradores':'colaboradores','Caixa de Entrada':'caixa','Sócios':'socios','Sócios e Rateio':'socios','Configurações':'configuracoes','Relatórios':'relatorios','Propostas e Contratos':'propostas','Documentos':'documentos'};
+var IR_ID={'Despesas':'despesas','Notas Fiscais':'notas','Bancos':'bancos','Colaboradores':'colaboradores','Caixa de Entrada':'caixa','Sócios':'socios','Sócios e Rateio':'socios','Configurações':'configuracoes','Relatórios':'relatorios','Propostas e Contratos':'propostas','Documentos':'documentos','Tickets':'tickets','ARTs':'arts','Clientes e Projetos':'projetos'};
 function irPara(p){var id=IR_ID[p];if(id&&typeof FG_ir==='function'){FG_ir(id);return}toast('Abra a página "'+p+'" pelos botões do alto.')}
 var CHEV='<svg class="chev{op}" viewBox="0 0 12 12"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 function chev(k){return CHEV.replace('{op}',S.ab[k]?' op':'')}
@@ -519,7 +528,7 @@ var marcL={},marcV={};LEMB.forEach(function(l){marcL[+l.d.slice(0,2)]=1});PAGM.f
 var tt='';for(var i=0;i<42;i++){var dd=i-ini+1,cl='d',tx;if(dd<1){tx=dant+dd;cl+=' fo'}else if(dd>dm){tx=dd-dm;cl+=' fo'}else{tx=dd;if(a===HOJE.getFullYear()&&m===HOJE.getMonth()&&dd===HOJE.getDate())cl+=' hj';var fr=FERIADOS(a)[('0'+dd).slice(-2)+'/'+('0'+(m+1)).slice(-2)];if(fr){cl+=' fe';tt=fr}}var dk=(cl.indexOf('fo')<0)?('0'+dd).slice(-2)+'/'+('0'+(m+1)).slice(-2)+'/'+a:'',na=dk?AGD.filter(function(x){return x.data===dk}):[];if(na.length){cl+=' ag';tt=(tt?tt+'\n':'')+na.map(function(x){return (x.hora?x.hora+' ':'')+x.texto+' ('+agNome(x.para)+')'}).join('\n')}h+='<div class="'+cl+'"'+(tt?' title="'+esc(tt)+'"':'')+(dk?' onclick="agAbre(\''+dk+'\',this)"':'')+'>'+tx+'</div>';tt=''}
 return '<div class="cal"><div class="calh"><button onclick="CALM.m--;if(CALM.m<0){CALM.m=11;CALM.a--}desenhaArvore()">‹</button><span>'+nm[m]+' de '+a+'</span><button onclick="CALM.m++;if(CALM.m>11){CALM.m=0;CALM.a++}desenhaArvore()">›</button></div><div class="calg">'+h+'</div></div>'}
 function lembCabe(){[].forEach.call(document.querySelectorAll('.lemb .it .lt'),function(e){e.style.fontSize='';var f=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&f>10){f-=0.5;e.style.fontSize=f+'px'}})}
-desenhaArvore=function(){document.getElementById('tree').innerHTML=calHtml()+'<div class="lemb"><h4>Lembretes <button title="Novo compromisso para hoje" onclick="agAbre(agHoje(),this)">+</button></h4>'+AGD.filter(function(x){return x.data===agHoje()}).map(function(x){return '<div class="it agi" title="'+esc(x.texto+' — '+agNome(x.para))+'"><input type="checkbox" title="Feito (some da lista)" onclick="agFeito(\''+x.id+'\',this)"><i class="lt" style="cursor:pointer" onclick="agAbre(agHoje(),this)">'+esc((x.hora?x.hora+' ':'')+x.texto+(x.para!=='todos'?' · '+agNome(x.para):''))+'</i><span>hoje</span></div>'}).join('')+LEMB.map(function(l){return '<div class="it" title="'+esc(l.t)+'"><input type="checkbox" title="Apagar este lembrete" onclick="lembMata(this,\''+esc(String(l.k||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\')"><i class="lt" style="cursor:pointer" onclick="irPara(\'Caixa de Entrada\')">'+esc(l.t)+'</i><span>'+l.d+'</span></div>'}).join('')+'<div class="sub">Pagamentos do mês</div>'+PAGM.map(function(p){return '<div class="it" title="'+esc(p[0])+'"><input type="checkbox" title="Apagar este lembrete" onclick="lembMata(this,\''+esc(String(p[2]||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\')"><i class="lt" style="cursor:pointer" onclick="irPara(\'Despesas\')">'+esc(p[0])+'</i><span>'+p[1]+'</span></div>'}).join('')+'</div>';setTimeout(lembCabe,0)};
+desenhaArvore=function(){document.getElementById('tree').innerHTML=calHtml()+'<div class="lemb"><h4>Lembretes <button title="Novo compromisso para hoje" onclick="agAbre(agHoje(),this)">+</button></h4>'+AGD.filter(function(x){return x.data===agHoje()}).map(function(x){return '<div class="it agi" title="'+esc(x.texto+' — '+agNome(x.para))+'"><input type="checkbox" title="Feito (some da lista)" onclick="agFeito(\''+x.id+'\',this)"><i class="lt" style="cursor:pointer" onclick="agAbre(agHoje(),this)">'+esc((x.hora?x.hora+' ':'')+x.texto+(x.para!=='todos'?' · '+agNome(x.para):''))+'</i><span>hoje</span></div>'}).join('')+LEMB.map(function(l){return '<div class="it" title="'+esc(l.t)+'"><input type="checkbox" title="Apagar este lembrete" onclick="lembMata(this,\''+esc(String(l.k||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\')"><i class="lt" style="cursor:pointer" onclick="irPara(\'Caixa de Entrada\')">'+esc(l.t)+'</i><span>'+l.d+'</span></div>'}).join('')+((TK&&TK.comigo&&TK.comigo.length)?'<div class="sub">Tickets Comigo ('+TK.comigo.length+')</div>'+TK.comigo.map(function(t){return '<div class="it tki" title="'+esc(t.ob+' · '+t.a)+'"><span style="flex:none;color:#163F75">▸</span><i class="lt" style="cursor:pointer" onclick="tkAbre(\''+t.id+'\')">'+esc(t.ob+' · '+t.a)+'</i><span>'+(t.l?'lembrete':t.r?'respondido':'')+'</span></div>'}).join(''):'')+'<div class="sub">Pagamentos do mês</div>'+PAGM.map(function(p){return '<div class="it" title="'+esc(p[0])+'"><input type="checkbox" title="Apagar este lembrete" onclick="lembMata(this,\''+esc(String(p[2]||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"))+'\')"><i class="lt" style="cursor:pointer" onclick="irPara(\'Despesas\')">'+esc(p[0])+'</i><span>'+p[1]+'</span></div>'}).join('')+'</div>';setTimeout(lembCabe,0)};
 /* Ilacir 10/11 17:58: agenda — clicar num dia do calendário marca compromisso (o que, para quem, hora) */
 var AGD=(typeof D!=='undefined'&&D&&D.agenda)||[],AGP=(typeof D!=='undefined'&&D&&D.agPessoas&&D.agPessoas.length)?D.agPessoas:[{e:'todos',n:'Todos'}];
 function agHoje(){var h=HOJE||new Date();return ('0'+h.getDate()).slice(-2)+'/'+('0'+(h.getMonth()+1)).slice(-2)+'/'+h.getFullYear()}
@@ -538,6 +547,9 @@ function agAbre(dk,el){agFecha();var L=AGD.filter(function(x){return x.data===dk
   document.getElementById('agOk').onclick=go;t.onkeydown=function(e){if(e.key==='Enter')go();if(e.key==='Escape')agFecha()}}
 function agFeito(id,cb){var it=cb.closest('.it,label');if(it)it.style.opacity='.35';google.script.run.withSuccessHandler(function(l){AGD=l||AGD.filter(function(x){return x.id!==id});toast('Feito ✓');var b=document.getElementById('agBox');if(b&&it)it.remove();desenhaArvore()}).withFailureHandler(function(e){if(it)it.style.opacity='';cb.checked=false;toast('Não gravou: '+(e&&e.message||e))}).agendaFeito(id)}
 document.addEventListener('mousedown',function(e){var b=document.getElementById('agBox');if(b&&!b.contains(e.target)&&!(e.target.closest&&e.target.closest('.calg .d')))agFecha()});
+function tkAbre(id){if(typeof FG_ir==='function'){FG_ir('tickets','&tk='+id);return}irPara('Tickets')}
+/* a cópia rápida traz os tickets do Ilacir; em seguida vem a de quem entrou */
+try{google.script.run.withSuccessHandler(function(r){if(!r)return;TK=r;tkAvisos();desenha()}).withFailureHandler(function(){}).tkMeuResumo()}catch(e){}
 /* Ilacir 10/11 16:22: a caixinha MATA o lembrete (some e não volta) */
 function lembMata(cb,k){var it=cb.closest('.it'),t=it?it.textContent:'';if(!k){toast('Este lembrete é de exemplo; não dá para apagar.');cb.checked=false;return}it.style.opacity='.35';google.script.run.withSuccessHandler(function(){LEMB=LEMB.filter(function(l){return l.k!==k});PAGM=PAGM.filter(function(p){return p[2]!==k});it.remove();toast('Lembrete apagado ✓')}).withFailureHandler(function(er){it.style.opacity='';cb.checked=false;toast('Não apagou: '+(er&&er.message||er))}).inicioLembreteOcultar(k,t)}
 var _dpI=desenhaPainel;
@@ -546,8 +558,11 @@ var c=function(g){return AVISOS.filter(function(a){return a.g===g}).length};
 document.getElementById('head').innerHTML='<div><div class="headtitle">FG Gestão</div></div>';kpisInicio();
 document.getElementById('tabs').innerHTML='';
 var ps=PAGINAS.map(function(p){return p[0]}).sort(function(x,y){return x.localeCompare(y,'pt')});
-var cx=ps.map(function(n){var ic=PICO[n];return '<div class="pcx" onclick="irPara(\''+n+'\')">'+(ic?'<span class="pico" style="background:'+ic[0]+'"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+ic[1]+'</svg></span>':'')+esc(n)+'</div>'});while(cx.length<12)cx.push('<div class="pcx vz"></div>');
-document.getElementById('pane').innerHTML='<div class="pgrid">'+cx.join('')+'</div>'};
+var cx=ps.map(function(n){var ic=PICO[n],tk=n==='Tickets';return '<div class="pcx'+(tk?' tk':'')+'" onclick="irPara(\''+n+'\')">'+(ic?'<span class="pico" style="background:'+ic[0]+'"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+ic[1]+'</svg></span>':'')+'<span class="pn">'+esc(n)+'</span>'+(tk&&TK?'<span class="tkc">'+(TK.comigo||[]).length+' Comigo · '+(TK.aguardando||0)+' Aguardando</span>':'')+'</div>'});while(cx.length<15)cx.push('<div class="pcx vz"></div>');
+document.getElementById('pane').innerHTML='<div class="pgrid">'+cx.join('')+'</div>';setTimeout(pcxCabe,0)};
+/* Ilacir 12/11 (grade 5×3): todos os nomes com a mesma letra, a maior que caiba no nome mais comprido */
+function pcxCabe(){var L=[].slice.call(document.querySelectorAll('.pcx .pn'));if(!L.length)return;L.forEach(function(e){e.style.fontSize=''});var f=parseFloat(getComputedStyle(L[0]).fontSize),n=0;while(n++<30&&f>12&&L.some(function(e){return e.scrollWidth>e.parentNode.clientWidth-16})){f-=0.5;L.forEach(function(e){e.style.fontSize=f+'px'})}}
+window.addEventListener('resize',function(){setTimeout(pcxCabe,0)});
 function kpisInicio(){var c=function(g){return AVISOS.filter(function(a){return a.g===g}).length};
 document.getElementById('kpis').innerHTML='<div class="box kpi clk" onclick="sel({t:\'grp\',g:\'urg\'})" style="cursor:pointer"><small>Urgentes</small><b class="db">'+c('urg')+'</b><em>clique para ver</em></div><div class="box kpi" onclick="sel({t:\'grp\',g:\'ate\'})" style="cursor:pointer"><small>Atenção</small><b>'+c('ate')+'</b><em>clique para ver</em></div><div class="box kpi" onclick="sel({t:\'grp\',g:\'sab\'})" style="cursor:pointer"><small>Para Saber</small><b>'+c('sab')+'</b><em>clique para ver</em></div><div class="box kpi"><small>Hoje</small><b>'+['domingo','segunda','terça','quarta','quinta','sexta','sábado'][HOJE.getDay()]+', '+('0'+HOJE.getDate()).slice(-2)+'/'+('0'+(HOJE.getMonth()+1)).slice(-2)+'/'+HOJE.getFullYear()+'</b><em>'+(FERIADOS(HOJE.getFullYear())[('0'+HOJE.getDate()).slice(-2)+'/'+('0'+(HOJE.getMonth()+1)).slice(-2)]||'&nbsp;')+'</em></div>'}
 S.sel={t:'inicio'};
@@ -635,7 +650,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
-const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
+const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes","tickets"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
