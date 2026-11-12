@@ -601,7 +601,10 @@ onAuthStateChanged(auth, async u => {
           else $('fgTempo').textContent += ' · conferido agora'; }).catch(() => {});
     }
     if (!window.__fgVivo) { window.__fgVivo = 1; let base = jsonAtual;
-      onSnapshot(doc(db, 'paginas', 'documentos'), s3 => { if (!s3.exists() || s3.get('json') === base) return; base = s3.get('json');
+      onSnapshot(doc(db, 'paginas', 'documentos'), s3 => { if (!s3.exists()) return;
+        const q3 = s3.get('atualizado') ? s3.get('atualizado').toDate() : null;
+        if (s3.get('json') === base) { if (q3) { const ft = $('fgTempo'); ft.textContent = ft.textContent.replace(/dados de [^·]+/, 'dados de ' + q3.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' ').replace(/ · conferido agora/, ''); } return; }
+        base = s3.get('json');
         const ae = document.activeElement, dig = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !ae.disabled;
         if (!dig && !document.querySelector('.modal.on')) { location.reload(); return; }
         if (document.getElementById('fgNovo')) return; const f = document.createElement('div'); f.id = 'fgNovo';
