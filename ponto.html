@@ -79,6 +79,9 @@ var API="https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7C
 var E=null,TAB=0,ESPERA=false,ERRO='',DIAS_SEM=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 var TIPOS=['entrada','almoco','volta','saida'],NOMES={entrada:'Entrada',almoco:'Saída para Almoço',volta:'Volta do Almoço',saida:'Saída'};
 function $(id){return document.getElementById(id)}
+var COR_PESSOA={ilacir:'#1F5FA8',thiago:'#2E7D32',edna:'#7B3FA0',rebeca:'#C2620A'};var COR_MAIS=['#00838F','#6D4C41','#AD1457','#455A64'];
+function corPessoa(n){var k=String(n||'').trim().split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COR_PESSOA[k])return COR_PESSOA[k];var h=0;for(var i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))%997;return COR_MAIS[h%COR_MAIS.length]}
+function pes(n){return '<b style="color:'+corPessoa(n)+'">'+esc(n)+'</b>'}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},3500)}
 /* Ilacir 10/11 18:09: chave deste computador (a página só abre no computador liberado com a senha do Ilacir) */
@@ -206,7 +209,7 @@ function paneTk(){if(!TKM){setTimeout(tkCarrega,0);return '<div class="aviso inf
   if(t){var pode=t.souPara&&(t.estado==='aberto'||t.estado==='visto');
     return '<div style="display:flex;flex-direction:column;gap:10px;font-size:16px"><div><button class="btn" onclick="TKS=\'\';desenha()">‹ Voltar à lista</button></div>'+
     '<div style="font-size:19px;font-weight:700;color:#1F3B5C">'+esc(t.id+' · '+t.assunto)+'</div>'+
-    '<div><b style="color:#A3271B">'+esc(t.obra_nome)+'</b>'+(t.item?' · '+esc(t.item):'')+' · de '+esc(t.de)+' · '+tkDt(t.criado_em)+(t.prazo?' · prazo '+tkDt(t.prazo):'')+'</div>'+
+    '<div><b style="color:#A3271B">'+esc(t.obra_nome)+'</b>'+(t.item?' · '+esc(t.item):'')+' · de '+pes(t.de)+' · '+tkDt(t.criado_em)+(t.prazo?' · prazo '+tkDt(t.prazo):'')+'</div>'+
     '<div style="white-space:pre-wrap;border:1px solid #C3CAD3;border-radius:8px;padding:10px 12px;background:#FAFBFC">'+esc(t.texto)+'</div>'+
     (t.onde?'<div><b>Onde o arquivo deve ficar:</b> '+esc(t.onde)+'</div>':'')+(t.desbloqueia?'<div><b>Isto desbloqueia:</b> '+esc(t.desbloqueia)+'</div>':'')+
     (t.resposta?'<div style="white-space:pre-wrap;border:1px solid #B9CBE4;border-radius:8px;padding:10px 12px;background:#EEF3FA"><b>Sua resposta:</b> '+esc(t.resposta)+'</div>':'')+
@@ -214,7 +217,7 @@ function paneTk(){if(!TKM){setTimeout(tkCarrega,0);return '<div class="aviso inf
   if(!L.length)return tkBarra()+'<div class="aviso info">Nenhum ticket para você.</div>';
   L=L.slice().sort(function(a,b){return (b.comigo?1:0)-(a.comigo?1:0)});
   return tkBarra()+'<table style="width:100%;border-collapse:collapse;font-size:16px"><tr style="text-align:left;color:#5A6676"><th>Nº</th><th>Projeto</th><th>Assunto</th><th>Situação</th></tr>'+L.map(function(t){
-    return '<tr style="cursor:pointer;border-top:1px solid #E1E5EA" onclick="tkAbreM(\''+t.id+'\')"><td style="padding:8px 6px">'+t.id+'</td><td style="padding:8px 6px;color:#A3271B;font-weight:700;white-space:nowrap">'+esc(t.obra==='OB0000'?'Assuntos Internos':String(t.obra_nome).split(' ')[0])+(t.item?' · '+esc(t.item):'')+'</td><td style="padding:8px 6px"><b>'+esc(t.assunto)+'</b></td><td style="padding:8px 6px;white-space:nowrap">'+(t.comigo?'<b style="color:#8E2A1F">Com você</b>':t.estado==='fechado'?'Fechado':t.souDe&&(t.estado==='aberto'||t.estado==='visto')?'Aguardando '+esc(t.para):'Respondido')+'</td></tr>'}).join('')+'</table>'}
+    return '<tr style="cursor:pointer;border-top:1px solid #E1E5EA" onclick="tkAbreM(\''+t.id+'\')"><td style="padding:8px 6px">'+t.id+'</td><td style="padding:8px 6px;color:#A3271B;font-weight:700;white-space:nowrap">'+esc(t.obra==='OB0000'?'Assuntos Internos':String(t.obra_nome).split(' ')[0])+(t.item?' · '+esc(t.item):'')+'</td><td style="padding:8px 6px"><b>'+esc(t.assunto)+'</b></td><td style="padding:8px 6px;white-space:nowrap">'+(t.comigo?'<b style="color:#8E2A1F">Com você</b>':t.estado==='fechado'?'Fechado':t.souDe&&(t.estado==='aberto'||t.estado==='visto')?'Aguardando '+pes(t.para):'Respondido')+'</td></tr>'}).join('')+'</table>'}
 function tkAbreM(id){TKS=id;desenha();var t=(TKM||[]).filter(function(x){return x.id===id})[0];if(t&&t.souPara&&t.estado==='aberto')chamar('tkVisto',[id],function(n){TKM=TKM.map(function(x){return x.id===id?n:x})},function(){})}
 function tkResp(id){var r=($('tkR')||{}).value||'';chamar('tkResponder',[id,r.trim()],function(d){TKM=(d&&d.lista)||TKM;toast('Gravado ✓');desenha()})}
 var AGM=null,AGC=null,AGD_SEL='',AGM_C=0;
