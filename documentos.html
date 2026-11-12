@@ -494,7 +494,7 @@ if(typeof voltar==='function'){var _FGv=voltar;voltar=function(){if(typeof S!=='
 
 if(typeof inicio==='function')inicio=function(){FG_ir('inicio')};
 if(typeof abrirProjeto==='function')abrirProjeto=function(ob){FG_ir('projetos','&ob='+ob)};
-if(typeof irPara==='function')irPara=function(nome){var m={'Clientes e Projetos':'projetos','Notas Fiscais':'notas','Bancos':'bancos','Propostas e Contratos':'propostas','Sócios e Rateio':'socios','Despesas':'despesas','Colaboradores':'colaboradores','Documentos':'documentos','ARTs':'arts','Caixa de Entrada':'caixa','Relatórios':'relatorios','Configurações':'configuracoes'};FG_ir(m[nome]||'inicio')};
+if(typeof irPara==='function')irPara=function(nome){var m={'Clientes e Projetos':'projetos','Notas Fiscais':'notas','Bancos':'bancos','Propostas e Contratos':'propostas','Sócios e Rateio':'socios','Despesas':'despesas','Colaboradores':'colaboradores','Documentos':'documentos','ARTs':'arts','Caixa de Entrada':'caixa','Relatórios':'relatorios','Configurações':'configuracoes','Tickets':'tickets'};FG_ir(m[nome]||'inicio')};
 if(typeof anxHtml==='function'){var _anx=anxHtml;anxHtml=function(l){return (l.anx||[]).length?l.anx.map(function(a){return '<div class="an" title="'+esc(a.nome)+'" style="cursor:pointer" onclick="window.open(\''+a.url+'\',\'_blank\')"><span class="pdf">ABRIR</span><small>'+esc(a.nome.length>16?a.nome.slice(0,14)+'.'+a.nome.split('.').pop():a.nome)+'</small><small>'+esc(a.quem)+'</small></div>'}).join(''):_anx(l)}}
 if(typeof L!=='undefined'&&L&&L.forEach)L.forEach(function(l){if(l&&l.anexos&&l.anexos.length)l.anx=FG_conv(l.anexos)});
 
