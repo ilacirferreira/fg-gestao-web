@@ -366,6 +366,7 @@ function corPessoa(n){var k=String(n||'').trim().split(' ')[0].toLowerCase().nor
 function pes(n){return '<b style="color:'+corPessoa(n)+'">'+esc(n)+'</b>'}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2800)}
+function prz(x,curto){x=String(x||'');if(!x)return curto?'—':'';if(/^\d{4}-\d\d-\d\d$/.test(x)){var d=dt(x);return curto?d.slice(0,5):d}return x}
 function dt(x){var m=String(x||'').match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d:\d\d))?/);return m?m[3]+'/'+m[2]+(m[4]?' '+m[4]:'/'+m[1]):'—'}
 function nOb(t){return String(t.obra_nome||t.obra).split(' ')[0]}
 function aplica(d){if(!d)return;d.carregando=0;T=d.lista||[];OBS=d.obras||OBS;PES=d.pessoas||PES;EU=d.eu||EU;VE_TUDO=!!d.veTudo;D=d}
@@ -412,13 +413,13 @@ function cab(){var s=S.sel,oo=s.t==='ob'?(OBS.filter(function(o){return o.id===s
 function tabela(ls){if(D&&D.erro)return '<div class="info" style="color:#8E2A1F;font-weight:600">'+esc(D.erro)+' — aperte F5 para tentar de novo.</div>';if(D&&D.carregando)return '<div class="info">Abrindo os seus tickets…</div>';var n=Math.max(1,Math.ceil(ls.length/PT));if(S.pg>n-1)S.pg=n-1;var pg=ls.slice(S.pg*PT,S.pg*PT+PT);
  if(!ls.length)return '<div class="info">Nenhum ticket aqui.</div>';
  /* Ilacir 12/11 11:18: a lista tem que caber — colunas com largura fixa; o que não cabe termina em … (texto inteiro ao passar o mouse) */
- return '<div class="tablewrap" id="tw"><table class="tk-tab"><colgroup><col style="width:72px"><col style="width:104px"><col style="width:15%"><col style="width:84px"><col style="width:150px"><col><col style="width:64px"><col style="width:104px"></colgroup><thead><tr><th>Nº</th><th>Aberto em</th><th>Projeto · Item</th><th>Tipo</th><th>De → Para</th><th>Assunto</th><th>Prazo</th><th>Estado</th></tr></thead><tbody>'+pg.map(function(t){
-  return '<tr class="clk" onclick="abrir(\''+t.id+'\')"><td>'+t.id+'</td><td>'+dt(t.criado_em)+'</td><td title="'+esc(nOb(t)+(t.item?' · '+t.item:''))+'"><span class="tk-ob">'+esc(nOb(t))+'</span>'+(t.item?' · '+esc(t.item):'')+'</td><td>'+(t.tipo==='arquivo'?'Arquivo':'Pergunta')+'</td><td>'+pes(t.de)+' → '+pes(t.para)+'</td><td title="'+esc(t.assunto)+'"><b>'+esc(t.assunto)+'</b></td><td>'+(t.prazo?String(dt(t.prazo)).slice(0,5):'—')+'</td><td>'+tagE(t)+'</td></tr>'}).join('')+'</tbody></table></div>'+
+ return '<div class="tablewrap" id="tw"><table class="tk-tab"><colgroup><col style="width:72px"><col style="width:104px"><col style="width:15%"><col style="width:84px"><col style="width:150px"><col><col style="width:110px"><col style="width:104px"></colgroup><thead><tr><th>Nº</th><th>Aberto em</th><th>Projeto · Item</th><th>Tipo</th><th>De → Para</th><th>Assunto</th><th>Prazo</th><th>Estado</th></tr></thead><tbody>'+pg.map(function(t){
+  return '<tr class="clk" onclick="abrir(\''+t.id+'\')"><td>'+t.id+'</td><td>'+dt(t.criado_em)+'</td><td title="'+esc(nOb(t)+(t.item?' · '+t.item:''))+'"><span class="tk-ob">'+esc(nOb(t))+'</span>'+(t.item?' · '+esc(t.item):'')+'</td><td>'+(t.tipo==='arquivo'?'Arquivo':'Pergunta')+'</td><td>'+pes(t.de)+' → '+pes(t.para)+'</td><td title="'+esc(t.assunto)+'"><b>'+esc(t.assunto)+'</b></td><td title="'+esc(prz(t.prazo))+'">'+esc(prz(t.prazo,1))+'</td><td>'+tagE(t)+'</td></tr>'}).join('')+'</tbody></table></div>'+
   (n>1?'<div class="pgline">Tickets '+(S.pg*PT+1)+'–'+Math.min(ls.length,S.pg*PT+PT)+' de '+ls.length+' <button class="mini" '+(S.pg?'':'disabled')+' onclick="S.pg--;desenhaPainel()">◀</button><button class="mini" '+(S.pg<n-1?'':'disabled')+' onclick="S.pg++;desenhaPainel()">▶</button></div>':'')}
 function fld(r,v,cl){return '<div class="fld'+(cl?' '+cl:'')+'"><label>'+r+'</label><div class="v" title="'+esc(v)+'">'+(v||'—')+'</div></div>'}
 function links(x){return String(x||'').split(';').map(function(a){a=a.trim();return !a?'':/^https?:/.test(a)?'<a href="'+esc(a)+'" target="_blank">'+esc(a.length>50?a.slice(0,47)+'…':a)+'</a>':esc(a)}).filter(Boolean).join(' · ')}
 function detalhe(t){var h='<div class="tk-det">';
- h+='<div class="ficha">'+fld('Projeto','<a href="#" class="tk-ob" onclick="abrirProjeto(\''+t.obra+'\');return false">'+esc(t.obra_nome)+'</a> <span style="color:#5A6676">'+t.obra+'</span>')+fld('Item',esc(t.item))+fld('Tipo',t.tipo==='arquivo'?'Arquivo':'Pergunta')+fld('De → Para',pes(t.de)+' → '+pes(t.para))+fld('Aberto em',dt(t.criado_em))+fld('Prazo',t.prazo?dt(t.prazo):'')+
+ h+='<div class="ficha">'+fld('Projeto','<a href="#" class="tk-ob" onclick="abrirProjeto(\''+t.obra+'\');return false">'+esc(t.obra_nome)+'</a> <span style="color:#5A6676">'+t.obra+'</span>')+fld('Item',esc(t.item))+fld('Tipo',t.tipo==='arquivo'?'Arquivo':'Pergunta')+fld('De → Para',pes(t.de)+' → '+pes(t.para))+fld('Aberto em',dt(t.criado_em))+fld('Prazo',esc(prz(t.prazo)))+
   (t.desbloqueia?fld('Desbloqueia',esc(t.desbloqueia),'s2'):'')+(t.onde?fld('Onde o arquivo deve ficar',esc(t.onde)):'')+(t.anexos?fld('Anexos',links(t.anexos),'s2'):'')+'</div>';
  h+='<div><div class="tk-rot">Texto</div><div class="tk-bloco">'+esc(t.texto)+'</div></div>';
  if(t.resposta)h+='<div><div class="tk-rot">Resposta de '+pes(t.para)+'</div><div class="tk-bloco resp">'+esc(t.resposta)+'</div></div>';
@@ -438,7 +439,7 @@ function formNovo(){var ob=S.sel.t==='ob'?S.sel.o:'';
  '<div class="fld"><label for="nItem">Item (ex.: R03 A17)</label><input id="nItem"></div>'+
  '<div class="fld"><label for="nTipo">Tipo</label><select id="nTipo" onchange="document.getElementById(\'nOndeB\').style.display=this.value===\'arquivo\'?\'\':\'none\'"><option value="pergunta">Pergunta</option><option value="arquivo">Arquivo</option></select></div>'+
  '<div class="fld"><label for="nPara">Para</label><select id="nPara">'+PES.map(function(p){return '<option value="'+esc(p.e)+'">'+esc(p.n)+(p.e===EU?' (lembrete para mim)':'')+'</option>'}).join('')+'</select></div>'+
- '<div class="fld"><label for="nPrazo">Prazo (dd/mm/aaaa)</label><input id="nPrazo" maxlength="10" placeholder="opcional"></div>'+
+ '<div class="fld"><label for="nPrazo">Prazo (data ou evento)</label><input id="nPrazo" maxlength="80" placeholder="opcional — 20/11/2026 ou na liberação para processamento"></div>'+
  '<div class="fld s2"><label for="nAss">Assunto</label><input id="nAss" maxlength="160"></div>'+
  '<div class="fld s4"><label for="nTexto">Texto</label><textarea id="nTexto"></textarea></div>'+
  '<div class="fld s2"><label for="nDesb">Desbloqueia (o que depende da resposta)</label><input id="nDesb"></div>'+
