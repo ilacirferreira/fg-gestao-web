@@ -128,7 +128,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.pri:hover{background:var(--blue2)}
 .btn.ok{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
 .btn.red{background:#B23B2E;border-color:#B23B2E;color:#fff}
-.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow:hidden}
+.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto}
 table{width:100%;border-collapse:collapse}
 th{font-weight:600;text-align:left;vertical-align:top;padding:5px 8px;background:#EEF1F4;border-bottom:1px solid var(--line);color:#3A4554;font-size:12px}
 td{padding:4px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
@@ -422,8 +422,8 @@ function desenhaLista(){var ls=filtradas(),tp=Math.max(1,Math.ceil(ls.length/S.P
   var faixa=S.escolher?'<div class="faixa"><b>'+(S.escolher==='canc'?'Cancelar NF':'Substituir NF')+':</b> clique na nota.<span class="sp"></span><button class="pb cz" onclick="S.escolher=\'\';tudo()">Desistir</button></div>':'';
   if(S.escolher)pag=pag.filter(function(n){return !morta(n)});
   /* Ilacir 12/11 15:48: novas tentativas automáticas (30 em 30 min, até 5) e NOTA NÃO EMITIDA */
-  (D.retry||[]).forEach(function(x){if(S.escolher)return;faixa+=x.fim?'<div class="faixa" style="background:#FDECEA;border-color:#C0392B;color:#8E2A1F" title="'+esc(x.erro)+'"><b>NOTA NÃO EMITIDA</b>&nbsp;· '+esc(x.tomador)+' · R$ '+esc(String(x.valor).replace('.',','))+(x.parc?' · '+esc(x.parc):'')+' — o GDF recusou '+(x.tent+1)+' vezes. Emita de novo (Emitir NF) ou pelo site do ISSNet.</div>':'<div class="faixa" title="'+esc(x.erro)+'"><b>Aguardando nova tentativa automática</b>&nbsp;· '+esc(x.tomador)+' · R$ '+esc(String(x.valor).replace('.',','))+' — tentativa '+(x.tent+1)+' de '+x.max+' às '+esc(String(x.prox).slice(6))+'. Não emita de novo enquanto isso.</div>'});
-  var pr=(D.proc||[]);if(pr.length&&!S.escolher)faixa+='<div class="faixa"><b>'+pr.length+' nota(s) ainda processando no GDF</b><span class="sp"></span><button class="pb" onclick="abrir(\'avisos\')">Ver e Consultar</button></div>';
+  (D.retry||[]).forEach(function(x){if(S.escolher)return;faixa+='<div class="faixa"'+(x.g==='urg'?' style="background:#FDECEA;border-color:#C0392B;color:#8E2A1F"':'')+' title="'+esc(x.erro)+'"><b>'+esc(x.titulo)+'</b>&nbsp;· '+esc(x.quem)+' — '+esc(x.txt)+'</div>'});
+  var pr=(D.proc||[]);if(pr.length&&!S.escolher)faixa+='<div class="faixa"><b>'+(pr.length>1?pr.length+' notas enviadas ao GDF aguardando resposta':'1 nota enviada ao GDF aguardando resposta')+'</b>&nbsp;· o Gestão confere sozinho a cada 3 minutos; não emita de novo.<span class="sp"></span><button class="pb" onclick="abrir(\'avisos\')">Ver e Consultar</button></div>';
   var h=faixa+'<div class="grade" id="grade">'+(pag.length?pag.map(cardNF).join(''):'<div class="msg" style="grid-column:span 2">Nenhuma nota'+(S.q?' com "'+esc(S.q)+'"':'')+'.</div>')+'</div>';
   var semPdf=N.filter(function(n){return !n.pdf&&n.n<151}).length;
   h+='<div class="pags">'+''+'<button class="pg" '+(S.pg?'':'disabled')+' onclick="S.pg=0;tudo()">«</button><button class="pg" '+(S.pg?'':'disabled')+' onclick="S.pg--;tudo()">‹</button> Página <b>'+(S.pg+1)+'</b> de <b>'+tp+'</b> ('+(ls.length?(S.pg*S.PT+1)+'–'+Math.min(ls.length,S.pg*S.PT+S.PT):0)+' de '+ls.length+') <button class="pg" '+(S.pg<tp-1?'':'disabled')+' onclick="S.pg++;tudo()">›</button><button class="pg" '+(S.pg<tp-1?'':'disabled')+' onclick="S.pg='+(tp-1)+';tudo()">»</button></div>';
@@ -679,6 +679,8 @@ onAuthStateChanged(auth, async u => {
     const s = await getDoc(doc(db, 'paginas', 'notas'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
     window.__FGD = JSON.parse(s.get('json'));
+    /* Ilacir 12/11 10:17: Tickets abre na hora com a lista da própria pessoa (tickets/<email>, só ela lê); o servidor confere depois */
+    if (s.ref && s.ref.id === 'tickets') { try { const st = await getDoc(doc(db, 'tickets', String(u.email || '').toLowerCase())); if (st.exists()) { const dd = JSON.parse(st.get('json')); dd.daCopia = 1; window.__FGD = dd; } } catch (e) {} }
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
       const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
