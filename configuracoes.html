@@ -128,7 +128,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.pri:hover{background:var(--blue2)}
 .btn.ok{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
 .btn.red{background:#B23B2E;border-color:#B23B2E;color:#fff}
-.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow:hidden}
+.tablewrap{border:1px solid var(--line);border-radius:3px;flex:1;min-height:0;overflow-x:hidden;overflow-y:auto}
 table{width:100%;border-collapse:collapse}
 th{font-weight:600;text-align:left;vertical-align:top;padding:5px 8px;background:#EEF1F4;border-bottom:1px solid var(--line);color:#3A4554;font-size:12px}
 td{padding:4px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
@@ -361,7 +361,7 @@ document.addEventListener('focusout',function(ev){if(FG_emEh(ev.target)){var b=d
 document.addEventListener('keydown',function(ev){var b=document.getElementById('fgEmSug');if(!b||b.style.display!=='block'||b._inp!==ev.target)return;if(ev.key==='Escape'){b.style.display='none'}else if(ev.key==='Tab'||(ev.key==='Enter'&&FG_EM_LISTA[ev.target.id])){var f=b.firstChild;if(f){ev.preventDefault();FG_emEscolhe(f.getAttribute('data-e'))}}},true);
 
 var EQ=[['Ilacir','ilacirferreira@gmail.com','Administrador','tudo'],['Thiago','(e-mail dele)','Técnico e Financeiro limitado','começa bloqueado; você libera tela por tela'],['Rebeca','—','não usa o sistema','entra no rateio'],['Edna','—','não usa o sistema','ponto marcado por Ilacir e Thiago']];
-var TELAS=['Início','Clientes e Projetos','Notas Fiscais','ARTs','Bancos','Propostas e Contratos','Sócios e Rateio','Despesas','Colaboradores','Documentos','Caixa de Entrada','Relatórios','Configurações'];
+var TELAS=['Início','Clientes e Projetos','Notas Fiscais','ARTs','Bancos','Propostas e Contratos','Sócios e Rateio','Despesas','Colaboradores','Documentos','Caixa de Entrada','Relatórios','Tickets','Configurações'];
 /* Ilacir 10/11 16:26: permissões de QUALQUER pessoa (Config "permissoes"); só o Ilacir (ilacirferreira) grava */
 var PERM_EXTRAS=['Entrar no FG Gestão','Senha de liberação do ponto','Clientes: nome, CPF/CNPJ, endereço','Cadastro de sócios e funcionários'];
 var PERM_TODAS=(function(){try{return JSON.parse((typeof D!=='undefined'&&D&&D.config&&D.config.permissoes)||'{}')}catch(e){return {}}})();
@@ -571,7 +571,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.2.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 const t0 = performance.now();
-const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes"];
+const API = "https://script.google.com/macros/s/AKfycbxt0kg2XYT2d7_c9g0zrbIW1Vw6xL7CoyHKC0cj-edwlmOPn-C-37t8vSxhJDTE_9DpCg/exec", WEB = ["inicio","projetos","notas","arts","bancos","propostas","socios","despesas","colaboradores","documentos","caixa","relatorios","configuracoes","tickets"];
 const app = initializeApp({"apiKey":"AIzaSyDJpZqekcTxW5C3AJTtkFNKwJVr7cMVMSI","authDomain":"fg-gestao.firebaseapp.com","projectId":"fg-gestao","appId":"1:933388015487:web:a22b389975c1c9d1e7ec4a"});
 const auth = getAuth(app), db = getFirestore(app); window.__fgAuth = auth;
 const $ = id => document.getElementById(id);
