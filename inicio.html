@@ -457,6 +457,10 @@ if(I.lemb&&(I.lemb.length||I.lembReal))LEMB_REAL=I.lemb.map(function(l){return {
 ptAvisosCli(D&&D.ponto).forEach(function(t){AVISOS.unshift({g:'urg',t:t,d:'Ponto marcado pela própria colaboradora · só o Ilacir corrige, com motivo',p:'Colaboradores',a:'Abrir o Ponto'})});
 
 var GRP=[['urg','Urgentes','pend'],['ate','Atenção','emit'],['sab','Para Saber','ano']];
+/* Ilacir 12/11 15:07: colaborador (ex.: Colaborador 1) também tem um Início numa tela única, como o do Ilacir, mas só com as páginas que o Ilacir liberou
+   em Configurações › Permissões, e sem avisos, lembretes nem pagamentos da FG (a página dele não lê a cópia do Início do Ilacir). */
+if(D&&D.equipe){var EQ_ID={'Clientes e Projetos':'projetos','Notas Fiscais':'notas','Bancos':'bancos','Propostas e Contratos':'propostas','Sócios e Rateio':'socios','Despesas':'despesas','Colaboradores':'colaboradores','Documentos':'documentos','ARTs':'arts','Caixa de Entrada':'caixa','Relatórios':'relatorios','Tickets':'tickets'};
+  PAGINAS=PAGINAS.filter(function(p){return (D.telas||[]).indexOf(EQ_ID[p[0]])>=0});AVISOS.length=0;PAGM_REAL=[];LEMB_REAL=[];TK=null}
 var S={sel:{t:'hoje'},ab:{av:1,pg:1},tab:0,hist:[],busca:'',pg:0};var PT=10,AJT=0;
 function paginar(rows){var n=Math.max(1,Math.ceil(rows.length/PT));if(S.pg>n-1)S.pg=n-1;return rows.slice(S.pg*PT,S.pg*PT+PT).join('')}
 function pgLine(t){var n=Math.max(1,Math.ceil(t/PT));if(n<2)return '';return '<div class="pgline">Avisos '+(S.pg*PT+1)+'–'+Math.min(t,S.pg*PT+PT)+' de '+t+' <button class="mini" '+(S.pg?'':'disabled')+' onclick="S.pg--;desenhaPainel()">◀</button><button class="mini" '+(S.pg<n-1?'':'disabled')+' onclick="S.pg++;desenhaPainel()">▶</button></div>'}
@@ -464,6 +468,7 @@ function ajustaTabela(){if(AJT)return;var cabe=function(){var x=document.getElem
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2800)}
 var TB=[['Voltar','voltar',''],['Início','inicio',''],['Nova Solicitação','novaSol','novo'],['Novo E-mail','novoEmail','novo'],['Procurar em Tudo','procurar',''],['Sair','sair','']];
+if(D&&D.equipe)TB=TB.filter(function(b){return b[1]==='voltar'||b[1]==='inicio'||b[1]==='procurar'});
 function desenhaToolbar(){document.getElementById('toolbar').innerHTML=TB.map(function(b){return '<button class="tb '+b[2]+'" onclick="'+b[1]+'()">'+b[0]+'</button>'}).join('')}
 function voltar(){if(!S.hist.length){toast('Nada para voltar.');return}S.sel=JSON.parse(S.hist.pop());desenha()}
 function inicio(){S.hist=[];S.sel={t:'hoje'};desenha()}
@@ -668,9 +673,11 @@ onAuthStateChanged(auth, async u => {
   /* Ilacir 10/11: mostrar sempre com qual conta entrou, com Sair */
   try { window.__fgSair = () => signOut(auth).then(() => location.reload()); const us = document.querySelector('.titlebar .usr'); if (us) us.innerHTML = u.email + ' · <a href="#" style="color:#fff;text-decoration:underline" onclick="window.__fgSair();return false">Sair</a>'; } catch (e) {}
   try {
-    const s = await getDoc(doc(db, 'paginas', 'inicio'));
-    if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
-    window.__FGD = JSON.parse(s.get('json'));
+    let s = null; try { s = await getDoc(doc(db, 'paginas', 'inicio')); } catch (e0) { if (!/permission|insufficient/i.test(e0.message)) throw e0; }
+    if (s === null) { const ac = await getDoc(doc(db, 'acesso', u.email.toLowerCase())); const tl = ac.exists() ? Object.keys(ac.get('telas') || {}) : []; if (!tl.length) throw new Error('permission'); window.__FGD = { equipe: 1, telas: tl }; s = { get: () => null }; }
+    else { if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.'); window.__FGD = JSON.parse(s.get('json')); }
+    /* Ilacir 12/11 10:17: Tickets abre na hora com a lista da própria pessoa (tickets/<email>, só ela lê); o servidor confere depois */
+    if (s.ref && s.ref.id === 'tickets') { try { const st = await getDoc(doc(db, 'tickets', String(u.email || '').toLowerCase())); if (st.exists()) { const dd = JSON.parse(st.get('json')); dd.daCopia = 1; window.__FGD = dd; } } catch (e) {} }
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
       const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
@@ -679,7 +686,7 @@ onAuthStateChanged(auth, async u => {
     $('fgTempo').textContent = 'aberto em ' + ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',') + ' s' + (quando ? ' · dados de ' + quando.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
     // confere com a planilha em segundo plano; se mudou algo, oferece atualizar (não recarrega sozinho para não perder o que estiver digitando)
     const jsonAtual = s.get('json'), k = 'fgRv_inicio', ult = Number(sessionStorage.getItem(k) || 0);
-    if (API && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
+    if (API && !window.__FGD.equipe && Date.now() - ult > 60000) { sessionStorage.setItem(k, Date.now());
       u.getIdToken().then(tk => fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'fbPagina', args: ['inicio'], token: tk }) }))
         .then(r => r.json()).then(async j => { if (!j.ok) return; const s2 = await getDoc(doc(db, 'paginas', 'inicio'));
           if (s2.get('json') !== jsonAtual) {
