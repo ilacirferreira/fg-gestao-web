@@ -356,6 +356,9 @@ document.addEventListener('keydown',function(ev){var b=document.getElementById('
 /* TICKETS DA EQUIPE (Ilacir 12/11/2026): todo ticket é de um projeto; fechar = registrar a decisão; só quem abriu fecha. */
 var T=(D&&D.lista)||[],OBS=(D&&D.obras)||[],PES=(D&&D.pessoas)||[],EU=(D&&D.eu)||'',VE_TUDO=!!(D&&D.veTudo);
 var S={sel:{t:'f',f:'comigo'},ab:{f:1,ob:1},hist:[],busca:'',pg:0,tk:'',modo:''};var PT=12;
+var COR_PESSOA={ilacir:'#1F5FA8',thiago:'#2E7D32',edna:'#7B3FA0',rebeca:'#C2620A'};var COR_MAIS=['#00838F','#6D4C41','#AD1457','#455A64'];
+function corPessoa(n){var k=String(n||'').trim().split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COR_PESSOA[k])return COR_PESSOA[k];var h=0;for(var i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))%997;return COR_MAIS[h%COR_MAIS.length]}
+function pes(n){return '<b style="color:'+corPessoa(n)+'">'+esc(n)+'</b>'}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2800)}
 function dt(x){var m=String(x||'').match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d:\d\d))?/);return m?m[3]+'/'+m[2]+(m[4]?' '+m[4]:'/'+m[1]):'—'}
@@ -396,15 +399,15 @@ function cab(){var s=S.sel,tit=s.t==='ob'?(OBS.filter(function(o){return o.id===
 function tabela(ls){if(D&&D.erro)return '<div class="info" style="color:#8E2A1F;font-weight:600">'+esc(D.erro)+' — aperte F5 para tentar de novo.</div>';if(D&&D.carregando)return '<div class="info">Abrindo os seus tickets…</div>';var n=Math.max(1,Math.ceil(ls.length/PT));if(S.pg>n-1)S.pg=n-1;var pg=ls.slice(S.pg*PT,S.pg*PT+PT);
  if(!ls.length)return '<div class="info">Nenhum ticket aqui.</div>';
  return '<div class="tablewrap" id="tw"><table><thead><tr><th>Nº</th><th>Aberto em</th><th>Projeto · Item</th><th>Tipo</th><th>De → Para</th><th>Assunto</th><th>Prazo</th><th>Estado</th></tr></thead><tbody>'+pg.map(function(t){
-  return '<tr class="clk" onclick="abrir(\''+t.id+'\')"><td>'+t.id+'</td><td>'+dt(t.criado_em)+'</td><td><span class="tk-ob">'+esc(nOb(t))+'</span>'+(t.item?' · '+esc(t.item):'')+'</td><td>'+(t.tipo==='arquivo'?'Arquivo':'Pergunta')+'</td><td>'+esc(t.de)+' → '+esc(t.para)+'</td><td><b>'+esc(t.assunto)+'</b></td><td>'+(t.prazo?dt(t.prazo):'—')+'</td><td>'+tagE(t)+'</td></tr>'}).join('')+'</tbody></table></div>'+
+  return '<tr class="clk" onclick="abrir(\''+t.id+'\')"><td>'+t.id+'</td><td>'+dt(t.criado_em)+'</td><td><span class="tk-ob">'+esc(nOb(t))+'</span>'+(t.item?' · '+esc(t.item):'')+'</td><td>'+(t.tipo==='arquivo'?'Arquivo':'Pergunta')+'</td><td>'+pes(t.de)+' → '+pes(t.para)+'</td><td><b>'+esc(t.assunto)+'</b></td><td>'+(t.prazo?dt(t.prazo):'—')+'</td><td>'+tagE(t)+'</td></tr>'}).join('')+'</tbody></table></div>'+
   (n>1?'<div class="pgline">Tickets '+(S.pg*PT+1)+'–'+Math.min(ls.length,S.pg*PT+PT)+' de '+ls.length+' <button class="mini" '+(S.pg?'':'disabled')+' onclick="S.pg--;desenhaPainel()">◀</button><button class="mini" '+(S.pg<n-1?'':'disabled')+' onclick="S.pg++;desenhaPainel()">▶</button></div>':'')}
 function fld(r,v,cl){return '<div class="fld'+(cl?' '+cl:'')+'"><label>'+r+'</label><div class="v" title="'+esc(v)+'">'+(v||'—')+'</div></div>'}
 function links(x){return String(x||'').split(';').map(function(a){a=a.trim();return !a?'':/^https?:/.test(a)?'<a href="'+esc(a)+'" target="_blank">'+esc(a.length>50?a.slice(0,47)+'…':a)+'</a>':esc(a)}).filter(Boolean).join(' · ')}
 function detalhe(t){var h='<div class="tk-det">';
- h+='<div class="ficha">'+fld('Projeto','<a href="#" class="tk-ob" onclick="abrirProjeto(\''+t.obra+'\');return false">'+esc(t.obra_nome)+'</a> <span style="color:#5A6676">'+t.obra+'</span>')+fld('Item',esc(t.item))+fld('Tipo',t.tipo==='arquivo'?'Arquivo':'Pergunta')+fld('De → Para',esc(t.de)+' → '+esc(t.para))+fld('Aberto em',dt(t.criado_em))+fld('Prazo',t.prazo?dt(t.prazo):'')+
+ h+='<div class="ficha">'+fld('Projeto','<a href="#" class="tk-ob" onclick="abrirProjeto(\''+t.obra+'\');return false">'+esc(t.obra_nome)+'</a> <span style="color:#5A6676">'+t.obra+'</span>')+fld('Item',esc(t.item))+fld('Tipo',t.tipo==='arquivo'?'Arquivo':'Pergunta')+fld('De → Para',pes(t.de)+' → '+pes(t.para))+fld('Aberto em',dt(t.criado_em))+fld('Prazo',t.prazo?dt(t.prazo):'')+
   (t.desbloqueia?fld('Desbloqueia',esc(t.desbloqueia),'s2'):'')+(t.onde?fld('Onde o arquivo deve ficar',esc(t.onde)):'')+(t.anexos?fld('Anexos',links(t.anexos),'s2'):'')+'</div>';
  h+='<div><div class="tk-rot">Texto</div><div class="tk-bloco">'+esc(t.texto)+'</div></div>';
- if(t.resposta)h+='<div><div class="tk-rot">Resposta de '+esc(t.para)+'</div><div class="tk-bloco resp">'+esc(t.resposta)+'</div></div>';
+ if(t.resposta)h+='<div><div class="tk-rot">Resposta de '+pes(t.para)+'</div><div class="tk-bloco resp">'+esc(t.resposta)+'</div></div>';
  if(t.decisao)h+='<div><div class="tk-rot">Decisão registrada no projeto</div><div class="tk-bloco dec"><b>'+esc(t.decisao)+'</b></div></div>';
  var ac='';
  if(!t.arquivado&&t.estado!=='fechado'){
