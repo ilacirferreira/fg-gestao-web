@@ -209,7 +209,7 @@ function paneTk(){if(!TKM){setTimeout(tkCarrega,0);return '<div class="aviso inf
   if(t){var pode=t.souPara&&(t.estado==='aberto'||t.estado==='visto');
     return '<div style="display:flex;flex-direction:column;gap:10px;font-size:16px"><div><button class="btn" onclick="TKS=\'\';desenha()">‹ Voltar à lista</button></div>'+
     '<div style="font-size:19px;font-weight:700;color:#1F3B5C">'+esc(t.id+' · '+t.assunto)+'</div>'+
-    '<div><b style="color:#A3271B">'+esc(t.obra_nome)+'</b>'+(t.item?' · '+esc(t.item):'')+' · de '+pes(t.de)+' · '+tkDt(t.criado_em)+(t.prazo?' · prazo '+tkDt(t.prazo):'')+'</div>'+
+    '<div><b style="color:#A3271B">'+esc(t.obra_nome)+'</b>'+(t.item?' · '+esc(t.item):'')+' · de '+pes(t.de)+' · '+tkDt(t.criado_em)+(t.prazo?' · prazo '+esc(tkDt(t.prazo)||t.prazo):'')+'</div>'+
     '<div style="white-space:pre-wrap;border:1px solid #C3CAD3;border-radius:8px;padding:10px 12px;background:#FAFBFC">'+esc(t.texto)+'</div>'+
     (t.onde?'<div><b>Onde o arquivo deve ficar:</b> '+esc(t.onde)+'</div>':'')+(t.desbloqueia?'<div><b>Isto desbloqueia:</b> '+esc(t.desbloqueia)+'</div>':'')+
     (t.resposta?'<div style="white-space:pre-wrap;border:1px solid #B9CBE4;border-radius:8px;padding:10px 12px;background:#EEF3FA"><b>Sua resposta:</b> '+esc(t.resposta)+'</div>':'')+
