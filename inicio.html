@@ -444,7 +444,7 @@ if(TK.aguardando)AVISOS.push({tk:1,g:'sab',t:TK.aguardando+' Ticket(s) aguardand
 /* Ilacir 10/11 14:56: Início de verdade — hoje pelo relógio; avisos tirados do sistema; os anotados em 05/11 ficam em "Para Saber" como lista antiga a conferir */
 (function(){var V=AVISOS.splice(0,AVISOS.length);var I=(typeof D!=='undefined'&&D)||{},hj=new Date(),z=function(n){return ('0'+n).slice(-2)},hs=z(hj.getDate())+'/'+z(hj.getMonth()+1)+'/'+hj.getFullYear(),k=function(x){return x.slice(6)+x.slice(3,5)+x.slice(0,2)};
 var dif=function(d){var p=d.split('/');return Math.round((new Date(+p[2],+p[1]-1,+p[0])-new Date(hj.getFullYear(),hj.getMonth(),hj.getDate()))/864e5)};
-(I.nfRet||[]).forEach(function(x){AVISOS.push({g:x.g||(x.fim?'urg':'ate'),t:(x.fim?'Nota NÃO emitida: ':'Nota aguardando nova tentativa: ')+x.tomador+' (R$ '+String(x.valor).replace('.',',')+')',d:x.txt||'',p:'Notas Fiscais',a:'Abrir Notas'})});
+(I.nfRet||[]).forEach(function(x){AVISOS.push({g:'ate',t:(x.fim?'Nota pendente: ':'Nota com nova tentativa programada: ')+x.tomador+' (R$ '+String(x.valor).replace('.',',')+')',d:x.txt||'',p:'Notas Fiscais',a:'Abrir Notas'})});
 if((I.nfEmitir||[]).length)AVISOS.push({g:'ate',t:I.nfEmitir.length+' parcela(s) para emitir NF',d:I.nfEmitir.slice(0,5).join(' · '),p:'Notas Fiscais',a:'Emitir NF'});
 if(I.bancoPend)AVISOS.push({g:'ate',t:I.bancoPend+' lançamento(s) do banco pendente(s)',d:'a classificar, conciliar, confirmar ou verificar',p:'Bancos',a:'Abrir Pendências'});
 (I.impDif||[]).forEach(function(c){AVISOS.push({g:'urg',t:'Guia com diferença: '+c.conta+(c.venc?' (vence '+String(c.venc).slice(0,5)+')':''),d:c.txt.replace(/^CONFERÊNCIA ⚠ /,''),p:'Despesas',a:'Abrir Contas a Pagar'})});
