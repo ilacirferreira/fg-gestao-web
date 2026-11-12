@@ -257,6 +257,10 @@ body .pgline .mini{width:24px;height:22px;min-width:24px;min-height:22px;border-
 .tk-acao textarea{min-height:58px;resize:vertical}
 .tk-det{display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0}
 .ficha .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.headrow>#head{flex:0 0 36%;max-width:36%}
+.tk-endtit{color:#1F2937;font-size:16px;font-weight:500;white-space:nowrap;margin-top:2px}
+.headrow>#head .headtitle{line-height:1.2}
+.tk-end{color:#5A6676;font-weight:400;font-size:.9em}
 </style>
 </head>
 <body>
@@ -356,7 +360,7 @@ document.addEventListener('keydown',function(ev){var b=document.getElementById('
 /* TICKETS DA EQUIPE (Ilacir 12/11/2026): todo ticket é de um projeto; fechar = registrar a decisão; só quem abriu fecha. */
 var T=(D&&D.lista)||[],OBS=(D&&D.obras)||[],PES=(D&&D.pessoas)||[],EU=(D&&D.eu)||'',VE_TUDO=!!(D&&D.veTudo);
 var S={sel:{t:'f',f:'comigo'},ab:{f:1,ob:1},hist:[],busca:'',pg:0,tk:'',modo:''};var PT=12;
-var COR_PESSOA={ilacir:'#1F5FA8',thiago:'#2E7D32',edna:'#7B3FA0',rebeca:'#C2620A'};var COR_MAIS=['#00838F','#6D4C41','#AD1457','#455A64'];
+var COR_PESSOA={ilacir:'#1F5FA8',thiago:'#2E7D32',edna:'#E07000',rebeca:'#00838F'};var COR_MAIS=['#7B3FA0','#6D4C41','#AD1457','#455A64'];
 function corPessoa(n){var k=String(n||'').trim().split(' ')[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COR_PESSOA[k])return COR_PESSOA[k];var h=0;for(var i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))%997;return COR_MAIS[h%COR_MAIS.length]}
 function pes(n){return '<b style="color:'+corPessoa(n)+'">'+esc(n)+'</b>'}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -387,13 +391,19 @@ function desenhaArvore(){var h='';
  h+=no('raiz b'+(eq({t:'ob',o:'OB0000'})?' sel':''),false,'Assuntos Internos','<span class="vl">'+nia+' aberto(s) · '+ni.length+'</span>',selJ({t:'ob',o:'OB0000'}));
  var obs={};T.forEach(function(t){if(t.arquivado||t.obra==='OB0000')return;obs[t.obra]=obs[t.obra]||{n:t.obra_nome,ab:0,tot:0};obs[t.obra].tot++;if(t.estado!=='fechado')obs[t.obra].ab++});
  h+=no('raiz b',false,'Por Projeto','<span class="vl">'+Object.keys(obs).length+'</span>',"tog('ob');desenhaArvore()");
- if(S.ab.ob)Object.keys(obs).sort(function(a,b){return obs[a].n.localeCompare(obs[b].n,'pt')}).forEach(function(o){h+=no('ob b',eq({t:'ob',o:o}),esc(obs[o].n),'<span class="cnt">'+obs[o].ab+' aberto(s) · '+obs[o].tot+'</span>',selJ({t:'ob',o:o}),1)});
- document.getElementById('tree').innerHTML=h}
+ if(S.ab.ob)Object.keys(obs).sort(function(a,b){return obs[a].n.localeCompare(obs[b].n,'pt')}).forEach(function(o){var oc=OBS.filter(function(x){return x.id===o})[0]||{};h+=no('ob b',eq({t:'ob',o:o}),esc(oc.nome||obs[o].n)+(oc.end?'<span class="tk-end"> · '+esc(oc.end)+'</span>':''),'<span class="cnt">'+obs[o].ab+' aberto(s) · '+obs[o].tot+'</span>',selJ({t:'ob',o:o}),1)});
+ document.getElementById('tree').innerHTML=h;
+ /* endereço na árvore só quando couber; sem quebrar linha */
+ [].forEach.call(document.querySelectorAll('#tree .tk-end'),function(e){var n=e.parentNode.parentNode;if(n.scrollWidth>n.clientWidth+1)e.style.display='none'})}
 function kpi(t,v,e,cl,go){return '<div class="box kpi'+(go?' clk" onclick="'+go+'" style="cursor:pointer" title="Clique para ver"':'"')+'><small>'+t+'</small><b'+(cl?' class="'+cl+'"':'')+'>'+v+'</b><em>'+(e||'&nbsp;')+'</em></div>'}
 var EST={aberto:['t-warn','Aberto'],visto:['t-info','Visto'],respondido:['t-ok','Respondido'],recebido:['t-ok','Recebido'],fechado:['t-gray','Fechado']};
 function tagE(t){if(t.arquivado)return '<span class="tag t-gray">Arquivado</span>';if(t.lembrete&&t.estado!=='fechado')return '<span class="tag t-info">Lembrete</span>';var e=EST[t.estado]||['t-gray',t.estado];return '<span class="tag '+e[0]+'">'+e[1]+'</span>'+(t.vencido?' <span class="tag t-bad">Vencido</span>':'')}
-function cab(){var s=S.sel,tit=s.t==='ob'?(OBS.filter(function(o){return o.id===s.o})[0]||{nome:s.o}).nome:s.t==='f'?FILTROS.filter(function(x){return x[0]===s.f})[0][1]:'Tickets';
- document.getElementById('head').innerHTML='<div><div class="crumb">Tickets'+(s.t==='ob'?' › Por Projeto':'')+'</div><div class="headtitle"'+(s.t==='ob'?' style="color:#A3271B"':'')+'>'+esc(tit)+'</div></div><div class="tags"><span class="tag t-gray">todo ticket é de um projeto · fechar = registrar a decisão</span></div>';
+function tituloCabe(){[].forEach.call(document.querySelectorAll('#head .headtitle,#head .tk-endtit'),cabeUm)}
+function cabeUm(t){t.style.whiteSpace='nowrap';t.style.fontSize='';var f=parseFloat(getComputedStyle(t).fontSize)||22,w=t.parentNode;w.style.minWidth='0';w.style.overflow='hidden';t.style.overflow="hidden";while(t.scrollWidth>t.clientWidth+1&&f>11){f-=1;t.style.fontSize=f+'px'}}
+function cab(){var s=S.sel,oo=s.t==='ob'?(OBS.filter(function(o){return o.id===s.o})[0]||{nome:s.o}):null,tit=oo?(oo.t1||oo.nome):s.t==='f'?FILTROS.filter(function(x){return x[0]===s.f})[0][1]:'Tickets';
+ /* Ilacir 12/11 09:55: projeto em 2 linhas — nome em vermelho, endereço em preto embaixo */
+ document.getElementById('head').innerHTML='<div><div class="crumb">Tickets'+(oo?' › Por Projeto':'')+'</div><div class="headtitle"'+(oo?' style="color:#A3271B"':'')+'>'+esc(tit)+'</div>'+(oo&&oo.end?'<div class="tk-endtit">'+esc(oo.end)+'</div>':'')+'</div><div class="tags"><span class="tag t-gray">todo ticket é de um projeto · fechar = registrar a decisão</span></div>';
+ tituloCabe();
  var c=function(f){return T.filter(FILTROS.filter(function(x){return x[0]===f})[0][2]).length},mes=(D&&D.hoje||'').slice(0,7);
  document.getElementById('kpis').innerHTML=kpi('Comigo',c('comigo'),'esperando você',c('comigo')?'db':'',"sel({t:'f',f:'comigo'})")+kpi('Que Eu Abri · Aguardando',c('aguard'),'sem resposta ainda','',"sel({t:'f',f:'aguard'})")+kpi('Vencidos',c('venc'),'prazo passou',c('venc')?'db':'',"sel({t:'f',f:'venc'})")+kpi('Fechados no Mês',T.filter(function(t){return t.estado==='fechado'&&/fechou/.test(t.historico)&&String(t.historico).split(' | ').some(function(h){return h.slice(0,7)===mes&&/fechou/.test(h)})}).length,'decisões registradas','',"sel({t:'f',f:'fech'})")}
 function tabela(ls){if(D&&D.erro)return '<div class="info" style="color:#8E2A1F;font-weight:600">'+esc(D.erro)+' — aperte F5 para tentar de novo.</div>';if(D&&D.carregando)return '<div class="info">Abrindo os seus tickets…</div>';var n=Math.max(1,Math.ceil(ls.length/PT));if(S.pg>n-1)S.pg=n-1;var pg=ls.slice(S.pg*PT,S.pg*PT+PT);
