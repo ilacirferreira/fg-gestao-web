@@ -421,6 +421,8 @@ function desenhaAnos(){}
 function desenhaLista(){var ls=filtradas(),tp=Math.max(1,Math.ceil(ls.length/S.PT));if(S.pg>tp-1)S.pg=tp-1;var pag=ls.slice(S.pg*S.PT,S.pg*S.PT+S.PT);
   var faixa=S.escolher?'<div class="faixa"><b>'+(S.escolher==='canc'?'Cancelar NF':'Substituir NF')+':</b> clique na nota.<span class="sp"></span><button class="pb cz" onclick="S.escolher=\'\';tudo()">Desistir</button></div>':'';
   if(S.escolher)pag=pag.filter(function(n){return !morta(n)});
+  /* Ilacir 12/11 15:48: novas tentativas automáticas (30 em 30 min, até 5) e NOTA NÃO EMITIDA */
+  (D.retry||[]).forEach(function(x){if(S.escolher)return;faixa+=x.fim?'<div class="faixa" style="background:#FDECEA;border-color:#C0392B;color:#8E2A1F" title="'+esc(x.erro)+'"><b>NOTA NÃO EMITIDA</b>&nbsp;· '+esc(x.tomador)+' · R$ '+esc(String(x.valor).replace('.',','))+(x.parc?' · '+esc(x.parc):'')+' — o GDF recusou '+(x.tent+1)+' vezes. Emita de novo (Emitir NF) ou pelo site do ISSNet.</div>':'<div class="faixa" title="'+esc(x.erro)+'"><b>Aguardando nova tentativa automática</b>&nbsp;· '+esc(x.tomador)+' · R$ '+esc(String(x.valor).replace('.',','))+' — tentativa '+(x.tent+1)+' de '+x.max+' às '+esc(String(x.prox).slice(6))+'. Não emita de novo enquanto isso.</div>'});
   var pr=(D.proc||[]);if(pr.length&&!S.escolher)faixa+='<div class="faixa"><b>'+pr.length+' nota(s) ainda processando no GDF</b><span class="sp"></span><button class="pb" onclick="abrir(\'avisos\')">Ver e Consultar</button></div>';
   var h=faixa+'<div class="grade" id="grade">'+(pag.length?pag.map(cardNF).join(''):'<div class="msg" style="grid-column:span 2">Nenhuma nota'+(S.q?' com "'+esc(S.q)+'"':'')+'.</div>')+'</div>';
   var semPdf=N.filter(function(n){return !n.pdf&&n.n<151}).length;
