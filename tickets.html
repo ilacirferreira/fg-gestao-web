@@ -260,6 +260,7 @@ body .pgline .mini{width:24px;height:22px;min-width:24px;min-height:22px;border-
 .headrow>#head{flex:0 0 36%;max-width:36%}
 .tk-endtit{color:#1F2937;font-size:16px;font-weight:500;white-space:nowrap;margin-top:2px;padding-left:36px}
 .headrow>#head .headtitle{line-height:1.2}
+.tk-tab{table-layout:fixed;width:100%}.tk-tab td,.tk-tab th{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tk-end{color:#5A6676;font-weight:400;font-size:.9em}
 </style>
 </head>
@@ -410,8 +411,9 @@ function cab(){var s=S.sel,oo=s.t==='ob'?(OBS.filter(function(o){return o.id===s
  document.getElementById('kpis').innerHTML=kpi('Comigo',c('comigo'),'esperando você',c('comigo')?'db':'',"sel({t:'f',f:'comigo'})")+kpi('Que Eu Abri · Aguardando',c('aguard'),'sem resposta ainda','',"sel({t:'f',f:'aguard'})")+kpi('Vencidos',c('venc'),'prazo passou',c('venc')?'db':'',"sel({t:'f',f:'venc'})")+kpi('Fechados no Mês',T.filter(function(t){return t.estado==='fechado'&&/fechou/.test(t.historico)&&String(t.historico).split(' | ').some(function(h){return h.slice(0,7)===mes&&/fechou/.test(h)})}).length,'decisões registradas','',"sel({t:'f',f:'fech'})")}
 function tabela(ls){if(D&&D.erro)return '<div class="info" style="color:#8E2A1F;font-weight:600">'+esc(D.erro)+' — aperte F5 para tentar de novo.</div>';if(D&&D.carregando)return '<div class="info">Abrindo os seus tickets…</div>';var n=Math.max(1,Math.ceil(ls.length/PT));if(S.pg>n-1)S.pg=n-1;var pg=ls.slice(S.pg*PT,S.pg*PT+PT);
  if(!ls.length)return '<div class="info">Nenhum ticket aqui.</div>';
- return '<div class="tablewrap" id="tw"><table><thead><tr><th>Nº</th><th>Aberto em</th><th>Projeto · Item</th><th>Tipo</th><th>De → Para</th><th>Assunto</th><th>Prazo</th><th>Estado</th></tr></thead><tbody>'+pg.map(function(t){
-  return '<tr class="clk" onclick="abrir(\''+t.id+'\')"><td>'+t.id+'</td><td>'+dt(t.criado_em)+'</td><td><span class="tk-ob">'+esc(nOb(t))+'</span>'+(t.item?' · '+esc(t.item):'')+'</td><td>'+(t.tipo==='arquivo'?'Arquivo':'Pergunta')+'</td><td>'+pes(t.de)+' → '+pes(t.para)+'</td><td><b>'+esc(t.assunto)+'</b></td><td>'+(t.prazo?dt(t.prazo):'—')+'</td><td>'+tagE(t)+'</td></tr>'}).join('')+'</tbody></table></div>'+
+ /* Ilacir 12/11 11:18: a lista tem que caber — colunas com largura fixa; o que não cabe termina em … (texto inteiro ao passar o mouse) */
+ return '<div class="tablewrap" id="tw"><table class="tk-tab"><colgroup><col style="width:72px"><col style="width:104px"><col style="width:15%"><col style="width:84px"><col style="width:150px"><col><col style="width:64px"><col style="width:104px"></colgroup><thead><tr><th>Nº</th><th>Aberto em</th><th>Projeto · Item</th><th>Tipo</th><th>De → Para</th><th>Assunto</th><th>Prazo</th><th>Estado</th></tr></thead><tbody>'+pg.map(function(t){
+  return '<tr class="clk" onclick="abrir(\''+t.id+'\')"><td>'+t.id+'</td><td>'+dt(t.criado_em)+'</td><td title="'+esc(nOb(t)+(t.item?' · '+t.item:''))+'"><span class="tk-ob">'+esc(nOb(t))+'</span>'+(t.item?' · '+esc(t.item):'')+'</td><td>'+(t.tipo==='arquivo'?'Arquivo':'Pergunta')+'</td><td>'+pes(t.de)+' → '+pes(t.para)+'</td><td title="'+esc(t.assunto)+'"><b>'+esc(t.assunto)+'</b></td><td>'+(t.prazo?String(dt(t.prazo)).slice(0,5):'—')+'</td><td>'+tagE(t)+'</td></tr>'}).join('')+'</tbody></table></div>'+
   (n>1?'<div class="pgline">Tickets '+(S.pg*PT+1)+'–'+Math.min(ls.length,S.pg*PT+PT)+' de '+ls.length+' <button class="mini" '+(S.pg?'':'disabled')+' onclick="S.pg--;desenhaPainel()">◀</button><button class="mini" '+(S.pg<n-1?'':'disabled')+' onclick="S.pg++;desenhaPainel()">▶</button></div>':'')}
 function fld(r,v,cl){return '<div class="fld'+(cl?' '+cl:'')+'"><label>'+r+'</label><div class="v" title="'+esc(v)+'">'+(v||'—')+'</div></div>'}
 function links(x){return String(x||'').split(';').map(function(a){a=a.trim();return !a?'':/^https?:/.test(a)?'<a href="'+esc(a)+'" target="_blank">'+esc(a.length>50?a.slice(0,47)+'…':a)+'</a>':esc(a)}).filter(Boolean).join(' · ')}
