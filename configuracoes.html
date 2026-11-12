@@ -408,7 +408,12 @@ function voltar(){if(!S.hist.length){toast('Nada para voltar.');return}S.sel=JSO
 function inicio(){S.hist=[];S.sel={t:'equipe'};desenha()}
 function limpar(){document.getElementById('busca').value='';desenha()}
 function hist(){sel({t:'historico'})}
-function novoCol(){abrirModal('Novo Colaborador','<div class="mgrid"><div class="fld"><label>Número</label><input value="Colaborador 4" readonly></div><div class="fld"><label>Nome</label><input></div><div class="fld"><label>E-mail Google</label><input></div><div class="fld"><label>Perfil</label><select><option>Técnico</option><option>Técnico e Financeiro limitado</option></select></div></div><div class="info dica">Entra com tudo bloqueado. Você libera tela por tela em Permissões.</div>',[['Cancelar','fecharModal()',''],['Salvar','fecharModal();toast(\'Ainda não disponível: pede a sua confirmação (cadastro protegido) e salva.\')','pri']])}
+function novoCol(){/* Ilacir 12/11 10:46: "salvei a Rebeca... mas não aparece nas permissões" — o botão agora grava de verdade */
+ abrirModal('Novo Colaborador','<div class="mgrid"><div class="fld"><label for="ncNome">Nome</label><input id="ncNome" placeholder="Ex.: Rebeca"></div><div class="fld"><label for="ncEmail">E-mail Google (o login dela)</label><input id="ncEmail" placeholder="nome@gmail.com"></div></div><div class="info dica">Entra no FG Gestão só com Tickets (Ver). As outras telas você libera em Permissões.</div>',[['Cancelar','fecharModal()',''],['Gravar','ncGravar()','pri']])}
+function ncGravar(){var n=(document.getElementById('ncNome').value||'').trim(),e=(document.getElementById('ncEmail').value||'').trim().toLowerCase();
+ if(!n){toast('Escreva o nome.');return}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){toast('E-mail inválido.');return}
+ if(PERM_TODAS[e]&&!window.confirm(n+' ('+e+') já tem permissões. Substituir por Entrar + Tickets (Ver)?'))return;
+ FG_srv('permSalvar',[e,{'Entrar no FG Gestão':'Editar','Tickets':'Ver'},n],function(r){PERM_TODAS=r||{};PESSOAS[e]={nome:n,colab:''};fecharModal();permCarrega(e);S.hist.push(JSON.stringify(S.sel));S.sel={t:'perm'};desenha();toast(n+' gravada ✓ — já entra e vê os Tickets')})}
 var GR=[['equipe','Equipe'],['perm','Permissões'],['func','Funções Ligadas'],['emp','Empresa e Fiscal'],['nfe','Emissor de NF (Focus)'],['nft','Nota de Teste'],['val','Prazos e Valores'],['ponto','Ponto'],['trava','Bloqueio de Tela'],['rateio','Rateio por Período'],['cat','Categorias e Tópicos'],['txt','Modelos de Texto'],['arq','Arquivo Morto'],['historico','Histórico de Alterações']];
 function rvNovo(){var u=RVL.length?RVL[RVL.length-1]:{I:40,'1':35,'2':25,cap:20},h=new Date(),m=h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2);RVL.push({desde:m,I:u.I,'1':u['1'],'2':u['2'],cap:u.cap});desenhaPainel()}
 function rvGravar(){FG_srv('rateioVigSalvar',[RVL],function(r){D.rateioVig=r;window.RVL=JSON.parse(JSON.stringify(r.lista));toast('Rateio por período gravado ✓');desenhaPainel()})}
@@ -587,6 +592,8 @@ onAuthStateChanged(auth, async u => {
     const s = await getDoc(doc(db, 'paginas', 'configuracoes'));
     if (!s.exists()) throw new Error('a cópia desta página ainda não foi gravada.');
     window.__FGD = JSON.parse(s.get('json'));
+    /* Ilacir 12/11 10:17: Tickets abre na hora com a lista da própria pessoa (tickets/<email>, só ela lê); o servidor confere depois */
+    if (s.ref && s.ref.id === 'tickets') { try { const st = await getDoc(doc(db, 'tickets', String(u.email || '').toLowerCase())); if (st.exists()) { const dd = JSON.parse(st.get('json')); dd.daCopia = 1; window.__FGD = dd; } } catch (e) {} }
     const quando = s.get('atualizado') ? s.get('atualizado').toDate() : null;
     if (!rodou) { rodou = true; const sc = document.createElement('script'); sc.textContent = $('fgMain').textContent; document.body.appendChild(sc);
       const irVelho = window.FG_ir; window.FG_ir = function (pg, extra, semPilha) { if (WEB.indexOf(pg) >= 0) { location.href = pg + '.html' + (extra ? '?' + String(extra).replace(/^&/, '') : ''); return; } return irVelho(pg, extra, semPilha); };
