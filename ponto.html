@@ -90,7 +90,7 @@ function chamar(acao,args,ok,bg){if(!bg){if(ESPERA)return;ESPERA=true;desenhaBar
   .then(function(r){return r.json()}).then(function(j){if(!bg)ESPERA=false;if(j.ok){if(!bg)ERRO='';ok&&ok(j.r)}else{var m=j.erro||'Não deu certo.';if(bg)bg(m);else{ERRO=m;toast(m);desenha()}}})
   .catch(function(e){var m='Sem resposta do Google: '+(e&&e.message||e);if(!bg)ESPERA=false;if(bg)bg(m);else{ERRO=m;toast(m);desenha()}})}
 function ecErro(m){EC.carr=false;EC.erro=/muitas vezes|too many times/i.test(m)?'Os e-mails da FG não abriram agora: o Google limitou o uso do Gmail da FG por hoje. Amanhã volta ao normal; até lá, use o Gmail.':'Os e-mails não abriram: '+m;toast(EC.erro);desenha()}
-function carregar(){chamar('pontoEstado',[],function(r){E=r;desenha()})}
+function carregar(){chamar('pontoEstado',[],function(r){E=r;desenha();setTimeout(tkCarrega,0)})}
 function agoraHM(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
 function hm(m){return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2)}
 function dt(d){var p=d.split('/');return new Date(+p[2],+p[1]-1,+p[0])}
@@ -133,9 +133,9 @@ function desenha(){if(!E)return;var s=E.situacao,hoje=E.dias[E.hoje]||{};
   if(TAB>=tabs.length)TAB=0;
   $('tabs').innerHTML=tabs.map(function(t,i){return '<div class="tab'+(i===TAB?' on':'')+'" onclick="TAB='+i+';desenha()">'+t+'</div>'}).join('');
   if(s.pendente&&TAB===0&&!E._foi){E._foi=1;TAB=1;return desenha()}
-  var tn=tabs[TAB];$('pane').innerHTML=TAB===0?paneMes():/^Liberar/.test(tn)?paneLiberar():tn==='Corrigir Marcação'?paneCorrigir():tn==='Imprimir Folha do Mês'?paneFolha():tn==='E-mails'?paneEmail():tn==='Calendário e Lembretes'?paneAgenda():tn==='Meus Dados'?paneMeus():tn==='Projetos'?paneProj():tn==='ARTs'?paneArts():tn==='Minha Senha de Liberação'?paneSenha():paneComo();desenhaBarra();cabe()}
+  var tn=tabs[TAB];$('pane').innerHTML=TAB===0?paneMes():/^Liberar/.test(tn)?paneLiberar():tn==='Corrigir Marcação'?paneCorrigir():tn==='Imprimir Folha do Mês'?paneFolha():tn==='E-mails'?paneEmail():/^Tickets/.test(tn)?paneTk():tn==='Calendário e Lembretes'?paneAgenda():tn==='Meus Dados'?paneMeus():tn==='Projetos'?paneProj():tn==='ARTs'?paneArts():tn==='Minha Senha de Liberação'?paneSenha():paneComo();desenhaBarra();cabe()}
 function cabe(){[].forEach.call(document.querySelectorAll('td.fit'),function(e){e.style.fontSize='';var f=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&f>9.5){f-=0.5;e.style.fontSize=f+'px'}})}
-function nomesTabs(){var s=E.situacao,d=dt(E.hoje),t=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona'),'Corrigir Marcação','E-mails','Imprimir Folha do Mês','Calendário e Lembretes','Meus Dados','Projetos','ARTs'];if(E.podeSenha)t.push('Minha Senha de Liberação');return t}
+function nomesTabs(){var s=E.situacao,d=dt(E.hoje),t=['Ponto de '+MESES[d.getMonth()],(s.pendente?'Liberar '+s.pendente.data:'Como Funciona'),'Corrigir Marcação','E-mails',(TKM&&TKM.filter(function(t){return t.comigo}).length?'Tickets ('+TKM.filter(function(t){return t.comigo}).length+')':'Tickets'),'Imprimir Folha do Mês','Calendário e Lembretes','Meus Dados','Projetos','ARTs'];if(E.podeSenha)t.push('Minha Senha de Liberação');return t}
 function paneCorrigir(){var o=['entrada','almoco','volta','saida'].map(function(t){return '<option value="'+t+'">'+NOMES[t]+'</option>'}).join('');
   return '<div class="aviso info" style="margin-bottom:12px" title="A correção é feita aqui, no computador da colaboradora, e liberada na frente dela com a senha do Ilacir. A hora original fica guardada.">Correção feita aqui, na frente da Edna, e liberada com a senha do Ilacir. A hora original fica guardada.</div><div class="form">'+
    '<div class="fld"><label>Dia</label><input id="cDia" value="'+esc(E.hoje)+'" style="min-width:150px"></div><div class="fld"><label>Marcação</label><select id="cTipo">'+o+'</select></div><div class="fld"><label>Hora certa</label><input id="cHora" type="time"></div>'+
@@ -176,6 +176,28 @@ function paneEmail(){ecLeForm();if(!EC.lista&&!EC.carr&&!EC.erro)setTimeout(ecCa
   else dir='<div class="aviso info">Clique num e-mail para ler, ou em Novo E-mail.</div>';
   return '<div class="ecw"><div class="ecl">'+topo+'<div class="lst">'+lst+'</div>'+pg+'</div><div class="ecr">'+dir+'</div></div>'}
 /* Ilacir 10/11 18:03: Calendário e Lembretes na página da colaboradora — os compromissos dela e os de "Todos" */
+/* Ilacir 12/11: Tickets — só os que são para ela (ou que ela abriu). Ela responde ou avisa que entregou o arquivo. */
+var TKM=null,TKM_C=0,TKS='',TKM_T=0;
+/* atualiza sozinha: ao abrir a página, ao entrar na aba Tickets (se passou 1 min) e a cada 5 minutos */
+setInterval(function(){if(E)tkCarrega()},300000);
+function tkCarrega(){if(TKM_C)return;TKM_C=1;chamar('tkListar',[],function(r){TKM=(r&&r.lista)||[];TKM_C=0;TKM_T=Date.now();desenha()},function(m){TKM_C=0;toast('Os tickets não abriram: '+m)})}
+function tkDt(x){var m=String(x||'').match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d:\d\d))?/);return m?m[3]+'/'+m[2]+(m[4]?' '+m[4]:''):''}
+function paneTk(){if(!TKM){setTimeout(tkCarrega,0);return '<div class="aviso info">Abrindo os tickets…</div>'}if(Date.now()-TKM_T>60000&&!TKS)setTimeout(tkCarrega,0);
+  var L=TKM.filter(function(t){return !t.arquivado}),t=L.filter(function(x){return x.id===TKS})[0];
+  if(t){var pode=t.souPara&&(t.estado==='aberto'||t.estado==='visto');
+    return '<div style="display:flex;flex-direction:column;gap:10px;font-size:16px"><div><button class="btn" onclick="TKS=\'\';desenha()">‹ Voltar à lista</button></div>'+
+    '<div style="font-size:19px;font-weight:700;color:#1F3B5C">'+esc(t.id+' · '+t.assunto)+'</div>'+
+    '<div><b style="color:#A3271B">'+esc(t.obra_nome)+'</b>'+(t.item?' · '+esc(t.item):'')+' · de '+esc(t.de)+' · '+tkDt(t.criado_em)+(t.prazo?' · prazo '+tkDt(t.prazo):'')+'</div>'+
+    '<div style="white-space:pre-wrap;border:1px solid #C3CAD3;border-radius:8px;padding:10px 12px;background:#FAFBFC">'+esc(t.texto)+'</div>'+
+    (t.onde?'<div><b>Onde o arquivo deve ficar:</b> '+esc(t.onde)+'</div>':'')+(t.desbloqueia?'<div><b>Isto desbloqueia:</b> '+esc(t.desbloqueia)+'</div>':'')+
+    (t.resposta?'<div style="white-space:pre-wrap;border:1px solid #B9CBE4;border-radius:8px;padding:10px 12px;background:#EEF3FA"><b>Sua resposta:</b> '+esc(t.resposta)+'</div>':'')+
+    (pode?'<textarea id="tkR" placeholder="'+(t.tipo==='arquivo'?'Se quiser, diga onde deixou o arquivo':'Escreva a resposta')+'" style="font:16px inherit;padding:8px;border:1px solid #9FB3C8;border-radius:8px;min-height:80px"></textarea><div><button class="btn pri" onclick="tkResp(\''+t.id+'\')" style="font-size:16px;padding:8px 18px">'+(t.tipo==='arquivo'?'Entreguei o Arquivo':'Responder')+'</button></div>':'<div class="aviso info">'+(t.estado==='fechado'?'Fechado: '+esc(t.decisao||''):'Respondido — aguardando '+esc(t.de)+' fechar.')+'</div>')+'</div>'}
+  if(!L.length)return '<div class="aviso info">Nenhum ticket para você.</div>';
+  L=L.slice().sort(function(a,b){return (b.comigo?1:0)-(a.comigo?1:0)});
+  return '<table style="width:100%;border-collapse:collapse;font-size:16px"><tr style="text-align:left;color:#5A6676"><th>Nº</th><th>Projeto</th><th>Assunto</th><th>Situação</th></tr>'+L.map(function(t){
+    return '<tr style="cursor:pointer;border-top:1px solid #E1E5EA" onclick="tkAbreM(\''+t.id+'\')"><td style="padding:8px 6px">'+t.id+'</td><td style="padding:8px 6px;color:#A3271B;font-weight:700;white-space:nowrap">'+esc(String(t.obra_nome).split(' ')[0])+(t.item?' · '+esc(t.item):'')+'</td><td style="padding:8px 6px"><b>'+esc(t.assunto)+'</b></td><td style="padding:8px 6px;white-space:nowrap">'+(t.comigo?'<b style="color:#8E2A1F">Com você</b>':t.estado==='fechado'?'Fechado':'Respondido')+'</td></tr>'}).join('')+'</table>'}
+function tkAbreM(id){TKS=id;desenha();var t=(TKM||[]).filter(function(x){return x.id===id})[0];if(t&&t.souPara&&t.estado==='aberto')chamar('tkVisto',[id],function(n){TKM=TKM.map(function(x){return x.id===id?n:x})},function(){})}
+function tkResp(id){var r=($('tkR')||{}).value||'';chamar('tkResponder',[id,r.trim()],function(d){TKM=(d&&d.lista)||TKM;toast('Gravado ✓');desenha()})}
 var AGM=null,AGC=null,AGD_SEL='',AGM_C=0;
 function agK(d){var p=String(d).split('/');return p[2]+p[1]+p[0]}
 function paneAgenda(){if(!AGM){if(!AGM_C){AGM_C=1;setTimeout(function(){chamar('agendaMinha',[],function(r){AGM=r||[];AGM_C=0;desenha()},function(m){AGM_C=0;toast('A agenda não abriu: '+m)})},0)};return '<div class="aviso info">Abrindo a agenda…</div>'}
