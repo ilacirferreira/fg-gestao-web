@@ -569,8 +569,18 @@ onAuthStateChanged(auth, async u => {
         const luz = document.createElement('div'); luz.id = 'fgTkLuz'; luz.onclick = () => { location.href = 'tickets.html'; }; document.body.appendChild(luz);
         const poe = () => { const t = $('fgTempo'); if (!t || luz.style.display === 'none') return; const r = t.getBoundingClientRect(); luz.style.left = Math.max(4, r.left - 16) + 'px'; };
         setInterval(poe, 2000);
-        onSnapshot(doc(db, 'tickets', eu), s4 => { let n = 0; try { const j = JSON.parse(s4.exists() ? s4.get('json') : '{}'); n = (j.lista || []).filter(t => String(t.para_email || '').toLowerCase() === eu && t.estado === 'aberto' && String(t.de_email || '').toLowerCase() !== eu).length; } catch (e) {}
-          luz.style.display = n ? 'block' : 'none'; luz.title = n ? (n > 1 ? n + ' tickets novos para você' : '1 ticket novo para você') + ' — clique para abrir' : ''; poe(); }, () => {}); } }
+        const pede = () => { try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {} };
+        document.addEventListener('click', pede, { once: true });
+        const avisados = () => { try { return JSON.parse(localStorage.getItem('fgTkAvisados') || '[]'); } catch (e) { return []; } };
+        const titulo0 = document.title.replace(/^\(\d+\) /, '');
+        onSnapshot(doc(db, 'tickets', eu), s4 => { let novos = []; try { const j = JSON.parse(s4.exists() ? s4.get('json') : '{}'); novos = (j.lista || []).filter(t => String(t.para_email || '').toLowerCase() === eu && t.estado === 'aberto' && String(t.de_email || '').toLowerCase() !== eu); } catch (e) {}
+          const n = novos.length; luz.style.display = n ? 'block' : 'none'; luz.title = n ? (n > 1 ? n + ' tickets novos para você' : '1 ticket novo para você') + ' — clique para abrir' : ''; poe();
+          document.title = (n ? '(' + n + ') ' : '') + titulo0;
+          try { if (window.Notification && Notification.permission === 'granted') { const ja = avisados(); novos.filter(t => ja.indexOf(t.id) < 0).forEach(t => {
+            const no = new Notification('FG Gestão — ticket novo de ' + (t.de || ''), { body: (t.assunto || '') + (t.obra_nome ? ' · ' + t.obra_nome : ''), tag: 'fg-tk-' + t.id, requireInteraction: true });
+            no.onclick = () => { window.focus(); location.href = 'tickets.html'; no.close(); }; ja.push(t.id); });
+            try { localStorage.setItem('fgTkAvisados', JSON.stringify(ja.slice(-300))); } catch (e) {} } } catch (e) {}
+        }, () => {}); } }
   } catch (e) {
     $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
     $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
