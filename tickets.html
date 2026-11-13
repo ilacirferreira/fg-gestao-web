@@ -438,7 +438,7 @@ function formNovo(){var ob=S.sel.t==='ob'?S.sel.o:'';
  '<div class="fld s2"><label for="nObra">Projeto (obrigatório)</label><select id="nObra"><option value="">— escolha o projeto —</option>'+OBS.map(function(o){return '<option value="'+o.id+'"'+(o.id===ob?' selected':'')+'>'+esc(o.nome)+' · '+o.id+'</option>'}).join('')+'</select></div>'+
  '<div class="fld"><label for="nItem">Item (ex.: R03 A17)</label><input id="nItem"></div>'+
  '<div class="fld"><label for="nTipo">Tipo</label><select id="nTipo" onchange="document.getElementById(\'nOndeB\').style.display=this.value===\'arquivo\'?\'\':\'none\'"><option value="pergunta">Pergunta</option><option value="arquivo">Arquivo</option></select></div>'+
- '<div class="fld"><label for="nPara">Para</label><select id="nPara">'+PES.map(function(p){return '<option value="'+esc(p.e)+'">'+esc(p.n)+(p.e===EU?' (lembrete para mim)':'')+'</option>'}).join('')+'</select></div>'+
+ '<div class="fld"><label for="nPara">Para</label><select id="nPara">'+PES.map(function(p){return '<option value="'+esc(p.e)+'">'+esc(p.n)+(p.e===EU?' (lembrete para mim)':'')+'</option>'}).join('')+'<option value="*todos*">Todos (um ticket para cada pessoa)</option></select></div>'+
  '<div class="fld"><label for="nPrazo">Prazo (data ou evento)</label><input id="nPrazo" maxlength="80" placeholder="opcional — 20/11/2026 ou na liberação para processamento"></div>'+
  '<div class="fld s2"><label for="nAss">Assunto</label><input id="nAss" maxlength="160"></div>'+
  '<div class="fld s4"><label for="nTexto">Texto</label><textarea id="nTexto"></textarea></div>'+
