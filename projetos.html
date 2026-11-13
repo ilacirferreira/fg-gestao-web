@@ -1007,6 +1007,13 @@ onAuthStateChanged(auth, async u => {
         f.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:300;background:#F2C94C;color:#1E2733;font:600 17px Segoe UI,Arial,sans-serif;text-align:center;padding:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)';
         f.textContent = 'Há dados novos no sistema — clique aqui para atualizar a página (termine antes o que está digitando).'; f.onclick = () => location.reload(); document.body.appendChild(f);
       }, () => {}); }
+    if (!window.__fgTkLuz) { window.__fgTkLuz = 1; const eu = String((auth.currentUser || {}).email || '').toLowerCase();
+      if (eu) { const st = document.createElement('style'); st.textContent = '@keyframes fgPisca{0%,100%{opacity:1}50%{opacity:.15}}#fgTkLuz{position:fixed;bottom:9px;width:9px;height:9px;border-radius:50%;background:#E0A800;box-shadow:0 0 6px #E0A800;z-index:121;cursor:pointer;animation:fgPisca 1.6s ease-in-out infinite;display:none}'; document.head.appendChild(st);
+        const luz = document.createElement('div'); luz.id = 'fgTkLuz'; luz.onclick = () => { location.href = 'tickets.html'; }; document.body.appendChild(luz);
+        const poe = () => { const t = $('fgTempo'); if (!t || luz.style.display === 'none') return; const r = t.getBoundingClientRect(); luz.style.left = Math.max(4, r.left - 16) + 'px'; };
+        setInterval(poe, 2000);
+        onSnapshot(doc(db, 'tickets', eu), s4 => { let n = 0; try { const j = JSON.parse(s4.exists() ? s4.get('json') : '{}'); n = (j.lista || []).filter(t => String(t.para_email || '').toLowerCase() === eu && t.estado === 'aberto' && String(t.de_email || '').toLowerCase() !== eu).length; } catch (e) {}
+          luz.style.display = n ? 'block' : 'none'; luz.title = n ? (n > 1 ? n + ' tickets novos para você' : '1 ticket novo para você') + ' — clique para abrir' : ''; poe(); }, () => {}); } }
   } catch (e) {
     $('fgCarregando').style.display = 'none'; $('fgEntrar').style.display = 'flex';
     $('fgMsg').textContent = /permission|insufficient/i.test(e.message) ? 'Esta conta (' + u.email + ') não tem acesso. Entre com a conta autorizada.' : 'Não abriu: ' + e.message;
